@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B1121"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="REGISTRO CORTEX"
+            android:textColor="#00F0FF"
+            android:textSize="28sp"
+            android:layout_gravity="center"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="8dp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SENTINEL: MODO ESTRICTO"
+            android:textColor="#64748b"
+            android:layout_gravity="center"
+            android:layout_marginBottom="32dp"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/in_company"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Empresa"
+            android:textColorHint="#475569"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#2563EB"
+            android:layout_marginBottom="16dp"
+            android:padding="12dp"/>
+
+        <EditText
+            android:id="@+id/in_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Apellidos y Nombres"
+            android:textColorHint="#475569"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#2563EB"
+            android:layout_marginBottom="16dp"
+            android:padding="12dp"/>
+
+        <EditText
+            android:id="@+id/in_dni"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="DNI / ID"
+            android:inputType="number"
+            android:textColorHint="#475569"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#2563EB"
+            android:layout_marginBottom="32dp"
+            android:padding="12dp"/>
+
+        <Button
+            android:id="@+id/btn_start_eval"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="SIGUIENTE"
+            android:backgroundTint="#2563EB"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+</ScrollView>
