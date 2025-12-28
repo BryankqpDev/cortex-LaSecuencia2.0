@@ -27,9 +27,11 @@ class ReflejosTestActivity : AppCompatActivity() {
     private var aciertos = 0
     private var intentosTotales = 0
     private var testFinalizado = false
+
+    // Variables de Seguridad Sentinel
     private var tiempoAusenteMs: Long = 0
     private var ultimaVezVistoMs: Long = System.currentTimeMillis()
-    private val LIMITE_AUSENCIA_MS = 5000 // 5 segundos
+    private val LIMITE_AUSENCIA_MS = 5000 // 5 segundos permitidos
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,6 +41,7 @@ class ReflejosTestActivity : AppCompatActivity() {
         targetCircle = findViewById(R.id.target_circle)
         txtInstruccion = findViewById(R.id.txt_instruccion)
 
+        // Iniciamos el hardware y el reloj
         iniciarSentinelCamara()
         iniciarTemporizador()
 
@@ -46,7 +49,7 @@ class ReflejosTestActivity : AppCompatActivity() {
             if (!testFinalizado) {
                 val reactionTime = System.currentTimeMillis() - startTime
                 aciertos++
-                intentosTotales++
+                // Ocultamos y esperamos al siguiente
                 targetCircle.visibility = View.GONE
                 esperarYAparecer()
             }
@@ -56,18 +59,16 @@ class ReflejosTestActivity : AppCompatActivity() {
     private fun iniciarTemporizador() {
         object : CountDownTimer(30000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
-                // Actualizamos el texto con el tiempo restante
                 if (!testFinalizado) {
                     val segundos = millisUntilFinished / 1000
-                    // Solo actualizamos si Sentinel no ha marcado error
-                    if (txtInstruccion.text != "⚠️ ¡OPERADOR AUSENTE!") {
+                    // Solo actualizamos el tiempo si el usuario está presente
+                    if (!txtInstruccion.text.contains("AUSENTE")) {
                         txtInstruccion.text = "TIEMPO: ${segundos}s | ACIERTOS: $aciertos"
                     }
                 }
             }
-
             override fun onFinish() {
-                finalizarPrueba()
+                if (!testFinalizado) finalizarPrueba()
             }
         }.start()
     }
@@ -76,11 +77,11 @@ class ReflejosTestActivity : AppCompatActivity() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
+
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder).surfaceProvider)
             }
 
-            // ANALIZADOR DE ROSTRO (Sentinel)
             val imageAnalyzer = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
@@ -94,7 +95,7 @@ class ReflejosTestActivity : AppCompatActivity() {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalyzer)
             } catch (e: Exception) {
-                Toast.makeText(this, "Error Sentinel", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Error Sentinel Hardware", Toast.LENGTH_SHORT).show()
             }
         }, ContextCompat.getMainExecutor(this))
     }
@@ -111,21 +112,24 @@ class ReflejosTestActivity : AppCompatActivity() {
                     val tiempoActual = System.currentTimeMillis()
 
                     if (faces.isEmpty()) {
-                        // El usuario NO está
+                        // El usuario NO está frente a la cámara
                         tiempoAusenteMs += (tiempoActual - ultimaVezVistoMs)
-
                         txtInstruccion.text = "⚠️ ¡OPERADOR AUSENTE!\nSEGUNDOS: ${tiempoAusenteMs / 1000}/5"
                         txtInstruccion.setTextColor(Color.RED)
                         targetCircle.visibility = View.GONE
 
-                        // VALIDACIÓN INDUSTRIAL: Si pasa de 5 segundos, reprobado.
                         if (tiempoAusenteMs >= LIMITE_AUSENCIA_MS) {
                             reprobarPorSeguridad("INCUMPLIMIENTO DE PROTOCOLO: OPERADOR AUSENTE")
                         }
                     } else {
-                        // El usuario SÍ está
+                        // El usuario SÍ está presente
                         txtInstruccion.setTextColor(Color.WHITE)
-                        // No reiniciamos el tiempoAusenteMs para que sea acumulativo (opcional)
+
+                        // LÓGICA DE ARRANQUE: Si es el inicio, lanzamos la primera bola
+                        if (targetCircle.visibility == View.GONE && intentosTotales == 0) {
+                            intentosTotales = 1
+                            esperarYAparecer()
+                        }
                     }
                     ultimaVezVistoMs = tiempoActual
                 }
@@ -135,46 +139,54 @@ class ReflejosTestActivity : AppCompatActivity() {
         }
     }
 
-    private fun reprobarPorSeguridad(motivo: String) {
-        testFinalizado = true
-        targetCircle.visibility = View.GONE
-
-        android.app.AlertDialog.Builder(this)
-            .setTitle("⚠️ EVALUACIÓN ANULADA")
-            .setMessage(motivo)
-            .setCancelable(false)
-            .setPositiveButton("SALIR") { _, _ -> finish() }
-            .show()
-    }
-
-    private fun finalizarPrueba() {
-        testFinalizado = true
-        targetCircle.visibility = View.GONE
-        val score = if (intentosTotales > 0) (aciertos.toFloat() / intentosTotales * 100).toInt() else 0
-        val resultado = if (score >= 70) "APTO ✅" else "NO APTO ❌"
-
-        txtInstruccion.text = "TEST FINALIZADO\nSCORE: $score% | $resultado"
-        txtInstruccion.textSize = 20f
-        txtInstruccion.setTextColor(Color.CYAN)
-    }
-
     private fun esperarYAparecer() {
         if (!testFinalizado) {
-            Handler(Looper.getMainLooper()).postDelayed({ moverCirculo() }, Random.nextLong(1000, 2500))
+            // Tiempo de espera aleatorio entre círculos
+            Handler(Looper.getMainLooper()).postDelayed({
+                moverCirculo()
+            }, Random.nextLong(800, 2000))
         }
     }
 
     private fun moverCirculo() {
-        if (!testFinalizado && txtInstruccion.text != "⚠️ ¡OPERADOR AUSENTE!") {
+        // Solo aparece si el test sigue activo y el usuario está presente
+        if (!testFinalizado && !txtInstruccion.text.contains("AUSENTE")) {
             val width = mainLayout.width - targetCircle.width
             val height = mainLayout.height - targetCircle.height
+
             if (width > 0 && height > 0) {
                 targetCircle.x = Random.nextInt(0, width).toFloat()
                 targetCircle.y = Random.nextInt(0, height).toFloat()
                 targetCircle.visibility = View.VISIBLE
                 startTime = System.currentTimeMillis()
-                if (intentosTotales == 0) intentosTotales = 1 // Primer intento
+                intentosTotales++
             }
         }
+    }
+
+    private fun finalizarPrueba() {
+        testFinalizado = true
+        targetCircle.visibility = View.GONE
+
+        // Cálculo basado en tu lógica original de HTML
+        val score = if (intentosTotales > 1) (aciertos.toFloat() / (intentosTotales - 1) * 100).toInt() else 0
+        val resultado = if (score >= 70) "APTO ✅" else "NO APTO ❌"
+
+        mostrarResultadoFinal("TEST FINALIZADO\nSCORE: $score% | $resultado")
+    }
+
+    private fun reprobarPorSeguridad(motivo: String) {
+        testFinalizado = true
+        targetCircle.visibility = View.GONE
+        mostrarResultadoFinal(motivo)
+    }
+
+    private fun mostrarResultadoFinal(mensaje: String) {
+        android.app.AlertDialog.Builder(this)
+            .setTitle("SISTEMA CORTEX: RESULTADO")
+            .setMessage(mensaje)
+            .setCancelable(false)
+            .setPositiveButton("FINALIZAR") { _, _ -> finish() }
+            .show()
     }
 }
