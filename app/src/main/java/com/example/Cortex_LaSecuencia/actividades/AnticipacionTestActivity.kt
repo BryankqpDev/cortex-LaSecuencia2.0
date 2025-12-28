@@ -8,7 +8,6 @@ import android.view.View
 import android.view.animation.LinearInterpolator
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.animation.doOnEnd
@@ -16,136 +15,157 @@ import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
 import kotlin.math.abs
 
-/**
- * ACTIVIDAD: Test de Anticipación (Módulo 3)
- * OBJETIVO: Evaluar la capacidad del operador para calcular tiempo y distancia (TTC).
- * LÓGICA: Un vehículo se mueve a velocidad constante y el usuario debe detenerlo
- * dentro de una zona objetivo (Zona Verde).
- */
 class AnticipacionTestActivity : AppCompatActivity() {
 
-    // --- ELEMENTOS DE LA INTERFAZ (UI) ---
-    private lateinit var vehiculo: ImageView // El camión o vehículo que se mueve
-    private lateinit var zonaMeta: View      // La zona verde donde se debe frenar
-    private lateinit var btnFrenar: Button   // El botón gigante de frenado
-    private lateinit var pista: View         // El contenedor que define el largo del recorrido
+    private lateinit var vehiculo: ImageView
+    private lateinit var zonaMeta: View
+    private lateinit var btnFrenar: Button
+    private lateinit var pista: View
 
-    // --- VARIABLES DE LÓGICA ---
-    private var animador: ObjectAnimator? = null // Objeto que controla la animación de movimiento
-    private var juegoActivo = false              // Bandera para evitar frenar dos veces o antes de tiempo
+    private var animador: ObjectAnimator? = null
+    private var juegoActivo = false
+
+    // Control de intentos
+    private var intentosRealizados = 0
+    private val MAX_INTENTOS = 2
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_anticipacion_test)
 
-        // 1. VINCULACIÓN DE VISTAS
-        // Conectamos las variables con los IDs del archivo XML (activity_anticipacion_test.xml)
         vehiculo = findViewById(R.id.img_vehiculo)
         zonaMeta = findViewById(R.id.zona_meta)
         btnFrenar = findViewById(R.id.btn_frenar)
         pista = findViewById(R.id.pista_container)
 
-        // 2. LISTENER DEL BOTÓN
-        // Solo permitimos frenar si el juego ya comenzó (juegoActivo = true)
         btnFrenar.setOnClickListener {
             if (juegoActivo) frenarVehiculo()
         }
 
-        // 3. INICIO AUTOMÁTICO
-        // Damos 1 segundo (1000ms) de espera para que el usuario se prepare antes de mover el camión
+        // Inicia el primer intento
+        programarInicioCarrera()
+    }
+
+    private fun programarInicioCarrera() {
         Handler(Looper.getMainLooper()).postDelayed({
             iniciarCarrera()
         }, 1000)
     }
 
-    /**
-     * Inicia la animación del vehículo de izquierda a derecha.
-     */
     private fun iniciarCarrera() {
-        juegoActivo = true
+        if (isFinishing) return
 
-        // Calculamos cuánto debe recorrer el vehículo (Ancho de la pista - Ancho del propio vehículo)
+        juegoActivo = true
         val anchoPista = pista.width.toFloat()
         val anchoVehiculo = vehiculo.width.toFloat()
 
-        // Configuración de la Animación (TranslationX = Movimiento horizontal)
+        vehiculo.translationX = 0f // Reset posición
+
         animador = ObjectAnimator.ofFloat(vehiculo, "translationX", 0f, anchoPista - anchoVehiculo).apply {
-            duration = 2500 // TIEMPO DE CRUCE: 2.5 segundos (Modificar este valor cambia la dificultad)
-            interpolator = LinearInterpolator() // Velocidad constante (sin acelerar ni frenar)
-
-            // Listener para detectar si la animación termina por sí sola
+            duration = 2500
+            interpolator = LinearInterpolator()
             doOnEnd {
-                // Si la animación termina y el juego seguía activo, significa que el usuario NO frenó
-                if (juegoActivo) evaluarFrenado(true)
+                if (juegoActivo) evaluarFrenado(falloTotal = true)
             }
-            start() // ¡Arranca el motor!
+            start()
         }
     }
 
-    /**
-     * Detiene el vehículo inmediatamente.
-     */
     private fun frenarVehiculo() {
-        juegoActivo = false // Bloqueamos el botón para no recibir más clics
-        animador?.pause()   // Congelamos la animación en el punto exacto
-        evaluarFrenado(false) // Evaluamos la posición actual
+        juegoActivo = false
+        animador?.pause()
+        evaluarFrenado(falloTotal = false)
     }
 
-    /**
-     * Calcula la precisión del frenado.
-     * @param falloTotal: True si el usuario dejó pasar el camión sin tocar el botón.
-     */
     private fun evaluarFrenado(falloTotal: Boolean) {
-        // CASO 1: El usuario se durmió y no frenó
+        intentosRealizados++
+
+        var puntaje = 0
+        var mensaje = ""
+
         if (falloTotal) {
-            mostrarResultado(0, "¡REACCIÓN TARDÍA! ❌")
-            return
+            puntaje = 0
+            mensaje = "¡NO FRENASTE! ❌"
+        } else {
+            val centroVehiculo = vehiculo.x + (vehiculo.width / 2)
+            val centroMeta = zonaMeta.x + (zonaMeta.width / 2)
+            val diferencia = abs(centroVehiculo - centroMeta)
+            val radioMeta = zonaMeta.width / 2
+
+            puntaje = when {
+                diferencia < (radioMeta * 0.5) -> 100
+                diferencia < radioMeta -> 80
+                diferencia < (radioMeta * 1.5) -> 40
+                else -> 0
+            }
+            mensaje = if (puntaje >= 80) "¡EXCELENTE! 😎" else "CALIBRACIÓN NECESARIA ⚠️"
         }
 
-        // CASO 2: El usuario frenó, calculamos la precisión matemática
+        // --- LÓGICA DE DECISIÓN ---
 
-        // Obtenemos el centro geométrico del vehículo (Posición X + mitad del ancho)
-        val centroVehiculo = vehiculo.x + (vehiculo.width / 2)
-
-        // Obtenemos el centro geométrico de la zona meta
-        val centroMeta = zonaMeta.x + (zonaMeta.width / 2)
-
-        // Calculamos la distancia absoluta (sin negativo) entre los dos centros
-        val diferencia = abs(centroVehiculo - centroMeta)
-
-        // Definimos el radio de tolerancia (mitad del ancho de la zona verde)
-        val radioMeta = zonaMeta.width / 2
-
-        // SISTEMA DE PUNTUACIÓN INDUSTRIAL
-        val puntaje = when {
-            diferencia < (radioMeta * 0.5) -> 100 // Precisión quirúrgica (Centro exacto)
-            diferencia < radioMeta -> 80      // Dentro de la zona verde (Aprobado)
-            diferencia < (radioMeta * 1.5) -> 40 // Rozando el borde (Zona de peligro)
-            else -> 0                              // Muy lejos (Fallo)
+        if (puntaje >= 80) {
+            // CASO A: APROBÓ -> Siguiente nivel
+            mostrarExito(puntaje, mensaje)
+        } else {
+            // CASO B: FALLÓ
+            if (intentosRealizados < MAX_INTENTOS) {
+                // Le queda 1 intento -> Reintento rápido (mismo nivel, no reinicia activity)
+                mostrarDialogoReintento(mensaje)
+            } else {
+                // Se acabaron los intentos -> REINICIAR DESDE EL PRINCIPIO (Loop)
+                reiniciarNivelCompleto(mensaje)
+            }
         }
-
-        // Mensaje de feedback según el resultado
-        val mensaje = if (puntaje >= 80) "¡BUEN CÁLCULO! 😎" else "CALIBRACIÓN NECESARIA ⚠️"
-        mostrarResultado(puntaje, mensaje)
     }
 
-    /**
-     * Muestra el resultado final y gestiona la navegación.
-     */
-    private fun mostrarResultado(puntaje: Int, mensaje: String) {
-        // 1. Guardamos el resultado en el "Cerebro" central de la app
-        CortexManager.guardarPuntaje("t3", puntaje)
+    private fun mostrarDialogoReintento(razonFallo: String) {
+        if (isFinishing) return
 
-        // 2. Mostramos el diálogo informativo
         AlertDialog.Builder(this)
-            .setTitle("RESULTADO T3")
-            .setMessage("Precisión: $puntaje%\n$mensaje")
-            .setCancelable(false) // Obligamos a usar el botón
-            .setPositiveButton("SIGUIENTE") { _, _ ->
-                // 3. El Manager decide cuál es el siguiente test (Test 4)
-                CortexManager.navegarAlSiguiente(this)
-                finish() // Cerramos esta actividad para liberar memoria
+            .setTitle("INTENTO FALLIDO ($intentosRealizados/$MAX_INTENTOS)")
+            .setMessage("$razonFallo\n\nTe queda 1 oportunidad más.\n¡Concéntrate!")
+            .setCancelable(false)
+            .setPositiveButton("REINTENTAR") { _, _ ->
+                vehiculo.translationX = 0f
+                programarInicioCarrera()
             }
             .show()
+    }
+
+    private fun reiniciarNivelCompleto(razonFallo: String) {
+        if (isFinishing) return
+
+        // No guardamos puntaje porque vamos a reiniciar
+        AlertDialog.Builder(this)
+            .setTitle("¡INTENTOS AGOTADOS! ❌")
+            .setMessage("$razonFallo\n\nHas fallado los 2 intentos.\nLa prueba se reiniciará desde el principio.")
+            .setCancelable(false)
+            .setPositiveButton("REINICIAR T3") { _, _ ->
+                // ESTO REINICIA LA ACTIVIDAD DESDE CERO
+                // (Como si acabara de entrar, reset de vidas a 0)
+                recreate()
+            }
+            .show()
+    }
+
+    private fun mostrarExito(puntaje: Int, mensaje: String) {
+        if (isFinishing) return
+
+        CortexManager.guardarPuntaje("t3", puntaje)
+
+        AlertDialog.Builder(this)
+            .setTitle("PRUEBA SUPERADA ✅")
+            .setMessage("Precisión: $puntaje%\n$mensaje")
+            .setCancelable(false)
+            .setPositiveButton("SIGUIENTE") { _, _ ->
+                CortexManager.navegarAlSiguiente(this)
+                finish()
+            }
+            .show()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        animador?.cancel()
     }
 }
