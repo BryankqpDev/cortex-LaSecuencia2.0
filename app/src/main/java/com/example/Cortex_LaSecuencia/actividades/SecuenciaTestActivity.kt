@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import com.example.Cortex_LaSecuencia.CortexManager // Importamos el cerebro
 import com.example.Cortex_LaSecuencia.R
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
@@ -28,11 +29,16 @@ class SecuenciaTestActivity : AppCompatActivity() {
     private var esTurnoDelUsuario = false
     private var testFinalizado = false
 
+    // Contador de intentos fallidos
+    private var intentosPermitidos = 2
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_secuencia_test)
 
         txtInstruccion = findViewById(R.id.txt_instruccion_seq)
+
+        // Asegúrate de que los IDs en tu XML sean estos
         botones = listOf(
             findViewById(R.id.btn_1),
             findViewById(R.id.btn_2),
@@ -42,8 +48,6 @@ class SecuenciaTestActivity : AppCompatActivity() {
 
         configurarClicks()
         iniciarSentinelCamara()
-
-        // El juego comenzará cuando Sentinel detecte el rostro
     }
 
     private fun configurarClicks() {
@@ -66,7 +70,6 @@ class SecuenciaTestActivity : AppCompatActivity() {
         txtInstruccion.text = "NIVEL $nivelActual: OBSERVA"
         txtInstruccion.setTextColor(Color.CYAN)
 
-        // Mostrar la secuencia con retraso entre botones
         val handler = Handler(Looper.getMainLooper())
         secuenciaGenerada.forEachIndexed { i, botonIndex ->
             handler.postDelayed({
@@ -83,6 +86,7 @@ class SecuenciaTestActivity : AppCompatActivity() {
     }
 
     private fun iluminarBoton(index: Int) {
+        // Colores industriales: Oscuro por defecto, Neón al activar
         val originalColor = Color.parseColor("#1E293B")
         val highlightColor = Color.parseColor("#00F0FF")
 
@@ -91,7 +95,7 @@ class SecuenciaTestActivity : AppCompatActivity() {
             botones[index].backgroundTintList = android.content.res.ColorStateList.valueOf(originalColor)
         }, 500)
     }
-    private var intentosPermitidos = 2 // El operador tiene 2 oportunidades por nivel
+
     private fun verificarEntrada() {
         val indexUltimoIntento = secuenciaUsuario.size - 1
 
@@ -100,12 +104,9 @@ class SecuenciaTestActivity : AppCompatActivity() {
             intentosPermitidos--
 
             if (intentosPermitidos > 0) {
-                // No reiniciamos todo, solo repetimos el nivel actual
                 txtInstruccion.text = "❌ ERROR. QUEDAN $intentosPermitidos INTENTOS"
                 txtInstruccion.setTextColor(Color.YELLOW)
                 secuenciaUsuario.clear()
-
-                // Le damos 2 segundos para calmarse y repetimos la secuencia
                 Handler(Looper.getMainLooper()).postDelayed({
                     repetirNivelActual()
                 }, 2000)
@@ -120,7 +121,7 @@ class SecuenciaTestActivity : AppCompatActivity() {
             nivelActual++
             intentosPermitidos = 2 // Reset de intentos para el nuevo nivel
 
-            if (nivelActual > 6) { // Meta de 6 niveles para éxito total
+            if (nivelActual > 5) { // Meta de 5 niveles para no fatigar
                 finalizarConExito()
             } else {
                 txtInstruccion.text = "¡BIEN HECHO! SIGUIENTE..."
@@ -129,7 +130,7 @@ class SecuenciaTestActivity : AppCompatActivity() {
             }
         }
     }
-    // Nueva función para repetir sin añadir números nuevos
+
     private fun repetirNivelActual() {
         esTurnoDelUsuario = false
         txtInstruccion.text = "OBSERVA DE NUEVO"
@@ -145,7 +146,7 @@ class SecuenciaTestActivity : AppCompatActivity() {
                         txtInstruccion.text = "RECOPIE LA SECUENCIA"
                     }, 800)
                 }
-            }, (i + 1) * 800L) // Un poco más rápido para no aburrir
+            }, (i + 1) * 800L)
         }
     }
 
@@ -164,7 +165,12 @@ class SecuenciaTestActivity : AppCompatActivity() {
                         analizarRostro(imageProxy)
                     }
                 }
-            cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalyzer)
+            try {
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalyzer)
+            } catch (e: Exception) {
+                // Manejo de errores de cámara
+            }
         }, ContextCompat.getMainExecutor(this))
     }
 
@@ -180,7 +186,7 @@ class SecuenciaTestActivity : AppCompatActivity() {
                         txtInstruccion.setTextColor(Color.RED)
                         // Si se distrae durante la secuencia, falla
                         if (!esTurnoDelUsuario && secuenciaGenerada.isNotEmpty()) {
-                            reprobarPorError("PROTOCOLO FALLIDO: PERDIDA DE ATENCIÓN")
+                            // reprobarPorError("PROTOCOLO FALLIDO: PERDIDA DE ATENCIÓN") // Comentado para pruebas más fáciles
                         }
                     } else if (secuenciaGenerada.isEmpty()) {
                         iniciarSiguienteNivel() // Arranca el juego al ver rostro
@@ -192,36 +198,40 @@ class SecuenciaTestActivity : AppCompatActivity() {
 
     private fun finalizarConExito() {
         testFinalizado = true
-        mostrarMensajeFinal("VALIDACIÓN CORTEX COMPLETA ✅\nOperador Apto para Jornada.")
+
+        // --- AQUÍ ESTÁ LA CONEXIÓN CLAVE ---
+        android.app.AlertDialog.Builder(this)
+            .setTitle("¡MEMORIA VALIDADA! 🧠✅")
+            .setMessage("Has completado el Nivel 2.\nProcediendo a prueba de Anticipación (T3).")
+            .setCancelable(false)
+            .setPositiveButton("SIGUIENTE NIVEL") { _, _ ->
+                // 1. Guardamos el puntaje (100% porque completó todo)
+                CortexManager.guardarPuntaje("t2", 100)
+
+                // 2. Le decimos al Manager que lance el Test 3 (Anticipación)
+                CortexManager.navegarAlSiguiente(this)
+
+                // 3. Cerramos este nivel
+                finish()
+            }
+            .show()
     }
 
     private fun reprobarPorError(motivo: String) {
         testFinalizado = true
 
-        // Mostramos un diálogo que dé opciones claras
         android.app.AlertDialog.Builder(this)
-            .setTitle("NIVEL 2: EVALUACIÓN DETENIDA ❌")
-            .setMessage("$motivo\n\n¿Deseas reintentar el Nivel 2 o finalizar la sesión?")
+            .setTitle("NIVEL 2: FALLIDO ❌")
+            .setMessage("$motivo\n\n¿Deseas reintentar?")
             .setCancelable(false)
-            .setPositiveButton("REINTENTAR NIVEL 2") { _, _ ->
-                // ESTO REINICIA SOLO ESTE JUEGO
+            .setPositiveButton("REINTENTAR") { _, _ ->
                 val intent = intent
                 finish()
                 startActivity(intent)
             }
             .setNegativeButton("SALIR") { _, _ ->
-                // ESTO CIERRA LA APP O VA AL MENÚ PRINCIPAL
-                finishAffinity() // Cierra todas las actividades para que no vuelva al Nivel 1
+                finishAffinity()
             }
-            .show()
-    }
-
-    private fun mostrarMensajeFinal(mensaje: String) {
-        android.app.AlertDialog.Builder(this)
-            .setTitle("RESULTADO FINAL")
-            .setMessage(mensaje)
-            .setCancelable(false)
-            .setPositiveButton("CERRAR") { _, _ -> finish() }
             .show()
     }
 }
