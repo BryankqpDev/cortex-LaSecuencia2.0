@@ -1,5 +1,6 @@
 package com.example.Cortex_LaSecuencia
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -37,12 +38,19 @@ class MainActivity : AppCompatActivity() {
                     dni = dni,
                     tipoEquipo = "POR DEFINIR",
                     unidad = "S/N"
+
+
                 )
 
                 // Mensaje de éxito
                 Toast.makeText(this, "Bienvenido ${nuevoOperador.nombre}", Toast.LENGTH_LONG).show()
 
                 // AQUÍ iría el paso a la siguiente pantalla (Welcome)
+                // Esto crea un "puente" hacia la siguiente pantalla
+                val intent = Intent(this, WelcomeActivity::class.java)
+// Pasamos el nombre para que la siguiente pantalla salude
+                intent.putExtra("USER_NAME", nombre)
+                startActivity(intent)
             }
         }
     }

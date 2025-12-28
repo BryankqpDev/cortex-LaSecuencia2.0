@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B1121"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="30dp">
+
+    <TextView
+        android:id="@+id/wel_greeting"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="¡HOLA!"
+        android:textColor="#2563EB"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/wel_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="OPERADOR"
+        android:textColor="#FFFFFF"
+        android:textSize="28sp"
+        android:layout_marginTop="8dp"
+        android:textAlignment="center"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hoy validaremos que tus sentidos estén al 100% para una operación segura."
+        android:textColor="#cbd5e1"
+        android:layout_marginTop="20dp"
+        android:textAlignment="center"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/btn_start_eval"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginTop="40dp"
+        android:text="INICIAR EVALUACIÓN 🚀"
+        android:backgroundTint="#2563EB"
+        android:textColor="#FFFFFF" />
+</LinearLayout>
