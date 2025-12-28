@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
                     supervisor = "PENDIENTE", // Lo completaremos luego
                     nombre = nombre,
                     dni = dni,
-                    tipoEquipo = "POR DEFINIR",
+                    equipo = "POR DEFINIR",
                     unidad = "S/N"
 
 
