@@ -6,6 +6,7 @@ import com.example.Cortex_LaSecuencia.actividades.AnticipacionTestActivity
 import com.example.Cortex_LaSecuencia.actividades.ReflejosTestActivity
 import com.example.Cortex_LaSecuencia.actividades.SecuenciaTestActivity
 import com.example.Cortex_LaSecuencia.actividades.CoordinacionTestActivity // ✅ Importante
+import com.example.Cortex_LaSecuencia.actividades.AtencionTestActivity
 
 object CortexManager {
 
@@ -57,6 +58,7 @@ object CortexManager {
 
                 // ✅ AQUÍ ESTÁ LA INTEGRACIÓN DEL T4:
                 "t4" -> Intent(context, CoordinacionTestActivity::class.java)
+                "t5" -> Intent(context, AtencionTestActivity::class.java)
 
                 else -> null
             }
