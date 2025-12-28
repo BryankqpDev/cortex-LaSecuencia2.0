@@ -197,7 +197,23 @@ class SecuenciaTestActivity : AppCompatActivity() {
 
     private fun reprobarPorError(motivo: String) {
         testFinalizado = true
-        mostrarMensajeFinal("FALLO EN NIVEL 2 ❌\n$motivo")
+
+        // Mostramos un diálogo que dé opciones claras
+        android.app.AlertDialog.Builder(this)
+            .setTitle("NIVEL 2: EVALUACIÓN DETENIDA ❌")
+            .setMessage("$motivo\n\n¿Deseas reintentar el Nivel 2 o finalizar la sesión?")
+            .setCancelable(false)
+            .setPositiveButton("REINTENTAR NIVEL 2") { _, _ ->
+                // ESTO REINICIA SOLO ESTE JUEGO
+                val intent = intent
+                finish()
+                startActivity(intent)
+            }
+            .setNegativeButton("SALIR") { _, _ ->
+                // ESTO CIERRA LA APP O VA AL MENÚ PRINCIPAL
+                finishAffinity() // Cierra todas las actividades para que no vuelva al Nivel 1
+            }
+            .show()
     }
 
     private fun mostrarMensajeFinal(mensaje: String) {
