@@ -27,15 +27,20 @@ class ReflejosTestActivity : AppCompatActivity() {
         mainLayout = findViewById(R.id.test_layout)
         targetCircle = findViewById(R.id.target_circle)
 
-        // Al tocar el círculo, se oculta y aparece en otro lado
+        // 1. Iniciamos la vigilancia de Sentinel
+        iniciarSentinelCamara()
+
+        // 2. IMPORTANTE: Iniciamos el ciclo del juego
+        esperarYAparecer()
+
+        // 3. Lógica completa del botón para que el círculo salte
         targetCircle.setOnClickListener {
             val reactionTime = System.currentTimeMillis() - startTime
             Toast.makeText(this, "Reflejo: ${reactionTime}ms", Toast.LENGTH_SHORT).show()
-            targetCircle.visibility = View.GONE
-            esperarYAparecer()
-        }
 
-        esperarYAparecer()
+            targetCircle.visibility = View.GONE
+            esperarYAparecer() // Vuelve a lanzarlo después de tocarlo
+        }
     }
 
     private fun esperarYAparecer() {
@@ -64,32 +69,24 @@ class ReflejosTestActivity : AppCompatActivity() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
-            // Obtener el proveedor de la cámara
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
-            // 1. Configurar la Vista Previa (Preview)
-            val preview = Preview.Builder()
-                .build()
-                .also {
-                    // Aquí vinculamos el rectángulo negro (viewFinder) con la cámara
-                    it.setSurfaceProvider(findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder).surfaceProvider)
-                }
+            // Configuramos la Preview
+            val preview = Preview.Builder().build().also {
+                // VINCULACIÓN CRUCIAL:
+                it.setSurfaceProvider(findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder).surfaceProvider)
+            }
 
-            // 2. Seleccionar la cámara frontal de forma explícita
             val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
             try {
-                // 3. Desvincular cualquier uso previo antes de volver a vincular
                 cameraProvider.unbindAll()
-
-                // 4. Vincular la cámara al ciclo de vida de esta actividad
-                cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview
-                )
+                // Unimos la cámara al ciclo de vida de la actividad
+                cameraProvider.bindToLifecycle(this, cameraSelector, preview)
             } catch (exc: Exception) {
-                Toast.makeText(this, "Sentinel Error: ${exc.message}", Toast.LENGTH_SHORT).show()
+                // Si hay un error, lo veremos en un Toast
+                Toast.makeText(this, "Error de cámara: ${exc.message}", Toast.LENGTH_SHORT).show()
             }
-
         }, ContextCompat.getMainExecutor(this))
     }
 }
