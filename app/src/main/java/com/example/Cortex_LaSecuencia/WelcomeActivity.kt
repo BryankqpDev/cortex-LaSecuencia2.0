@@ -43,8 +43,11 @@ class WelcomeActivity : AppCompatActivity() {
 
     private fun iniciarTestReflejos() {
         Toast.makeText(this, "SENTINEL ACTIVADO: Iniciando Test 1", Toast.LENGTH_SHORT).show()
-        // Aquí es donde haremos el salto a la pantalla del Test de Reflejos
+        // Este es el puente a la pantalla del test
+        val intent = Intent(this, ReflejosTestActivity::class.java)
+        startActivity(intent)
     }
+
 
     // Resultado de la pregunta de permiso
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -54,5 +57,7 @@ class WelcomeActivity : AppCompatActivity() {
         } else {
             Toast.makeText(this, "Sentinel requiere cámara para operar", Toast.LENGTH_LONG).show()
         }
+
     }
+
 }
