@@ -29,9 +29,14 @@ class ReflejosTestActivity : AppCompatActivity() {
     private var testFinalizado = false
 
     // Variables de Seguridad Sentinel
-    private var tiempoAusenteMs: Long = 0
-    private var ultimaVezVistoMs: Long = System.currentTimeMillis()
-    private val LIMITE_AUSENCIA_MS = 5000 // 5 segundos permitidos
+    private var usuarioPresente = false
+    private var tiempoInicioAusencia: Long = 0
+    private val LIMITE_AUSENCIA_MS = 5000L // 5 segundos permitidos
+    private var juegoIniciado = false
+
+    // Handler para manejar la aparición de círculos
+    private val handler = Handler(Looper.getMainLooper())
+    private var proximoCirculoRunnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,17 +46,22 @@ class ReflejosTestActivity : AppCompatActivity() {
         targetCircle = findViewById(R.id.target_circle)
         txtInstruccion = findViewById(R.id.txt_instruccion)
 
-        // Iniciamos el hardware y el reloj
+        targetCircle.visibility = View.GONE
+        txtInstruccion.text = "Posiciona tu rostro frente a la cámara..."
+
+        // Iniciamos la cámara para detección facial
         iniciarSentinelCamara()
-        iniciarTemporizador()
 
         targetCircle.setOnClickListener {
-            if (!testFinalizado) {
+            if (!testFinalizado && juegoIniciado) {
                 val reactionTime = System.currentTimeMillis() - startTime
                 aciertos++
-                // Ocultamos y esperamos al siguiente
+
+                // Ocultamos el círculo actual
                 targetCircle.visibility = View.GONE
-                esperarYAparecer()
+
+                // Programamos el siguiente círculo
+                programarSiguienteCirculo()
             }
         }
     }
@@ -59,12 +69,10 @@ class ReflejosTestActivity : AppCompatActivity() {
     private fun iniciarTemporizador() {
         object : CountDownTimer(30000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
-                if (!testFinalizado) {
+                if (!testFinalizado && juegoIniciado && usuarioPresente) {
                     val segundos = millisUntilFinished / 1000
-                    // Solo actualizamos el tiempo si el usuario está presente
-                    if (!txtInstruccion.text.contains("AUSENTE")) {
-                        txtInstruccion.text = "TIEMPO: ${segundos}s | ACIERTOS: $aciertos"
-                    }
+                    txtInstruccion.text = "TIEMPO: ${segundos}s | ACIERTOS: $aciertos"
+                    txtInstruccion.setTextColor(Color.WHITE)
                 }
             }
             override fun onFinish() {
@@ -112,26 +120,52 @@ class ReflejosTestActivity : AppCompatActivity() {
                     val tiempoActual = System.currentTimeMillis()
 
                     if (faces.isEmpty()) {
-                        // El usuario NO está frente a la cámara
-                        tiempoAusenteMs += (tiempoActual - ultimaVezVistoMs)
-                        txtInstruccion.text = "⚠️ ¡OPERADOR AUSENTE!\nSEGUNDOS: ${tiempoAusenteMs / 1000}/5"
-                        txtInstruccion.setTextColor(Color.RED)
-                        targetCircle.visibility = View.GONE
+                        // Usuario NO está presente
+                        if (usuarioPresente) {
+                            // Acaba de desaparecer, iniciamos el conteo
+                            usuarioPresente = false
+                            tiempoInicioAusencia = tiempoActual
 
-                        if (tiempoAusenteMs >= LIMITE_AUSENCIA_MS) {
-                            reprobarPorSeguridad("INCUMPLIMIENTO DE PROTOCOLO: OPERADOR AUSENTE")
+                            // Pausamos el juego: ocultamos círculo y cancelamos próximos
+                            targetCircle.visibility = View.GONE
+                            cancelarProximoCirculo()
                         }
-                    } else {
-                        // El usuario SÍ está presente
-                        txtInstruccion.setTextColor(Color.WHITE)
 
-                        // LÓGICA DE ARRANQUE: Si es el inicio, lanzamos la primera bola
-                        if (targetCircle.visibility == View.GONE && intentosTotales == 0) {
-                            intentosTotales = 1
-                            esperarYAparecer()
+                        // Calculamos tiempo ausente
+                        val tiempoAusente = tiempoActual - tiempoInicioAusencia
+                        val segundosAusente = tiempoAusente / 1000
+
+                        txtInstruccion.text = "⚠️ ¡OPERADOR AUSENTE!\nSEGUNDOS: $segundosAusente/5"
+                        txtInstruccion.setTextColor(Color.RED)
+
+                        // Si supera el límite, reprobamos
+                        if (tiempoAusente >= LIMITE_AUSENCIA_MS) {
+                            reprobarPorSeguridad("INCUMPLIMIENTO DE PROTOCOLO:\nOPERADOR AUSENTE MÁS DE 5 SEGUNDOS")
+                        }
+
+                    } else {
+                        // Usuario SÍ está presente
+                        if (!usuarioPresente) {
+                            // Acaba de aparecer o reaparecer
+                            usuarioPresente = true
+                            tiempoInicioAusencia = 0
+
+                            if (!juegoIniciado) {
+                                // Primera vez que se detecta: iniciamos el juego
+                                juegoIniciado = true
+                                iniciarTemporizador()
+                                programarSiguienteCirculo()
+                            } else {
+                                // Reapareció después de ausencia: reanudamos
+                                programarSiguienteCirculo()
+                            }
+                        }
+
+                        // Mantenemos la instrucción actualizada si el juego está corriendo
+                        if (juegoIniciado) {
+                            txtInstruccion.setTextColor(Color.WHITE)
                         }
                     }
-                    ultimaVezVistoMs = tiempoActual
                 }
                 .addOnCompleteListener { imageProxy.close() }
         } else {
@@ -139,18 +173,30 @@ class ReflejosTestActivity : AppCompatActivity() {
         }
     }
 
-    private fun esperarYAparecer() {
-        if (!testFinalizado) {
-            // Tiempo de espera aleatorio entre círculos
-            Handler(Looper.getMainLooper()).postDelayed({
-                moverCirculo()
-            }, Random.nextLong(800, 2000))
+    private fun programarSiguienteCirculo() {
+        if (!testFinalizado && usuarioPresente && juegoIniciado) {
+            // Cancelamos cualquier círculo pendiente
+            cancelarProximoCirculo()
+
+            // Programamos el siguiente con delay aleatorio
+            val delay = Random.nextLong(800, 2000)
+            proximoCirculoRunnable = Runnable {
+                mostrarCirculo()
+            }
+            handler.postDelayed(proximoCirculoRunnable!!, delay)
         }
     }
 
-    private fun moverCirculo() {
-        // Solo aparece si el test sigue activo y el usuario está presente
-        if (!testFinalizado && !txtInstruccion.text.contains("AUSENTE")) {
+    private fun cancelarProximoCirculo() {
+        proximoCirculoRunnable?.let {
+            handler.removeCallbacks(it)
+            proximoCirculoRunnable = null
+        }
+    }
+
+    private fun mostrarCirculo() {
+        // Solo mostramos si el juego sigue activo y el usuario está presente
+        if (!testFinalizado && usuarioPresente && juegoIniciado) {
             val width = mainLayout.width - targetCircle.width
             val height = mainLayout.height - targetCircle.height
 
@@ -166,17 +212,23 @@ class ReflejosTestActivity : AppCompatActivity() {
 
     private fun finalizarPrueba() {
         testFinalizado = true
+        cancelarProximoCirculo()
         targetCircle.visibility = View.GONE
 
-        // Cálculo basado en tu lógica original de HTML
-        val score = if (intentosTotales > 1) (aciertos.toFloat() / (intentosTotales - 1) * 100).toInt() else 0
+        // Cálculo del score
+        val score = if (intentosTotales > 0) {
+            (aciertos.toFloat() / intentosTotales * 100).toInt()
+        } else {
+            0
+        }
         val resultado = if (score >= 70) "APTO ✅" else "NO APTO ❌"
 
-        mostrarResultadoFinal("TEST FINALIZADO\nSCORE: $score% | $resultado")
+        mostrarResultadoFinal("TEST FINALIZADO\n\nIntentos: $intentosTotales\nAciertos: $aciertos\nSCORE: $score%\n\n$resultado")
     }
 
     private fun reprobarPorSeguridad(motivo: String) {
         testFinalizado = true
+        cancelarProximoCirculo()
         targetCircle.visibility = View.GONE
         mostrarResultadoFinal(motivo)
     }
@@ -188,5 +240,10 @@ class ReflejosTestActivity : AppCompatActivity() {
             .setCancelable(false)
             .setPositiveButton("FINALIZAR") { _, _ -> finish() }
             .show()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        cancelarProximoCirculo()
     }
 }
