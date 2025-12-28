@@ -64,22 +64,32 @@ class ReflejosTestActivity : AppCompatActivity() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
+            // Obtener el proveedor de la cámara
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
-            // Configurar la vista previa
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder).surfaceProvider)
-            }
+            // 1. Configurar la Vista Previa (Preview)
+            val preview = Preview.Builder()
+                .build()
+                .also {
+                    // Aquí vinculamos el rectángulo negro (viewFinder) con la cámara
+                    it.setSurfaceProvider(findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder).surfaceProvider)
+                }
 
-            // Seleccionar cámara frontal (Modo Vigilancia)
+            // 2. Seleccionar la cámara frontal de forma explícita
             val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
             try {
-                cameraProvider.unbindAll() // Limpiar cámaras anteriores
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview)
-            } catch (e: Exception) {
-                Toast.makeText(this, "Error de Sentinel: ${e.message}", Toast.LENGTH_SHORT).show()
+                // 3. Desvincular cualquier uso previo antes de volver a vincular
+                cameraProvider.unbindAll()
+
+                // 4. Vincular la cámara al ciclo de vida de esta actividad
+                cameraProvider.bindToLifecycle(
+                    this, cameraSelector, preview
+                )
+            } catch (exc: Exception) {
+                Toast.makeText(this, "Sentinel Error: ${exc.message}", Toast.LENGTH_SHORT).show()
             }
+
         }, ContextCompat.getMainExecutor(this))
     }
 }
