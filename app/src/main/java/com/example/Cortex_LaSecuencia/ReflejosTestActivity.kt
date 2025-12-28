@@ -8,6 +8,11 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import kotlin.random.Random
+// Agrega estos imports al principio
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.content.ContextCompat
 
 class ReflejosTestActivity : AppCompatActivity() {
 
@@ -54,5 +59,27 @@ class ReflejosTestActivity : AppCompatActivity() {
             targetCircle.visibility = View.VISIBLE
             startTime = System.currentTimeMillis()
         }
+    }
+    private fun iniciarSentinelCamara() {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+
+        cameraProviderFuture.addListener({
+            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+
+            // Configurar la vista previa
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder).surfaceProvider)
+            }
+
+            // Seleccionar cámara frontal (Modo Vigilancia)
+            val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+
+            try {
+                cameraProvider.unbindAll() // Limpiar cámaras anteriores
+                cameraProvider.bindToLifecycle(this, cameraSelector, preview)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error de Sentinel: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }, ContextCompat.getMainExecutor(this))
     }
 }
