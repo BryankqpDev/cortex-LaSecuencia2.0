@@ -53,6 +53,14 @@
             android:name=".actividades.AtencionTestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".actividades.EscaneoTestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".actividades.ImpulsoTestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

@@ -7,6 +7,8 @@ import com.example.Cortex_LaSecuencia.actividades.ReflejosTestActivity
 import com.example.Cortex_LaSecuencia.actividades.SecuenciaTestActivity
 import com.example.Cortex_LaSecuencia.actividades.CoordinacionTestActivity // ✅ Importante
 import com.example.Cortex_LaSecuencia.actividades.AtencionTestActivity
+import com.example.Cortex_LaSecuencia.actividades.EscaneoTestActivity
+import com.example.Cortex_LaSecuencia.actividades.ImpulsoTestActivity
 
 object CortexManager {
 
@@ -24,7 +26,8 @@ object CortexManager {
         "t3", // Anticipación (Camión)
         "t4", // Coordinación (Bolitas)
         "t5",
-        "t6"
+        "t6",
+        "t7"
     )
 
     // Función para guardar notas
@@ -59,6 +62,8 @@ object CortexManager {
                 // ✅ AQUÍ ESTÁ LA INTEGRACIÓN DEL T4:
                 "t4" -> Intent(context, CoordinacionTestActivity::class.java)
                 "t5" -> Intent(context, AtencionTestActivity::class.java)
+                "t6" -> Intent(context, EscaneoTestActivity::class.java)
+                "t7" -> Intent(context, ImpulsoTestActivity::class.java)
 
                 else -> null
             }
