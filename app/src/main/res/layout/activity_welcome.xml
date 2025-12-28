@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:text="¡HOLA!"
         android:textColor="#2563EB"
-        android:textSize="24sp"
+        android:textSize="22sp"
         android:textStyle="bold" />
 
     <TextView
@@ -22,8 +22,8 @@
         android:layout_height="wrap_content"
         android:text="OPERADOR"
         android:textColor="#FFFFFF"
-        android:textSize="28sp"
-        android:layout_marginTop="8dp"
+        android:textSize="26sp"
+        android:layout_marginTop="5dp"
         android:textAlignment="center"
         android:textStyle="bold" />
 
@@ -34,14 +34,84 @@
         android:textColor="#cbd5e1"
         android:layout_marginTop="20dp"
         android:textAlignment="center"
-        android:textSize="16sp" />
+        android:textSize="14sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="40dp"
+        android:gravity="center">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/baseline_bolt_24"
+                android:contentDescription="Reflejos" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reflejos"
+                android:textColor="#00F0FF"
+                android:textSize="12sp"
+                android:layout_marginTop="5dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/baseline_adjust_24"
+                android:contentDescription="Precisión" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Precisión"
+                android:textColor="#00F0FF"
+                android:textSize="12sp"
+                android:layout_marginTop="5dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/baseline_psychology_24"
+                android:contentDescription="Enfoque" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Enfoque"
+                android:textColor="#00F0FF"
+                android:textSize="12sp"
+                android:layout_marginTop="5dp" />
+        </LinearLayout>
+    </LinearLayout>
 
     <Button
         android:id="@+id/btn_start_eval"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:layout_marginTop="40dp"
         android:text="INICIAR EVALUACIÓN 🚀"
         android:backgroundTint="#2563EB"
-        android:textColor="#FFFFFF" />
+        android:textColor="#FFFFFF"
+        android:textStyle="bold" />
+
 </LinearLayout>

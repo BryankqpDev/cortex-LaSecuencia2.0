@@ -1,17 +1,20 @@
 [versions]
 agp = "8.8.0"
 kotlin = "2.0.0"
-coreKtx = "1.12.0"       # Ya lo tenías así, es correcto
+coreKtx = "1.12.0"
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
 lifecycleRuntimeKtx = "2.7.0"
-activityCompose = "1.8.2" # BAJA ESTA: de 1.12.2 a 1.8.2
-appcompat = "1.6.1"       # BAJA ESTA: de 1.7.1 a 1.6.1
-composeBom = "2024.01.00"
-material = "1.13.0"
-activity = "1.12.2"
+# BAJA ESTAS TRES QUE ESTÁN CAUSANDO EL PROBLEMA:
+activityCompose = "1.9.3"
+activity = "1.9.3"
+navigation = "2.8.0"
+# AGREGA ESTA PARA EVITAR EL ERROR ANTERIOR:
+composeBom = "2024.04.01"
+appcompat = "1.6.1"
 constraintlayout = "2.2.1"
+material = "1.13.0"
 
 
 [libraries]
