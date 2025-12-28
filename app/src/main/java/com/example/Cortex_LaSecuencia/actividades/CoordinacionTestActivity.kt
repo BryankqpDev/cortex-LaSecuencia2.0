@@ -1,14 +1,10 @@
 package com.example.Cortex_LaSecuencia.actividades
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.ObjectAnimator
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
-import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -23,11 +19,18 @@ class CoordinacionTestActivity : AppCompatActivity() {
     private lateinit var txtContador: TextView
 
     private var puntosAtrapados = 0
-    private val META_PUNTOS = 5 // Objetivo: Atrapas 5 amarillas para ganar
+    private val META_PUNTOS = 5
 
     private val random = Random()
     private var juegoActivo = true
     private val handler = Handler(Looper.getMainLooper())
+
+    // Keys para guardar la velocidad dentro de cada vista
+    private val TAG_VX = R.id.tag_vx_key // Necesitaremos definir esto en resources
+    private val TAG_VY = R.id.tag_vy_key // Necesitaremos definir esto en resources
+
+    // Velocidad base (pixeles por frame)
+    private val VELOCIDAD_BASE = 15f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,113 +39,135 @@ class CoordinacionTestActivity : AppCompatActivity() {
         containerJuego = findViewById(R.id.container_juego)
         txtContador = findViewById(R.id.txt_contador)
 
-        // Instrucción inicial
-        txtContador.text = "¡ATRAPA 5 AMARILLAS! (Evita las rojas)"
+        txtContador.text = "¡ATRAPA 5 AMARILLAS! (Rebotan)"
 
-        // Iniciar el caos después de 1 segundo
+        // Iniciar el juego después de 1 segundo
         handler.postDelayed({
-            iniciarGeneradorDeBolitas()
+            iniciarGenerador()
+            iniciarMotorFisica()
         }, 1000)
     }
 
-    private fun iniciarGeneradorDeBolitas() {
-        // Este Runnable se llama a sí mismo para crear un bucle infinito
+    // --- 1. GENERADOR DE BOLITAS (El que las crea) ---
+    private fun iniciarGenerador() {
         val generador = object : Runnable {
             override fun run() {
                 if (juegoActivo && !isFinishing) {
-                    spawnearEntidadDinamica()
-                    // Velocidad de aparición: Cada 600ms sale una nueva (ajústalo si es muy difícil)
-                    handler.postDelayed(this, 600)
+                    spawnearEntidadRebotante()
+                    // Aparece una nueva cada 800ms (ajústalo según dificultad)
+                    handler.postDelayed(this, 800)
                 }
             }
         }
         handler.post(generador)
     }
 
-    private fun spawnearEntidadDinamica() {
-        if (!juegoActivo) return
+    // --- 2. MOTOR DE FÍSICA (El que las mueve y hace rebotar) ---
+    private fun iniciarMotorFisica() {
+        val physicsLoop = object : Runnable {
+            override fun run() {
+                if (!juegoActivo) return
+                actualizarPosicionesYRebotes()
+                // Ejecutar esto aprox 60 veces por segundo (cada 16ms)
+                handler.postDelayed(this, 16)
+            }
+        }
+        handler.post(physicsLoop)
+    }
+
+    private fun actualizarPosicionesYRebotes() {
+        val containerW = containerJuego.width.toFloat()
+        val containerH = containerJuego.height.toFloat()
+
+        // Recorremos todas las bolitas que hay en pantalla
+        for (i in 0 until containerJuego.childCount) {
+            val bolita = containerJuego.getChildAt(i)
+
+            // Obtenemos sus velocidades actuales (si no tienen, usamos 0)
+            var vx = bolita.getTag(TAG_VX) as? Float ?: 0f
+            var vy = bolita.getTag(TAG_VY) as? Float ?: 0f
+
+            // Calculamos nueva posición
+            var nextX = bolita.x + vx
+            var nextY = bolita.y + vy
+            val size = bolita.width.toFloat()
+
+            // --- LÓGICA DE REBOTE ---
+
+            // Rebote Horizontal (Izquierda / Derecha)
+            if (nextX < 0) {
+                nextX = 0f
+                vx = -vx // Invertir dirección X
+            } else if (nextX + size > containerW) {
+                nextX = containerW - size
+                vx = -vx // Invertir dirección X
+            }
+
+            // Rebote Vertical (Arriba / Abajo)
+            if (nextY < 0) {
+                nextY = 0f
+                vy = -vy // Invertir dirección Y
+            } else if (nextY + size > containerH) {
+                nextY = containerH - size
+                vy = -vy // Invertir dirección Y
+            }
+
+            // Aplicamos la nueva posición y guardamos las nuevas velocidades
+            bolita.x = nextX
+            bolita.y = nextY
+            bolita.setTag(TAG_VX, vx)
+            bolita.setTag(TAG_VY, vy)
+        }
+    }
+
+    private fun spawnearEntidadRebotante() {
+        if (!juegoActivo || containerJuego.width == 0) return
 
         val view = View(this)
 
-        // --- 1. DECIDIR TIPO (Amarillo o Rojo) ---
-        // 40% probabilidad de ser Amarillo (Objetivo), 60% Rojo (Distractor)
-        val esObjetivo = random.nextBoolean() && random.nextBoolean() == false
-        // (Ajuste simple: aprox 1 de cada 3 será amarilla para que sea reto buscarla)
-        val esAmarillo = random.nextInt(100) < 40 // 40% chance de ser amarilla
-
+        // Decidir tipo (Amarillo objetivo vs Rojo distractor)
+        val esAmarillo = random.nextInt(100) < 40 // 40% chance amarillo
         if (esAmarillo) {
             view.setBackgroundResource(R.drawable.circulo_amarillo)
-            view.tag = "OBJETIVO" // Etiqueta para saber que es la buena
+            view.tag = "OBJETIVO"
         } else {
             view.setBackgroundResource(R.drawable.circulo_rojo)
             view.tag = "DISTRACTOR"
         }
 
-        // Tamaño
         val sizePx = (55 * resources.displayMetrics.density).toInt()
         val params = FrameLayout.LayoutParams(sizePx, sizePx)
         view.layoutParams = params
 
-        // --- 2. POSICIÓN INICIAL Y FINAL (Trayectoria) ---
-        val containerW = containerJuego.width
-        val containerH = containerJuego.height
+        // Posición inicial ALEATORIA dentro de la pantalla
+        val maxX = containerJuego.width - sizePx
+        val maxY = containerJuego.height - sizePx
+        view.x = random.nextInt(maxX).toFloat()
+        view.y = random.nextInt(maxY).toFloat()
 
-        if (containerW == 0 || containerH == 0) return
+        // Velocidad inicial ALEATORIA (Dirección y magnitud)
+        // vx va de -VELOCIDAD_BASE a +VELOCIDAD_BASE
+        val vx = (random.nextFloat() * 2 - 1) * VELOCIDAD_BASE
+        val vy = (random.nextFloat() * 2 - 1) * VELOCIDAD_BASE
 
-        // Comenzar en un punto aleatorio de la izquierda o arriba
-        val startX = random.nextInt(containerW - sizePx).toFloat()
-        val startY = containerH.toFloat() + 100f // Empieza abajo (fuera de pantalla)
+        // Guardamos la velocidad en la vista para que el motor de física la use
+        view.setTag(TAG_VX, vx)
+        view.setTag(TAG_VY, vy)
 
-        // Definimos movimiento: De abajo hacia arriba (tipo burbujas) o aleatorio
-        // Para hacerlo más caótico como pediste:
-        view.x = random.nextInt(containerW - sizePx).toFloat()
-        view.y = containerH.toFloat() // Empieza abajo
-
-        val destinoY = -200f // Termina arriba (fuera de pantalla)
-        val destinoX = random.nextInt(containerW - sizePx).toFloat() // Se mueve un poco lateralmente
-
-        // Agregamos la vista
         containerJuego.addView(view)
 
-        // --- 3. ANIMACIÓN DE MOVIMIENTO ---
-        // Duración aleatoria entre 2 y 4 segundos (algunas rápidas, otras lentas)
-        val duracion = (2000 + random.nextInt(2000)).toLong()
-
-        val animX = ObjectAnimator.ofFloat(view, "translationX", view.x, destinoX)
-        val animY = ObjectAnimator.ofFloat(view, "translationY", view.y, destinoY)
-
-        animX.duration = duracion
-        animY.duration = duracion
-
-        animX.start()
-        animY.start()
-
-        // --- 4. LIMPIEZA AUTOMÁTICA ---
-        // Si la animación termina y nadie la tocó, la borramos para no llenar la memoria
-        animY.addListener(object : AnimatorListenerAdapter() {
-            override fun onAnimationEnd(animation: Animator) {
-                containerJuego.removeView(view)
-            }
-        })
-
-        // --- 5. INTERACCIÓN (TAP) ---
+        // Interacción (Tap)
         view.setOnClickListener {
             if (view.tag == "OBJETIVO") {
-                // ¡ACIERTO!
                 puntosAtrapados++
                 txtContador.text = "ATRAPADOS: $puntosAtrapados / $META_PUNTOS"
                 txtContador.setTextColor(Color.GREEN)
-
-                containerJuego.removeView(view) // Desaparece al tocar
-
-                if (puntosAtrapados >= META_PUNTOS) {
-                    finalizarJuego()
-                }
+                containerJuego.removeView(view)
+                if (puntosAtrapados >= META_PUNTOS) finalizarJuego()
             } else {
-                // ¡ERROR! (Tocó roja)
                 txtContador.text = "¡CUIDADO CON LAS ROJAS!"
                 txtContador.setTextColor(Color.RED)
-                view.alpha = 0.5f // Feedback visual de que se equivocó
+                view.alpha = 0.5f
             }
         }
     }
@@ -150,7 +175,7 @@ class CoordinacionTestActivity : AppCompatActivity() {
     private fun finalizarJuego() {
         if (!juegoActivo) return
         juegoActivo = false
-        handler.removeCallbacksAndMessages(null) // Detener generación
+        handler.removeCallbacksAndMessages(null) // Detener motor y generador
 
         CortexManager.guardarPuntaje("t4", 100)
 
@@ -158,10 +183,9 @@ class CoordinacionTestActivity : AppCompatActivity() {
 
         AlertDialog.Builder(this)
             .setTitle("COORDINACIÓN SUPERADA ⚡")
-            .setMessage("Has capturado los objetivos móviles.\nNivel de atención: ÓPTIMO.")
+            .setMessage("Objetivos dinámicos capturados.\nPrueba finalizada.")
             .setCancelable(false)
             .setPositiveButton("FINALIZAR EVALUACIÓN") { _, _ ->
-                // Aquí termina el flujo por ahora, o va al reporte
                 CortexManager.navegarAlSiguiente(this)
                 finish()
             }
@@ -171,6 +195,6 @@ class CoordinacionTestActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         juegoActivo = false
-        handler.removeCallbacksAndMessages(null) // Limpiar memoria
+        handler.removeCallbacksAndMessages(null)
     }
 }
