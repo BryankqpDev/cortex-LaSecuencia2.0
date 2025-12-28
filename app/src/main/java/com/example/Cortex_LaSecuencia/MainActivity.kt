@@ -1,47 +1,49 @@
 package com.example.Cortex_LaSecuencia
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.Cortex_LaSecuencia.ui.theme.Cortex_LaSecuenciaTheme
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            Cortex_LaSecuenciaTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+        // Esto conecta este código con tu archivo XML
+        setContentView(R.layout.activity_main)
+
+        // 1. Identificar los componentes del diseño
+        val inputEmpresa = findViewById<EditText>(R.id.in_company)
+        val inputNombre = findViewById<EditText>(R.id.in_name)
+        val inputDni = findViewById<EditText>(R.id.in_dni)
+        val botonSiguiente = findViewById<Button>(R.id.btn_start_eval)
+
+        // 2. Configurar la acción del botón (el "onclick" de tu HTML)
+        botonSiguiente.setOnClickListener {
+            val empresa = inputEmpresa.text.toString()
+            val nombre = inputNombre.text.toString()
+            val dni = inputDni.text.toString()
+
+            // Validación simple (como en tu JS)
+            if (empresa.isEmpty() || nombre.isEmpty() || dni.isEmpty()) {
+                Toast.makeText(this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show()
+            } else {
+                // Crear el objeto Operador con los datos ingresados
+                val nuevoOperador = Operador(
+                    empresa = empresa,
+                    supervisor = "PENDIENTE", // Lo completaremos luego
+                    nombre = nombre,
+                    dni = dni,
+                    tipoEquipo = "POR DEFINIR",
+                    unidad = "S/N"
+                )
+
+                // Mensaje de éxito
+                Toast.makeText(this, "Bienvenido ${nuevoOperador.nombre}", Toast.LENGTH_LONG).show()
+
+                // AQUÍ iría el paso a la siguiente pantalla (Welcome)
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Cortex_LaSecuenciaTheme {
-        Greeting("Android")
     }
 }
