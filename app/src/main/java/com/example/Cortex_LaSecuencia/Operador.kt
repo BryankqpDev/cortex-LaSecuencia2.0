@@ -1,11 +1,12 @@
 package com.example.Cortex_LaSecuencia
 
+// Esta clase guarda el perfil del trabajador evaluado
 data class Operador(
-    val empresa: String,
-    val supervisor: String,
     val nombre: String,
     val dni: String,
-    val tipoEquipo: String,
+    val empresa: String,
+    val supervisor: String,
+    val equipo: String,
     val unidad: String,
-    val fotoBase64: String? = null
+    val fotoPerfil: String? = null // Para la captura de Sentinel
 )

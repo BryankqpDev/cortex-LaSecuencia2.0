@@ -1,5 +1,6 @@
 package com.example.Cortex_LaSecuencia
 
+import com.example.Cortex_LaSecuencia.actividades.WelcomeActivity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
