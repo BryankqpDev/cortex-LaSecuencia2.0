@@ -212,18 +212,27 @@ class ReflejosTestActivity : AppCompatActivity() {
 
     private fun finalizarPrueba() {
         testFinalizado = true
-        cancelarProximoCirculo()
         targetCircle.visibility = View.GONE
 
-        // Cálculo del score
-        val score = if (intentosTotales > 0) {
-            (aciertos.toFloat() / intentosTotales * 100).toInt()
-        } else {
-            0
-        }
-        val resultado = if (score >= 70) "APTO ✅" else "NO APTO ❌"
+        val score = if (intentosTotales > 1) (aciertos.toFloat() / (intentosTotales - 1) * 100).toInt() else 0
 
-        mostrarResultadoFinal("TEST FINALIZADO\n\nIntentos: $intentosTotales\nAciertos: $aciertos\nSCORE: $score%\n\n$resultado")
+        if (score >= 70) {
+            // ESCENARIO: EL OPERADOR APROBÓ EL NIVEL 1
+            android.app.AlertDialog.Builder(this)
+                .setTitle("¡NIVEL 1 SUPERADO! ✅")
+                .setMessage("Puntaje: $score%\nSentinel ha validado tus reflejos. ¿Proceder a la prueba de secuencia?")
+                .setCancelable(false)
+                .setPositiveButton("INICIAR NIVEL 2") { _, _ ->
+                    // ESTA ES LA CLAVE PARA EL SALTO:
+                    val intent = android.content.Intent(this, SecuenciaTestActivity::class.java)
+                    startActivity(intent)
+                    finish() // Cerramos Reflejos para liberar memoria
+                }
+                .show()
+        } else {
+            // ESCENARIO: NO ALCANZÓ EL MÍNIMO
+            mostrarResultadoFinal("SCORE: $score% | NO APTO ❌\nReintente la evaluación.")
+        }
     }
 
     private fun reprobarPorSeguridad(motivo: String) {
