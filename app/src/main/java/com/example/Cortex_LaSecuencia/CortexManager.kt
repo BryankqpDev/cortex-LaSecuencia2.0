@@ -1,53 +1,57 @@
 package com.example.Cortex_LaSecuencia
 
-import com.example.Cortex_LaSecuencia.actividades.ReflejosTestActivity
-import com.example.Cortex_LaSecuencia.actividades.SecuenciaTestActivity
-import com.example.Cortex_LaSecuencia.actividades.AnticipacionTestActivity
 import android.content.Context
 import android.content.Intent
-// Importamos las actividades desde su nueva ubicación
-
+import com.example.Cortex_LaSecuencia.actividades.AnticipacionTestActivity
+import com.example.Cortex_LaSecuencia.actividades.ReflejosTestActivity
+import com.example.Cortex_LaSecuencia.actividades.SecuenciaTestActivity
 
 object CortexManager {
 
-    // Mapa para guardar los resultados de cada test (t1 al t10)
+    var operadorActual: Operador? = null
+
+    // Mapa de resultados
     private val resultados = mutableMapOf<String, Int>()
 
-    // Lista ordenada de los tests según tu HTML
+    // Lista ordenada de tests
     private val listaDeTests = listOf(
         "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10"
     )
 
-    private var indiceActual = 0
-
-    var operadorActual: Operador? = null // Aquí guardamos al trabajador logueado
-
-    // Guarda el puntaje y prepara el siguiente paso
     fun guardarPuntaje(testId: String, puntaje: Int) {
         resultados[testId] = puntaje
     }
 
-    // Navegación automática entre actividades
+    // --- AQUÍ ESTÁ LA CORRECCIÓN MÁGICA ---
     fun navegarAlSiguiente(context: Context) {
-        if (indiceActual < listaDeTests.size) {
-            val siguienteTestId = listaDeTests[indiceActual]
-            indiceActual++
+        // En lugar de usar un contador ciego, buscamos el primer test que NO tenga nota
+        var siguienteTestId: String? = null
 
-            val intent = when (siguienteTestId) {
-                "t1" -> Intent(context, ReflejosTestActivity::class.java)
-                "t2" -> Intent(context, SecuenciaTestActivity::class.java)
-                "t3" -> Intent(context, AnticipacionTestActivity::class.java) // Crearemos esta luego
-                else -> null
+        for (test in listaDeTests) {
+            if (!resultados.containsKey(test)) {
+                siguienteTestId = test
+                break // Encontramos el primero que falta, ese es el que toca
             }
+        }
 
-            intent?.let { context.startActivity(it) }
+        // Si ya hicimos todos, siguienteTestId será null -> Vamos al Reporte
+        // Si falta alguno, lanzamos ese Intent
+        val intent = when (siguienteTestId) {
+            "t1" -> Intent(context, ReflejosTestActivity::class.java)
+            "t2" -> Intent(context, SecuenciaTestActivity::class.java)
+            "t3" -> Intent(context, AnticipacionTestActivity::class.java)
+            // Aquí agregarás "t4", "t5" cuando los creemos...
+            else -> null // Aquí iría el ReporteFinalActivity
+        }
+
+        if (intent != null) {
+            context.startActivity(intent)
         } else {
-            // Aquí irá la pantalla de Reporte Final PDF
+            // TODO: Crear y lanzar ReporteFinalActivity
         }
     }
 
-    fun resetear() {
+    fun resetearEvaluacion() {
         resultados.clear()
-        indiceActual = 0
     }
 }
