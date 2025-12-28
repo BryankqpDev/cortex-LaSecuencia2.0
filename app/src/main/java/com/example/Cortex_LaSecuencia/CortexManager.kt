@@ -2,6 +2,7 @@ package com.example.Cortex_LaSecuencia
 
 import com.example.Cortex_LaSecuencia.actividades.ReflejosTestActivity
 import com.example.Cortex_LaSecuencia.actividades.SecuenciaTestActivity
+import com.example.Cortex_LaSecuencia.actividades.AnticipacionTestActivity
 import android.content.Context
 import android.content.Intent
 // Importamos las actividades desde su nueva ubicación
@@ -35,7 +36,7 @@ object CortexManager {
             val intent = when (siguienteTestId) {
                 "t1" -> Intent(context, ReflejosTestActivity::class.java)
                 "t2" -> Intent(context, SecuenciaTestActivity::class.java)
-                //"t3" -> Intent(context, AnticipacionTestActivity::class.java) // Crearemos esta luego
+                "t3" -> Intent(context, AnticipacionTestActivity::class.java) // Crearemos esta luego
                 else -> null
             }
 
