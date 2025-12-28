@@ -26,22 +26,19 @@ class AtencionTestActivity : AppCompatActivity() {
     // Datos del juego
     private val palabras = listOf("ROJO", "VERDE", "AZUL", "AMARILLO")
 
-    // Colores HEX idénticos a tu HTML/CSS
-    // Red: #EF4444, Green: #10B981, Blue: #3B82F6, Yellow: #F59E0B
+    // Colores HEX (Rojo, Verde, Azul, Amarillo)
     private val coloresHex = listOf(
-        Color.parseColor("#EF4444"), // Rojo
-        Color.parseColor("#10B981"), // Verde
-        Color.parseColor("#3B82F6"), // Azul
-        Color.parseColor("#F59E0B")  // Amarillo
+        Color.parseColor("#EF4444"),
+        Color.parseColor("#10B981"),
+        Color.parseColor("#3B82F6"),
+        Color.parseColor("#F59E0B")
     )
-
-    // Mapeo para saber qué índice es qué color
-    // 0=Rojo, 1=Verde, 2=Azul, 3=Amarillo
 
     private var rondaActual = 0
     private val TOTAL_RONDAS = 10
     private var aciertos = 0
-    private var colorCorrectoActual = -1 // Índice del color (0-3)
+    private var colorCorrectoActual = -1
+    private var testFinalizado = false // Control de seguridad
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,17 +52,17 @@ class AtencionTestActivity : AppCompatActivity() {
         btnAzul = findViewById(R.id.btn_azul)
         btnAmarillo = findViewById(R.id.btn_amarillo)
 
-        // Configurar Listeners (0=Rojo, 1=Verde, 2=Azul, 3=Amarillo)
         btnRojo.setOnClickListener { verificarRespuesta(0) }
         btnVerde.setOnClickListener { verificarRespuesta(1) }
         btnAzul.setOnClickListener { verificarRespuesta(2) }
         btnAmarillo.setOnClickListener { verificarRespuesta(3) }
 
-        // Iniciar
         generarEstimuloStroop()
     }
 
     private fun generarEstimuloStroop() {
+        if (testFinalizado) return
+
         if (rondaActual >= TOTAL_RONDAS) {
             finalizarPrueba()
             return
@@ -74,45 +71,44 @@ class AtencionTestActivity : AppCompatActivity() {
         rondaActual++
         txtContador.text = "Ronda $rondaActual / $TOTAL_RONDAS"
 
-        // 1. Elegir qué palabra mostramos (EJ: "AZUL") - Esto es el distractor
+        // Lógica Stroop: Palabra vs Color
         val indicePalabra = Random.nextInt(0, 4)
         txtPalabra.text = palabras[indicePalabra]
 
-        // 2. Elegir de qué color la pintamos (EJ: Rojo) - Esta es la respuesta correcta
         colorCorrectoActual = Random.nextInt(0, 4)
         txtPalabra.setTextColor(coloresHex[colorCorrectoActual])
     }
 
     private fun verificarRespuesta(indiceSeleccionado: Int) {
+        if (testFinalizado) return
+
         if (indiceSeleccionado == colorCorrectoActual) {
-            // ¡Correcto! (El usuario eligió el color de la tinta)
             aciertos++
-        } else {
-            // Error (El usuario leyó la palabra o se equivocó)
-            // Opcional: Vibrar o sonido
         }
 
-        // Siguiente ronda inmediata (o con pequeño delay si prefieres)
+        // Pequeño delay para que no sea tan brusco
         Handler(Looper.getMainLooper()).postDelayed({
             generarEstimuloStroop()
-        }, 150) // Pequeño delay para feedback visual del botón
+        }, 150)
     }
 
     private fun finalizarPrueba() {
-        if (isFinishing) return
+        if (isFinishing || testFinalizado) return
+        testFinalizado = true
 
-        // Calculamos nota (Simple regla de 3)
         val nota = (aciertos.toFloat() / TOTAL_RONDAS * 100).toInt()
 
+        // Guardamos la nota del T5
         CortexManager.guardarPuntaje("t5", nota)
 
-        val mensaje = if (nota >= 80) "¡Excelente enfoque!" else "Cuidado con las distracciones."
+        val mensaje = if (nota >= 80) "¡Enfoque agudo! 🧠" else "Atención dispersa."
 
         AlertDialog.Builder(this)
-            .setTitle("ATENCIÓN EVALUADA")
-            .setMessage("Aciertos: $aciertos de $TOTAL_RONDAS\nNota: $nota%\n$mensaje")
+            .setTitle("NIVEL 5 COMPLETADO") // Título más claro de progreso
+            .setMessage("Aciertos: $aciertos/$TOTAL_RONDAS\nNota: $nota%\n\n$mensaje")
             .setCancelable(false)
-            .setPositiveButton("SIGUIENTE") { _, _ ->
+            .setPositiveButton("CONTINUAR AL TEST 6 ➡️") { _, _ ->
+                // Esto llama al cerebro para buscar el "t6"
                 CortexManager.navegarAlSiguiente(this)
                 finish()
             }
