@@ -9,6 +9,7 @@ import com.example.Cortex_LaSecuencia.actividades.CoordinacionTestActivity // �
 import com.example.Cortex_LaSecuencia.actividades.AtencionTestActivity
 import com.example.Cortex_LaSecuencia.actividades.EscaneoTestActivity
 import com.example.Cortex_LaSecuencia.actividades.ImpulsoTestActivity
+import com.example.Cortex_LaSecuencia.actividades.ReporteFinalActivity
 
 object CortexManager {
 
@@ -33,6 +34,10 @@ object CortexManager {
     // Función para guardar notas
     fun guardarPuntaje(testId: String, puntaje: Int) {
         resultados[testId] = puntaje
+    }
+    // --- ESTA ES LA FUNCIÓN QUE TE FALTA ---
+    fun obtenerResultados(): Map<String, Int> {
+        return resultados
     }
 
     // --- LÓGICA DE NAVEGACIÓN INTELIGENTE ---
@@ -73,9 +78,10 @@ object CortexManager {
                 context.startActivity(intent)
             }
         } else {
-            // 4. SI YA NO HAY MÁS TESTS (FIN DE LA EVALUACIÓN)
-            // Aquí irá el ReporteFinalActivity más adelante
-            // Intent(context, ReporteFinalActivity::class.java).also { context.startActivity(it) }
+            // 4. SI YA NO HAY MÁS TESTS -> IR AL REPORTE FINAL
+            val intent = Intent(context, ReporteFinalActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            context.startActivity(intent)
         }
     }
 
@@ -84,4 +90,6 @@ object CortexManager {
         resultados.clear()
         operadorActual = null
     }
+    // --- ESTA ES LA FUNCIÓN QUE TE FALTA ---
+
 }
