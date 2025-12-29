@@ -1,3 +1,35 @@
 <resources>
-    <string name="app_name">Cortex_LaSecuencia2</string>
+    <string name="app_name">Cortex_LaSecuencia</string>
+
+    <string-array name="lista_equipos">
+        <item>-- SELECCIONE EQUIPO --</item>
+        <item>--- MOVIMIENTO DE TIERRAS ---</item>
+        <item>EXCAVADORA</item>
+        <item>CARGADOR FRONTAL</item>
+        <item>TRACTOR ORUGA</item>
+        <item>MOTONIVELADORA</item>
+        <item>RETROEXCAVADORA</item>
+        <item>RODILLO COMPACTADOR</item>
+        <item>VOLQUETE / CAMIÓN MINERO</item>
+        <item>--- EQUIPOS SUBTERRÁNEOS ---</item>
+        <item>SCOOP (LHD)</item>
+        <item>JUMBO ELECTROHIDRÁULICO</item>
+        <item>DUMPER (BAJO PERFIL)</item>
+        <item>BOLTER (SOSTENIMIENTO)</item>
+        <item>SCALER (DESATADOR)</item>
+        <item>SIMBA (TALADROS LARGOS)</item>
+        <item>--- LÍNEA BLANCA / TRANSPORTE ---</item>
+        <item>CAMIONETA 4x4 / PICKUP</item>
+        <item>CUSTER / MINIBUS</item>
+        <item>VAN / COMBI</item>
+        <item>BUS INTERPROVINCIAL / PERSONAL</item>
+        <item>AMBULANCIA</item>
+        <item>--- IZAJE E IZAMIENTO ---</item>
+        <item>GRÚA TELESCÓPICA / RT</item>
+        <item>CAMIÓN GRÚA (BRAZO)</item>
+        <item>MANLIFT / PLATAFORMA</item>
+        <item>MONTACARGAS</item>
+        <item>--- OTROS ---</item>
+        <item>EQUIPO AUXILIAR / LIVIANO</item>
+    </string-array>
 </resources>
