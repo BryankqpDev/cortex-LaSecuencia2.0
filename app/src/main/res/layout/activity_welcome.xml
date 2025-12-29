@@ -1,117 +1,204 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0B1121"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="30dp">
+    android:background="@color/cortex_surface"
+    android:fillViewport="true">
 
-    <TextView
-        android:id="@+id/wel_greeting"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="¡HOLA!"
-        android:textColor="#2563EB"
-        android:textSize="22sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/wel_name"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="OPERADOR"
-        android:textColor="#FFFFFF"
-        android:textSize="26sp"
-        android:layout_marginTop="5dp"
-        android:textAlignment="center"
-        android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hoy validaremos que tus sentidos estén al 100% para una operación segura."
-        android:textColor="#cbd5e1"
-        android:layout_marginTop="20dp"
-        android:textAlignment="center"
-        android:textSize="14sp" />
-
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="40dp"
-        android:layout_marginBottom="40dp"
-        android:gravity="center">
+        android:padding="20dp">
 
-        <LinearLayout
+        <!-- Briefing Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/briefing_card"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
-            <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/baseline_bolt_24"
-                android:contentDescription="Reflejos" />
-            <TextView
-                android:layout_width="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            app:cardBackgroundColor="@color/cortex_card_bg"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="@color/cortex_tech"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginTop="60dp"
+            android:layout_marginBottom="60dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Reflejos"
-                android:textColor="#00F0FF"
-                android:textSize="12sp"
-                android:layout_marginTop="5dp" />
-        </LinearLayout>
+                android:orientation="vertical"
+                android:padding="25dp"
+                android:gravity="center">
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
-            <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/baseline_adjust_24"
-                android:contentDescription="Precisión" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Precisión"
-                android:textColor="#00F0FF"
-                android:textSize="12sp"
-                android:layout_marginTop="5dp" />
-        </LinearLayout>
+                <!-- Greeting -->
+                <TextView
+                    android:id="@+id/wel_greeting"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="¡HOLA!"
+                    android:textColor="@color/cortex_primary"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="5dp" />
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
-            <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/baseline_psychology_24"
-                android:contentDescription="Enfoque" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Enfoque"
-                android:textColor="#00F0FF"
-                android:textSize="12sp"
-                android:layout_marginTop="5dp" />
-        </LinearLayout>
-    </LinearLayout>
+                <!-- Name -->
+                <TextView
+                    android:id="@+id/wel_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="OPERADOR"
+                    android:textColor="@color/cortex_text_primary"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:layout_marginBottom="15dp" />
 
-    <Button
-        android:id="@+id/btn_start_eval"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="INICIAR EVALUACIÓN 🚀"
-        android:backgroundTint="#2563EB"
-        android:textColor="#FFFFFF"
-        android:textStyle="bold" />
+                <!-- Description -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hoy validaremos que tus sentidos estén al 100% para una operación segura."
+                    android:textColor="@color/cortex_text_primary"
+                    android:textSize="14sp"
+                    android:gravity="center"
+                    android:lineSpacingExtra="4dp"
+                    android:layout_marginBottom="15dp"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp" />
 
-</LinearLayout>
+                <!-- Metrics Grid -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="20dp"
+                    android:weightSum="3">
+
+                    <!-- Metric 1: Reflejos -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="@drawable/bg_metric_item"
+                        android:padding="10dp"
+                        android:layout_marginEnd="5dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="⚡"
+                            android:textSize="24sp"
+                            android:layout_marginBottom="5dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="REFLEJOS"
+                            android:textColor="@color/cortex_text_secondary"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.05" />
+                    </LinearLayout>
+
+                    <!-- Metric 2: Precisión -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="@drawable/bg_metric_item"
+                        android:padding="10dp"
+                        android:layout_marginStart="5dp"
+                        android:layout_marginEnd="5dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🎯"
+                            android:textSize="24sp"
+                            android:layout_marginBottom="5dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="PRECISIÓN"
+                            android:textColor="@color/cortex_text_secondary"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.05" />
+                    </LinearLayout>
+
+                    <!-- Metric 3: Enfoque -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="@drawable/bg_metric_item"
+                        android:padding="10dp"
+                        android:layout_marginStart="5dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🧠"
+                            android:textSize="24sp"
+                            android:layout_marginBottom="5dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ENFOQUE"
+                            android:textColor="@color/cortex_text_secondary"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.05" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Motivational Message -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tu familia te espera. ¡Demuestra que estás apto!"
+                    android:textColor="@color/cortex_tech"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="25dp"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp" />
+
+                <!-- Start Button -->
+                <Button
+                    android:id="@+id/btn_start_eval"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:text="INICIAR EVALUACIÓN 🚀"
+                    android:textColor="@color/cortex_text_primary"
+                    android:backgroundTint="@color/cortex_primary"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:letterSpacing="0.05" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

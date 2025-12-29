@@ -18,17 +18,25 @@
         tools:targetApi="31">
 
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:name=".SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Cortex_LaSecuencia">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".actividades.WelcomeActivity"
             android:exported="false" />
+        <activity
+            android:name=".actividades.IntroTestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".actividades.ReflejosTestActivity"
             android:exported="false"
@@ -62,11 +70,27 @@
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".actividades.RastreoTestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".actividades.EspacialTestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".actividades.DecisionTestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".actividades.ReporteFinalActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
             android:name=".AdminActivity" android:exported="false" />
+        <activity
+            android:name=".LockedActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

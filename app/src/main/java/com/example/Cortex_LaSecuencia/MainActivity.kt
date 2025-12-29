@@ -75,13 +75,9 @@ class MainActivity : AppCompatActivity() {
 
             Toast.makeText(this, "Bienvenido, $nombre", Toast.LENGTH_SHORT).show()
 
-            // Iniciar la evaluación
-            // Opción A: Ir directo a los tests (Recomendado ahora)
-            CortexManager.navegarAlSiguiente(this)
-
-            // Opción B: Ir a la WelcomeActivity (Si ya la tienes lista)
-            // val intent = Intent(this, WelcomeActivity::class.java)
-            // startActivity(intent)
+            // Ir a la pantalla Welcome (como en HTML)
+            val intent = Intent(this, WelcomeActivity::class.java)
+            startActivity(intent)
         }
 
         // 3. Configurar el botón ADMIN (Con contraseña)

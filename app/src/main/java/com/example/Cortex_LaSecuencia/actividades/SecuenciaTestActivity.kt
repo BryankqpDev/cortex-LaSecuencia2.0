@@ -135,35 +135,60 @@ class SecuenciaTestActivity : AppCompatActivity() {
         iniciarSiguienteNivel() // Truco: Reiniciamos la visualización del nivel actual
     }
 
+    private var cameraProvider: ProcessCameraProvider? = null
+    private var imageAnalyzer: ImageAnalysis? = null
+    private var preview: Preview? = null
+
     private fun iniciarSentinelCamara() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
             try {
-                val cameraProvider = cameraProviderFuture.get()
-                val preview = Preview.Builder().build().also {
-                    it.setSurfaceProvider(findViewById<androidx.camera.view.PreviewView>(R.id.viewFinderSeq).surfaceProvider)
+                if (isFinishing || isDestroyed) return@addListener
+                
+                cameraProvider = cameraProviderFuture.get()
+                val previewView = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinderSeq)
+                
+                preview = Preview.Builder().build().also {
+                    it.setSurfaceProvider(previewView.surfaceProvider)
                 }
-                val imageAnalyzer = ImageAnalysis.Builder()
+                
+                imageAnalyzer = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
                     .also {
                         it.setAnalyzer(ContextCompat.getMainExecutor(this)) { imageProxy ->
-                            analizarRostro(imageProxy)
+                            if (!isFinishing && !isDestroyed && !testFinalizado) {
+                                analizarRostro(imageProxy)
+                            } else {
+                                imageProxy.close()
+                            }
                         }
                     }
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalyzer)
+                
+                cameraProvider?.unbindAll()
+                cameraProvider?.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalyzer)
             } catch (e: Exception) { }
         }, ContextCompat.getMainExecutor(this))
     }
 
     @OptIn(ExperimentalGetImage::class)
     private fun analizarRostro(imageProxy: ImageProxy) {
+        // Verificar que la Activity sigue activa
+        if (isFinishing || isDestroyed || testFinalizado) {
+            imageProxy.close()
+            return
+        }
+
         val mediaImage = imageProxy.image
-        if (mediaImage != null && !testFinalizado) {
+        if (mediaImage != null) {
             val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
             FaceDetection.getClient().process(image)
                 .addOnSuccessListener { faces ->
+                    if (isFinishing || isDestroyed || testFinalizado) {
+                        imageProxy.close()
+                        return@addOnSuccessListener
+                    }
+                    
                     if (faces.isEmpty()) {
                         txtInstruccion.text = "⚠️ DISTRACCIÓN DETECTADA"
                         txtInstruccion.setTextColor(Color.RED)
@@ -172,7 +197,30 @@ class SecuenciaTestActivity : AppCompatActivity() {
                     }
                 }
                 .addOnCompleteListener { imageProxy.close() }
-        } else imageProxy.close()
+                .addOnFailureListener { imageProxy.close() }
+        } else {
+            imageProxy.close()
+        }
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        testFinalizado = true
+        
+        // Liberar cámara correctamente
+        imageAnalyzer?.clearAnalyzer()
+        cameraProvider?.unbindAll()
+        imageAnalyzer = null
+        preview = null
+        cameraProvider = null
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        // Pausar análisis cuando la Activity no está visible para evitar procesamiento innecesario
+        if (!testFinalizado) {
+            imageAnalyzer?.clearAnalyzer()
+        }
     }
 
     private fun finalizarConExito() {

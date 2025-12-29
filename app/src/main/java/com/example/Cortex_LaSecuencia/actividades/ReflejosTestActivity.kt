@@ -1,5 +1,7 @@
 package com.example.Cortex_LaSecuencia.actividades
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -9,12 +11,18 @@ import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.OptIn
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.utils.AudioManager
+import com.example.Cortex_LaSecuencia.utils.AudioManager.TipoSonido
+import com.example.Cortex_LaSecuencia.utils.ScoreOverlay
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import kotlin.random.Random
@@ -40,6 +48,11 @@ class ReflejosTestActivity : AppCompatActivity() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var proximoCirculoRunnable: Runnable? = null
+    
+    // Variables de cámara para liberación correcta
+    private var cameraProvider: ProcessCameraProvider? = null
+    private var imageAnalyzer: ImageAnalysis? = null
+    private var preview: Preview? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,24 +63,39 @@ class ReflejosTestActivity : AppCompatActivity() {
         txtInstruccion = findViewById(R.id.txt_instruccion)
 
         targetCircle.visibility = View.GONE
-        txtInstruccion.text = "Posiciona tu rostro frente a la cámara..."
-
-        iniciarSentinelCamara()
+        
+        // Verificar permisos antes de iniciar cámara (como en HTML)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+            == PackageManager.PERMISSION_GRANTED) {
+            txtInstruccion.text = "Posiciona tu rostro frente a la cámara..."
+            iniciarSentinelCamara()
+        } else {
+            txtInstruccion.text = "⚠️ Permiso de cámara requerido"
+            txtInstruccion.setTextColor(Color.RED)
+            // Solicitar permisos
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.CAMERA),
+                101
+            )
+        }
 
         targetCircle.setOnClickListener {
             if (!testFinalizado) {
                 val reactionTime = System.currentTimeMillis() - startTime
                 aciertos++
 
-                // GUARDAMOS EL TIEMPO (Esto quita la advertencia de 'unused variable')
+                // GUARDAMOS EL TIEMPO
                 sumaTiemposReaccion += reactionTime
 
                 txtInstruccion.text = "¡RÁPIDO! ${reactionTime}ms"
                 txtInstruccion.setTextColor(Color.GREEN)
 
+                // Sonido de éxito
+                AudioManager.reproducirSonido(TipoSonido.CLICK)
+
                 targetCircle.visibility = View.GONE
 
-                // CORRECCIÓN: Usamos el nombre correcto de la función
                 programarSiguienteCirculo()
             }
         }
@@ -89,38 +117,93 @@ class ReflejosTestActivity : AppCompatActivity() {
     }
 
     private fun iniciarSentinelCamara() {
+        // Verificar permisos nuevamente antes de iniciar
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+            != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "Permiso de cámara requerido", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder).surfaceProvider)
-            }
-            val imageAnalyzer = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-                .also {
-                    it.setAnalyzer(ContextCompat.getMainExecutor(this)) { imageProxy ->
-                        analizarRostro(imageProxy)
-                    }
-                }
             try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalyzer)
+                if (isFinishing || isDestroyed) return@addListener
+                
+                cameraProvider = cameraProviderFuture.get()
+                val previewView = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
+                
+                preview = Preview.Builder().build().also {
+                    it.setSurfaceProvider(previewView.surfaceProvider)
+                }
+                
+                imageAnalyzer = ImageAnalysis.Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build()
+                    .also {
+                        it.setAnalyzer(ContextCompat.getMainExecutor(this)) { imageProxy ->
+                            if (!isFinishing && !isDestroyed && !testFinalizado) {
+                                analizarRostro(imageProxy)
+                            } else {
+                                imageProxy.close()
+                            }
+                        }
+                    }
+                
+                cameraProvider?.unbindAll()
+                cameraProvider?.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalyzer)
+                txtInstruccion.text = "Sentinel activado. Esperando detección de rostro..."
+                txtInstruccion.setTextColor(Color.WHITE)
             } catch (e: Exception) {
-                Toast.makeText(this, "Error Sentinel Hardware", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Error Sentinel Hardware: ${e.message}", Toast.LENGTH_SHORT).show()
+                txtInstruccion.text = "Error al iniciar cámara"
+                txtInstruccion.setTextColor(Color.RED)
             }
         }, ContextCompat.getMainExecutor(this))
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 101) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                txtInstruccion.text = "Posiciona tu rostro frente a la cámara..."
+                txtInstruccion.setTextColor(Color.WHITE)
+                iniciarSentinelCamara()
+            } else {
+                txtInstruccion.text = "⚠️ Permiso denegado. No se puede continuar sin cámara."
+                txtInstruccion.setTextColor(Color.RED)
+                AlertDialog.Builder(this)
+                    .setTitle("Cámara Requerida")
+                    .setMessage("Sentinel necesita acceso a la cámara. Por favor, otorga el permiso en Configuración.")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+    }
+
     @OptIn(ExperimentalGetImage::class)
     private fun analizarRostro(imageProxy: ImageProxy) {
+        // Verificar que la Activity sigue activa
+        if (isFinishing || isDestroyed || testFinalizado) {
+            imageProxy.close()
+            return
+        }
+
         val mediaImage = imageProxy.image
-        if (mediaImage != null && !testFinalizado) {
+        if (mediaImage != null) {
             val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
             val detector = FaceDetection.getClient()
 
             detector.process(image)
                 .addOnSuccessListener { faces ->
+                    if (isFinishing || isDestroyed || testFinalizado) {
+                        imageProxy.close()
+                        return@addOnSuccessListener
+                    }
+                    
                     val tiempoActual = System.currentTimeMillis()
 
                     if (faces.isEmpty()) {
@@ -153,7 +236,10 @@ class ReflejosTestActivity : AppCompatActivity() {
                     }
                 }
                 .addOnCompleteListener { imageProxy.close() }
-        } else imageProxy.close()
+                .addOnFailureListener { imageProxy.close() }
+        } else {
+            imageProxy.close()
+        }
     }
 
     private fun programarSiguienteCirculo() {
@@ -191,23 +277,46 @@ class ReflejosTestActivity : AppCompatActivity() {
         targetCircle.visibility = View.GONE
 
         val score = if (intentosTotales > 1) (aciertos.toFloat() / (intentosTotales - 1) * 100).toInt() else 0
-
-        // CÁLCULO DEL PROMEDIO FINAL
         val promedioMs = if (aciertos > 0) sumaTiemposReaccion / aciertos else 0
 
-        if (score >= 70) {
-            android.app.AlertDialog.Builder(this)
-                .setTitle("¡NIVEL 1 SUPERADO! ✅")
-                .setMessage("Score: $score%\nReacción Promedio: ${promedioMs}ms\n\n¿Proceder al Nivel 2?")
-                .setCancelable(false)
-                .setPositiveButton("INICIAR NIVEL 2") { _, _ ->
-                    val intent = android.content.Intent(this, SecuenciaTestActivity::class.java)
-                    startActivity(intent)
+        // Usar sistema de intentos (como en HTML: nextRound)
+        val intentoActual = CortexManager.obtenerIntentoActual("t1")
+        val esPrimerIntento = intentoActual == 1
+
+        if (esPrimerIntento) {
+            if (score >= 95) {
+                // Excelente, pasa directo
+                CortexManager.guardarPuntaje("t1", score, true)
+                ScoreOverlay.mostrar(this, score, "¡EXCELENTE! 😎✅") {
+                    CortexManager.navegarAlSiguiente(this)
                     finish()
                 }
-                .show()
+            } else {
+                // Necesita segundo intento
+                CortexManager.guardarPuntaje("t1", score, true)
+                ScoreOverlay.mostrar(this, score, "INTENTO 1 REGISTRADO.") {
+                    // Reiniciar para segundo intento
+                    testFinalizado = false
+                    aciertos = 0
+                    intentosTotales = 0
+                    sumaTiemposReaccion = 0
+                    juegoIniciado = false
+                    usuarioPresente = false
+                    txtInstruccion.text = "INTENTO 2/2 - Posiciona tu rostro..."
+                    iniciarTemporizador()
+                }
+            }
         } else {
-            mostrarResultadoFinal("SCORE: $score% | PROMEDIO: ${promedioMs}ms\nESTADO: NO APTO ❌")
+            // Segundo intento - promediar
+            CortexManager.guardarPuntaje("t1", score, true)
+            val puntajeTemporal = CortexManager.obtenerPuntajeTemporal("t1") ?: score
+            val promedio = (puntajeTemporal + score) / 2
+            CortexManager.guardarPuntaje("t1", promedio, true)
+            
+            ScoreOverlay.mostrar(this, promedio, "MÓDULO FINALIZADO.") {
+                CortexManager.navegarAlSiguiente(this)
+                finish()
+            }
         }
     }
 
@@ -215,20 +324,40 @@ class ReflejosTestActivity : AppCompatActivity() {
         testFinalizado = true
         cancelarProximoCirculo()
         targetCircle.visibility = View.GONE
-        mostrarResultadoFinal(motivo)
-    }
-
-    private fun mostrarResultadoFinal(mensaje: String) {
+        AudioManager.reproducirSonido(TipoSonido.ERROR)
+        
         android.app.AlertDialog.Builder(this)
-            .setTitle("SISTEMA CORTEX: RESULTADO")
-            .setMessage(mensaje)
+            .setTitle("PRUEBA ANULADA")
+            .setMessage("Se perdió el contacto visual.\nEvaluación cancelada por seguridad.")
             .setCancelable(false)
-            .setPositiveButton("FINALIZAR") { _, _ -> finish() }
+            .setPositiveButton("VOLVER A EMPEZAR") { _, _ -> 
+                finish()
+            }
             .show()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        testFinalizado = true
         cancelarProximoCirculo()
+        
+        // Liberar cámara correctamente
+        imageAnalyzer?.clearAnalyzer()
+        try {
+            cameraProvider?.unbindAll()
+        } catch (e: Exception) {
+            // Ignorar errores al desvincular
+        }
+        imageAnalyzer = null
+        preview = null
+        cameraProvider = null
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        // Pausar análisis cuando la Activity no está visible para evitar procesamiento innecesario
+        if (!testFinalizado) {
+            imageAnalyzer?.clearAnalyzer()
+        }
     }
 }
