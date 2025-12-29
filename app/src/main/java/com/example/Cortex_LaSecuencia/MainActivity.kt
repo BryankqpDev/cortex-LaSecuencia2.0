@@ -118,9 +118,11 @@ class MainActivity : AppCompatActivity() {
                 val codigo = inputPassword.text.toString()
                 if (codigo == "1007") {
                     Toast.makeText(this, "Acceso Autorizado ✅", Toast.LENGTH_SHORT).show()
-                    // Aquí abrirías la AdminActivity cuando la crees
-                    // val intent = Intent(this, AdminActivity::class.java)
-                    // startActivity(intent)
+
+                    // --- AQUÍ CONECTAS LA NUEVA PANTALLA ---
+                    val intent = Intent(this, AdminActivity::class.java)
+                    startActivity(intent)
+
                 } else {
                     Toast.makeText(this, "⛔ Código Incorrecto", Toast.LENGTH_SHORT).show()
                 }

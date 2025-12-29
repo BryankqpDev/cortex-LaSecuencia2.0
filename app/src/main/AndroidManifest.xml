@@ -65,6 +65,8 @@
             android:name=".actividades.ReporteFinalActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".AdminActivity" android:exported="false" />
     </application>
 
 </manifest>

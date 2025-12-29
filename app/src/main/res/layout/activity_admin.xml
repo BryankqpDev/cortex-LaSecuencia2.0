@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B1121"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BASE DE DATOS"
+            android:textColor="#00F0FF"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:shadowColor="#00F0FF"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="20"
+            android:layout_marginTop="20dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="REGISTRO HISTÓRICO"
+            android:textColor="#94A3B8"
+            android:textSize="14sp"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="30dp"/>
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:background="#151E32"
+            android:padding="10dp"
+            android:layout_marginBottom="30dp">
+
+            <TableLayout
+                android:id="@+id/table_registros"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:stretchColumns="*">
+
+                <TableRow android:background="#1E293B" android:padding="10dp">
+                    <TextView android:text="FECHA" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                    <TextView android:text="HORA" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                    <TextView android:text="SUPERVISOR" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                    <TextView android:text="NOMBRE" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                    <TextView android:text="DNI" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                    <TextView android:text="EQUIPO" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                    <TextView android:text="NOTA" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                    <TextView android:text="ESTADO" android:textColor="#00F0FF" android:textStyle="bold"/>
+                </TableRow>
+
+            </TableLayout>
+        </HorizontalScrollView>
+
+        <Button
+            android:id="@+id/btn_descargar_excel"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="📄 DESCARGAR EXCEL COMPLETO"
+            android:backgroundTint="#10B981"
+            android:textColor="#000000"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="15dp"/>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_volver_inicio"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="VOLVER AL INICIO"
+            android:background="@drawable/bg_btn_outline"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="15dp"/>
+
+        <Button
+            android:id="@+id/btn_borrar_todo"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="BORRAR TODO (RESETEAR)"
+            android:backgroundTint="#EF4444"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="16sp"/>
+
+    </LinearLayout>
+</ScrollView>
