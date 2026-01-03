@@ -10,7 +10,7 @@ import com.example.Cortex_LaSecuencia.actividades.CoordinacionTestActivity
 import com.example.Cortex_LaSecuencia.actividades.AtencionTestActivity
 import com.example.Cortex_LaSecuencia.actividades.EscaneoTestActivity
 import com.example.Cortex_LaSecuencia.actividades.ImpulsoTestActivity
-import com.example.Cortex_LaSecuencia.actividades.RastreoTestActivity
+//import com.example.Cortex_LaSecuencia.actividades.RastreoTestActivity
 import com.example.Cortex_LaSecuencia.actividades.EspacialTestActivity
 import com.example.Cortex_LaSecuencia.actividades.DecisionTestActivity
 import com.example.Cortex_LaSecuencia.actividades.ReporteFinalActivity
@@ -219,7 +219,7 @@ object CortexManager {
             "t5" -> Intent(context, AtencionTestActivity::class.java)
             "t6" -> Intent(context, EscaneoTestActivity::class.java)
             "t7" -> Intent(context, ImpulsoTestActivity::class.java)
-            "t8" -> Intent(context, RastreoTestActivity::class.java)
+            //"t8" -> Intent(context, RastreoTestActivity::class.java)
             "t9" -> Intent(context, EspacialTestActivity::class.java)
             "t10" -> Intent(context, DecisionTestActivity::class.java)
             else -> null

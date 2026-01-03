@@ -18,19 +18,27 @@ class IntroTestActivity : AppCompatActivity() {
 
         val testId = intent.getStringExtra("TEST_ID") ?: "t1"
         val testInfo = CortexManager.obtenerInfoTest(testId)
+        val intentoActual = CortexManager.obtenerIntentoActual(testId)
 
         val txtIcon = findViewById<TextView>(R.id.intro_icon)
         val txtTitle = findViewById<TextView>(R.id.intro_title)
         val txtDesc = findViewById<TextView>(R.id.intro_desc)
         val btnEntendido = findViewById<Button>(R.id.btn_entendido)
 
-        // Configurar icono (usando emojis como en HTML)
         txtIcon.text = testInfo.icon
-        txtTitle.text = testInfo.title
-        txtDesc.text = testInfo.desc
 
-        // Hablar descripción (como en HTML: speak)
-        AudioManager.hablar("${testInfo.title}. ${testInfo.desc}")
+        if (intentoActual == 2) {
+            txtTitle.text = "${testInfo.title} (INTENTO 2)"
+            txtDesc.text = "Continuamos con el segundo intento.\n\n${testInfo.desc}"
+            btnEntendido.text = "¡LISTO! (INTENTO 2)"
+            // Hablar descripción
+            AudioManager.hablar("Continuamos con el segundo intento. ${testInfo.desc}")
+        } else {
+            txtTitle.text = testInfo.title
+            txtDesc.text = testInfo.desc
+            // Hablar descripción
+            AudioManager.hablar("${testInfo.title}. ${testInfo.desc}")
+        }
 
         // Botón "¡ENTENDIDO!" - navega al test correspondiente
         btnEntendido.setOnClickListener {
@@ -44,4 +52,3 @@ class IntroTestActivity : AppCompatActivity() {
         }
     }
 }
-
