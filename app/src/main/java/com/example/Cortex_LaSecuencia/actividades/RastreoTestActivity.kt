@@ -16,13 +16,11 @@ import kotlin.random.Random
 
 class RastreoTestActivity : AppCompatActivity() {
 
-    // === COMPONENTES DE LA UI ===
     private lateinit var areaRastreo: FrameLayout
     private lateinit var txtMensaje: TextView
     private lateinit var btnConfirmar: Button
     private lateinit var txtIntento: TextView
 
-    // === VARIABLES DE CONTROL ===
     private val handler = Handler(Looper.getMainLooper())
     private val bolas = mutableListOf<BallView>()
     private val indicesObjetivo = mutableListOf<Int>()
@@ -31,33 +29,25 @@ class RastreoTestActivity : AppCompatActivity() {
     private var animacionActiva = false
     private var testFinalizado = false
     private var animacionRunnable: Runnable? = null
+    private var tiempoInicioSeleccion: Long = 0 // ✅ NUEVO: Para medir tiempo de decisión
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_rastreo_test)
 
-        // === INICIALIZAR COMPONENTES ===
         areaRastreo = findViewById(R.id.area_rastreo)
         txtMensaje = findViewById(R.id.txt_mensaje)
         btnConfirmar = findViewById(R.id.btn_confirmar)
         txtIntento = findViewById(R.id.txt_intento)
 
-        // === CONFIGURAR BADGE DE INTENTO ===
         val intentoActual = CortexManager.obtenerIntentoActual("t8")
         txtIntento.text = "INTENTO $intentoActual/2"
 
-        // === CONFIGURAR BOTÓN ===
-        btnConfirmar.setOnClickListener {
-            if (!testFinalizado) verificarSeleccion()
-        }
+        btnConfirmar.setOnClickListener { if (!testFinalizado) verificarSeleccion() }
 
-        // === INICIAR TEST ===
         iniciarTest()
     }
 
-    /**
-     * FUNCIÓN PRINCIPAL: Iniciar el test
-     */
     private fun iniciarTest() {
         txtMensaje.text = "Memorice las 2 AZULES..."
         btnConfirmar.visibility = View.GONE
@@ -66,129 +56,78 @@ class RastreoTestActivity : AppCompatActivity() {
         bolas.clear()
         areaRastreo.removeAllViews()
 
-        // Esperar a que el área tenga dimensiones
         areaRastreo.post {
             val ancho = areaRastreo.width.toFloat()
             val alto = areaRastreo.height.toFloat()
-            val radioBola = (20 * resources.displayMetrics.density)
 
-            // === CREAR 5 BOLAS ===
             for (i in 0 until 5) {
                 val bola = BallView(this, i)
-
-                // Posición inicial normalizada (0.15 a 0.85)
                 bola.posX = Random.nextFloat() * 0.7f + 0.15f
                 bola.posY = Random.nextFloat() * 0.7f + 0.15f
-
-                // CAMBIAR ESTA LÍNEA ↓↓↓
-                val velocidad = Random.nextFloat() * 0.015f + 0.025f // Velocidad moderada
-
+                val velocidad = Random.nextFloat() * 0.015f + 0.025f
                 val angulo = Random.nextFloat() * 2f * Math.PI.toFloat()
                 bola.vx = kotlin.math.cos(angulo) * velocidad
                 bola.vy = kotlin.math.sin(angulo) * velocidad
-
                 val tamaño = (40 * resources.displayMetrics.density).toInt()
-                val params = FrameLayout.LayoutParams(tamaño, tamaño)
-                bola.layoutParams = params
-
+                bola.layoutParams = FrameLayout.LayoutParams(tamaño, tamaño)
                 bolas.add(bola)
                 areaRastreo.addView(bola)
-
-                // Actualizar posición visual inicial
                 bola.actualizarPosicion(ancho, alto)
             }
 
-            // === MARCAR LAS PRIMERAS 2 COMO AZULES (OBJETIVOS) ===
-            indicesObjetivo.add(0)
-            indicesObjetivo.add(1)
+            indicesObjetivo.addAll(listOf(0, 1))
             bolas[0].cambiarColor(Color.parseColor("#3B82F6"))
             bolas[1].cambiarColor(Color.parseColor("#3B82F6"))
 
-            // === ESPERAR 2.5 SEGUNDOS ANTES DE EMPEZAR ===
-            handler.postDelayed({
-                if (!isFinishing) {
-                    iniciarAnimacion()
-                }
-            }, 2500)
+            handler.postDelayed({ if (!isFinishing) iniciarAnimacion() }, 2000)
         }
     }
 
-    /**
-     * FUNCIÓN: Iniciar animación de movimiento
-     */
     private fun iniciarAnimacion() {
-        // Cambiar todas a blanco
         bolas.forEach { it.cambiarColor(Color.WHITE) }
         txtMensaje.text = "Rastreando..."
         animacionActiva = true
 
         var pasos = 0
-        val maxPasos = 300 // ~5 segundos a 60 FPS
+        val maxPasos = 300
 
         animacionRunnable = object : Runnable {
             override fun run() {
                 if (!animacionActiva || testFinalizado) return
-
                 val ancho = areaRastreo.width.toFloat()
                 val alto = areaRastreo.height.toFloat()
 
-                // === MOVER TODAS LAS BOLAS ===
                 bolas.forEach { bola ->
-                    // Actualizar posición
                     bola.posX += bola.vx
                     bola.posY += bola.vy
-
-                    // === REBOTES EN BORDES ===
-                    if (bola.posX <= 0.05f) {
-                        bola.posX = 0.05f
-                        bola.vx = kotlin.math.abs(bola.vx)
-                    } else if (bola.posX >= 0.95f) {
-                        bola.posX = 0.95f
-                        bola.vx = -kotlin.math.abs(bola.vx)
-                    }
-
-                    if (bola.posY <= 0.05f) {
-                        bola.posY = 0.05f
-                        bola.vy = kotlin.math.abs(bola.vy)
-                    } else if (bola.posY >= 0.95f) {
-                        bola.posY = 0.95f
-                        bola.vy = -kotlin.math.abs(bola.vy)
-                    }
-
-                    // Actualizar posición visual
+                    if (bola.posX <= 0.05f || bola.posX >= 0.95f) bola.vx *= -1
+                    if (bola.posY <= 0.05f || bola.posY >= 0.95f) bola.vy *= -1
                     bola.actualizarPosicion(ancho, alto)
                 }
 
                 pasos++
                 if (pasos >= maxPasos) {
-                    // === TERMINAR ANIMACIÓN ===
                     animacionActiva = false
                     txtMensaje.text = "Toque los 2 objetivos:"
                     habilitarSeleccion()
                 } else {
-                    handler.postDelayed(this, 16) // ~60 FPS
+                    handler.postDelayed(this, 16)
                 }
             }
         }
         handler.post(animacionRunnable!!)
     }
 
-    /**
-     * FUNCIÓN: Habilitar selección de bolas
-     */
     private fun habilitarSeleccion() {
+        tiempoInicioSeleccion = System.currentTimeMillis() // ✅ INICIA CRONÓMETRO DE DECISIÓN
         btnConfirmar.visibility = View.GONE
 
         bolas.forEachIndexed { indice, bola ->
             bola.setOnClickListener {
-                if (testFinalizado || indicesSeleccionados.size >= 2) return@setOnClickListener
-                if (indicesSeleccionados.contains(indice)) return@setOnClickListener
+                if (testFinalizado || indicesSeleccionados.size >= 2 || indicesSeleccionados.contains(indice)) return@setOnClickListener
 
-                // Marcar como seleccionada (naranja)
                 indicesSeleccionados.add(indice)
                 bola.cambiarColor(Color.parseColor("#F59E0B"))
-
-                // Actualizar botón
                 btnConfirmar.text = "CONFIRMAR (${indicesSeleccionados.size})"
 
                 if (indicesSeleccionados.size == 2) {
@@ -198,93 +137,55 @@ class RastreoTestActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * FUNCIÓN: Verificar selección del usuario
-     */
     private fun verificarSeleccion() {
         testFinalizado = true
         animacionActiva = false
         animacionRunnable?.let { handler.removeCallbacks(it) }
 
-        // === MOSTRAR OBJETIVOS CORRECTOS EN VERDE ===
-        indicesObjetivo.forEach { indiceObjetivo ->
-            bolas[indiceObjetivo].cambiarColor(Color.parseColor("#10B981"))
-        }
+        val tiempoDecision = System.currentTimeMillis() - tiempoInicioSeleccion // ✅ CALCULA TIEMPO
 
-        // === CONTAR ACIERTOS ===
+        indicesObjetivo.forEach { bolas[it].cambiarColor(Color.parseColor("#10B981")) }
+
         var aciertos = 0
-        indicesSeleccionados.forEach { seleccionado ->
-            if (indicesObjetivo.contains(seleccionado)) {
-                aciertos++
-            } else {
-                // Marcar incorrectas en rojo
-                bolas[seleccionado].cambiarColor(Color.parseColor("#EF4444"))
-            }
+        indicesSeleccionados.forEach {
+            if (indicesObjetivo.contains(it)) aciertos++
+            else bolas[it].cambiarColor(Color.parseColor("#EF4444"))
         }
 
-        // === CALCULAR PUNTAJE ===
-        val puntaje = when (aciertos) {
-            2 -> 100
-            1 -> 50
-            else -> 0
-        }
-
-        val mensaje = when (aciertos) {
-            2 -> "Perfecto! +100"
-            1 -> "1 correcta +50"
-            else -> "Fallaste +0"
-        }
+        val puntaje = when (aciertos) { 2 -> 100; 1 -> 50; else -> 0 }
+        val mensaje = when (aciertos) { 2 -> "Perfecto! +100"; 1 -> "1 correcta +50"; else -> "Fallaste +0" }
         txtMensaje.text = mensaje
 
-        // === ESPERAR 2 SEGUNDOS Y CONTINUAR ===
-        handler.postDelayed({
-            mostrarResultado(puntaje, aciertos)
-        }, 2000)
+        // --- ✅ REGISTRO DE MÉTRICAS DETALLADO ---
+        val details = mapOf(
+            "tiempo_decision_ms" to tiempoDecision,
+            "aciertos" to aciertos,
+            "objetivos" to indicesObjetivo,
+            "seleccionados" to indicesSeleccionados
+        )
+        CortexManager.logPerformanceMetric("t8", puntaje, details)
+
+        handler.postDelayed({ mostrarResultado(puntaje, aciertos) }, 2000)
     }
 
-    /**
-     * FUNCIÓN: Mostrar diálogo con resultado
-     */
     private fun mostrarResultado(puntaje: Int, aciertos: Int) {
         val mensaje = when (aciertos) {
-            2 -> {
-                "EXCELENTE!\n\n" +
-                        "Identificaste correctamente\n" +
-                        "los 2 objetivos.\n\n" +
-                        "Nota: $puntaje%"
-            }
-            1 -> {
-                "REGULAR\n\n" +
-                        "Identificaste solo 1 objetivo\n" +
-                        "de los 2.\n\n" +
-                        "Nota: $puntaje%"
-            }
-            else -> {
-                "FALLASTE\n\n" +
-                        "No identificaste ninguno\n" +
-                        "de los objetivos.\n\n" +
-                        "Nota: $puntaje%"
-            }
+            2 -> "EXCELENTE!\n\nIdentificaste correctamente los 2 objetivos.\n\nNota: $puntaje%"
+            1 -> "REGULAR\n\nIdentificaste solo 1 objetivo de los 2.\n\nNota: $puntaje%"
+            else -> "FALLASTE\n\nNo identificaste ninguno de los objetivos.\n\nNota: $puntaje%"
         }
 
         AlertDialog.Builder(this)
             .setTitle("RASTREO (MOT)")
             .setMessage(mensaje)
             .setCancelable(false)
-            .setPositiveButton("CONTINUAR") { _, _ ->
-                manejarContinuacion(puntaje)
-            }
+            .setPositiveButton("CONTINUAR") { _, _ -> manejarContinuacion(puntaje) }
             .show()
     }
 
-    /**
-     * FUNCIÓN: Manejar continuación
-     */
     private fun manejarContinuacion(puntaje: Int) {
         CortexManager.guardarPuntaje("t8", puntaje)
-        val intentoActual = CortexManager.obtenerIntentoActual("t8")
-
-        if (intentoActual == 1 && puntaje < 95) {
+        if (CortexManager.obtenerIntentoActual("t8") == 1 && puntaje < 80) {
             recreate()
         } else {
             CortexManager.navegarAlSiguiente(this)
@@ -292,50 +193,31 @@ class RastreoTestActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * FUNCIÓN: Limpiar recursos
-     */
     override fun onDestroy() {
         super.onDestroy()
         animacionActiva = false
         animacionRunnable?.let { handler.removeCallbacks(it) }
     }
-
-    // ========================================
-    // CLASE INTERNA: BallView
-    // ========================================
+    
+    // Clase BallView (sin cambios)
     private class BallView(context: android.content.Context, val indice: Int) : View(context) {
-
-        var posX: Float = 0f  // Posición normalizada 0-1
-        var posY: Float = 0f
-        var vx: Float = 0f    // Velocidad normalizada
-        var vy: Float = 0f
-
-        init {
+        var posX: Float = 0f; var posY: Float = 0f; var vx: Float = 0f; var vy: Float = 0f
+        init { 
             setBackgroundColor(Color.WHITE)
-            val tamaño = (40 * context.resources.displayMetrics.density).toInt()
-            layoutParams = FrameLayout.LayoutParams(tamaño, tamaño)
+            layoutParams = FrameLayout.LayoutParams((40 * resources.displayMetrics.density).toInt(), (40 * resources.displayMetrics.density).toInt())
         }
-
         override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
             super.onSizeChanged(w, h, oldw, oldh)
-            // Hacer circular
-            outlineProvider = object : android.view.ViewOutlineProvider() {
-                override fun getOutline(view: View, outline: android.graphics.Outline) {
-                    outline.setOval(0, 0, view.width, view.height)
-                }
-            }
             clipToOutline = true
+            outlineProvider = object : android.view.ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: android.graphics.Outline) { outline.setOval(0, 0, view.width, view.height) }
+            }
         }
-
-        fun cambiarColor(color: Int) {
-            setBackgroundColor(color)
-        }
-
-        fun actualizarPosicion(anchoContenedor: Float, altoContenedor: Float) {
+        fun cambiarColor(color: Int) { setBackgroundColor(color) }
+        fun actualizarPosicion(ancho: Float, alto: Float) {
             val params = layoutParams as FrameLayout.LayoutParams
-            params.leftMargin = (posX * anchoContenedor - width / 2).toInt()
-            params.topMargin = (posY * altoContenedor - height / 2).toInt()
+            params.leftMargin = (posX * ancho - width / 2).toInt()
+            params.topMargin = (posY * alto - height / 2).toInt()
             layoutParams = params
         }
     }

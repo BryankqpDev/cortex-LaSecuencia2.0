@@ -43,9 +43,9 @@ class SecuenciaTestActivity : AppCompatActivity() {
 
         configurarClicks()
         iniciarSentinelCamara()
-        
-        // Iniciar el primer nivel después de un breve retraso
-        Handler(Looper.getMainLooper()).postDelayed({ iniciarSiguienteNivel() }, 1500)
+
+        // Pausa inicial antes de empezar el primer nivel
+        Handler(Looper.getMainLooper()).postDelayed({ iniciarSiguienteNivel() }, 800)
     }
 
     private fun configurarClicks() {
@@ -65,7 +65,6 @@ class SecuenciaTestActivity : AppCompatActivity() {
 
         esTurnoDelUsuario = false
         secuenciaUsuario.clear()
-        // Añade un nuevo paso aleatorio a la secuencia (ahora hasta 9)
         secuenciaGenerada.add(Random.nextInt(0, 9))
 
         txtInstruccion.text = "NIVEL $nivelActual: OBSERVA"
@@ -76,10 +75,12 @@ class SecuenciaTestActivity : AppCompatActivity() {
 
     private fun mostrarSecuenciaGenerada() {
         val handler = Handler(Looper.getMainLooper())
+        val tiempoTotalPorPaso = 800L // 600ms de muestra + 200ms de pausa
+
         secuenciaGenerada.forEachIndexed { i, botonIndex ->
             handler.postDelayed({
                 if (!testFinalizado) iluminarBoton(botonIndex, false)
-                // Cuando la secuencia termina, da el turno al usuario
+
                 if (i == secuenciaGenerada.size - 1) {
                     handler.postDelayed({
                         if (!testFinalizado) {
@@ -87,56 +88,52 @@ class SecuenciaTestActivity : AppCompatActivity() {
                             txtInstruccion.text = "REPLICA LA SECUENCIA"
                             txtInstruccion.setTextColor(Color.WHITE)
                         }
-                    }, 800)
+                    }, tiempoTotalPorPaso) // Espera después del último
                 }
-            }, (i + 1) * 1000L) // 1 segundo por paso
+            }, (i + 1) * tiempoTotalPorPaso)
         }
     }
 
     private fun iluminarBoton(index: Int, esUsuario: Boolean) {
         val originalColor = Color.parseColor("#1E293B")
         val highlightColor = if (esUsuario) Color.parseColor("#F59E0B") else Color.parseColor("#00F0FF")
-        
+
         botones[index].backgroundTintList = android.content.res.ColorStateList.valueOf(highlightColor)
+        // La iluminación dura 600ms
         Handler(Looper.getMainLooper()).postDelayed({
             botones[index].backgroundTintList = android.content.res.ColorStateList.valueOf(originalColor)
-        }, 400) // Iluminación más corta
+        }, 600)
     }
 
     private fun verificarEntrada() {
         val indexUltimoIntento = secuenciaUsuario.size - 1
 
-        // Si el usuario se equivoca
         if (secuenciaUsuario[indexUltimoIntento] != secuenciaGenerada[indexUltimoIntento]) {
             gestionarFallo()
             return
         }
 
-        // Si el usuario completa la secuencia del nivel actual
         if (secuenciaUsuario.size == secuenciaGenerada.size) {
             nivelActual++
-            // Si supera el nivel 5, ha ganado
             if (nivelActual > 5) {
                 finalizarConExito()
             } else {
                 txtInstruccion.text = "¡BIEN! SIGUIENTE NIVEL..."
                 txtInstruccion.setTextColor(Color.GREEN)
                 esTurnoDelUsuario = false
-                Handler(Looper.getMainLooper()).postDelayed({ iniciarSiguienteNivel() }, 1500)
+                Handler(Looper.getMainLooper()).postDelayed({ iniciarSiguienteNivel() }, 1200)
             }
         }
     }
 
     private fun gestionarFallo() {
         testFinalizado = true
-        CortexManager.guardarPuntaje("t2", 0) // Guardar puntaje de fallo
+        CortexManager.guardarPuntaje("t2", 0)
         val eraPrimerIntento = CortexManager.obtenerIntentoActual("t2") == 1
 
         if (eraPrimerIntento) {
-            // Reinicia para el segundo intento sin mostrar diálogo
             recreate()
         } else {
-            // Muestra el diálogo de fallo final en el segundo intento
             mostrarDialogoFalloFinal()
         }
     }
@@ -145,7 +142,7 @@ class SecuenciaTestActivity : AppCompatActivity() {
         if (isFinishing || isDestroyed) return
         AlertDialog.Builder(this)
             .setTitle("MEMORIA: FALLIDO ❌")
-            .setMessage("No se completó la secuencia. La evaluación continuará.")
+            .setMessage("No se completó la secuencia.")
             .setCancelable(false)
             .setPositiveButton("CONTINUAR") { _, _ ->
                 CortexManager.navegarAlSiguiente(this)
@@ -171,7 +168,7 @@ class SecuenciaTestActivity : AppCompatActivity() {
             }
             .show()
     }
-    
+
     // --- CÓDIGO DE CÁMARA (Sin cambios) ---
     private var cameraProvider: ProcessCameraProvider? = null
     private var imageAnalyzer: ImageAnalysis? = null
@@ -182,14 +179,9 @@ class SecuenciaTestActivity : AppCompatActivity() {
         cameraProviderFuture.addListener({
             try {
                 if (isFinishing || isDestroyed) return@addListener
-                
                 cameraProvider = cameraProviderFuture.get()
                 val previewView = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinderSeq)
-                
-                preview = Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                }
-                
+                preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
                 imageAnalyzer = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
@@ -202,7 +194,6 @@ class SecuenciaTestActivity : AppCompatActivity() {
                             }
                         }
                     }
-                
                 cameraProvider?.unbindAll()
                 cameraProvider?.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalyzer)
             } catch (e: Exception) { }

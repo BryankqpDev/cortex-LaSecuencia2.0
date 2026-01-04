@@ -24,15 +24,16 @@ class ImpulsoTestActivity : AppCompatActivity() {
     private val random = Random()
 
     private var rondaActual = 0
-    private val TOTAL_RONDAS = 12 // Un poco más largo para medir consistencia
+    private val TOTAL_RONDAS = 12
 
-    private var aciertos = 0
     private var erroresImpulso = 0 // Tocar naranja
     private var erroresOmision = 0 // No tocar azul
+    private val tiemposDeReaccionGo = mutableListOf<Long>() // ✅ NUEVO: Lista para tiempos
 
     private var esAzul = false
     private var esperandoRespuesta = false
     private var respondioEnEstaRonda = false
+    private var tiempoInicioEstimulo: Long = 0 // ✅ NUEVO: Para medir reacción
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,11 +44,9 @@ class ImpulsoTestActivity : AppCompatActivity() {
         txtFeedback = findViewById(R.id.txt_feedback)
         layoutRoot = findViewById(R.id.layout_root)
 
-        // Configurar clic en TODA la pantalla o en el círculo
         layoutRoot.setOnClickListener { procesarToque() }
         cardEstimulo.setOnClickListener { procesarToque() }
 
-        // Iniciar tras 1 seg
         handler.postDelayed({ siguienteEstimulo() }, 1000)
     }
 
@@ -60,29 +59,20 @@ class ImpulsoTestActivity : AppCompatActivity() {
         rondaActual++
         esperandoRespuesta = true
         respondioEnEstaRonda = false
-
-        // 1. Decidir Color (Lógica HTML: Math.random() > 0.3 es GO)
-        // Significa ~70% Azul, ~30% Naranja
         esAzul = random.nextFloat() > 0.3
-
+        
         if (esAzul) {
-            // AZUL = GO 🔵
             cardEstimulo.setCardBackgroundColor(Color.parseColor("#3B82F6"))
-            txtIcono.text = "🔵" // Gem
+            txtIcono.text = "🔵"
         } else {
-            // NARANJA = NO GO ⛔
             cardEstimulo.setCardBackgroundColor(Color.parseColor("#F59E0B"))
-            txtIcono.text = "✖️" // Times
+            txtIcono.text = "✖️"
         }
-
+        
+        tiempoInicioEstimulo = System.currentTimeMillis() // ✅ INICIA CRONÓMETRO
         txtFeedback.text = "..."
 
-        // 2. Tiempo límite (Ritmo rápido, ~900ms según HTML)
-        handler.postDelayed({
-            if (!isFinishing) {
-                evaluarFinDeRonda()
-            }
-        }, 900)
+        handler.postDelayed({ if (!isFinishing) evaluarFinDeRonda() }, 900)
     }
 
     private fun procesarToque() {
@@ -91,12 +81,13 @@ class ImpulsoTestActivity : AppCompatActivity() {
         respondioEnEstaRonda = true
 
         if (esAzul) {
-            // CORRECTO: Tocó azul
-            aciertos++
-            txtFeedback.text = "¡BIEN!"
+            // CORRECTO (GO): Tocó azul
+            val tiempoReaccion = System.currentTimeMillis() - tiempoInicioEstimulo
+            tiemposDeReaccionGo.add(tiempoReaccion) // ✅ GUARDA TIEMPO
+            txtFeedback.text = "¡BIEN! (${tiempoReaccion}ms)"
             txtFeedback.setTextColor(Color.GREEN)
         } else {
-            // ERROR: Tocó naranja (Impulso)
+            // ERROR (NO-GO): Tocó naranja
             erroresImpulso++
             txtFeedback.text = "¡ERROR! NO TOQUES"
             txtFeedback.setTextColor(Color.RED)
@@ -104,36 +95,34 @@ class ImpulsoTestActivity : AppCompatActivity() {
     }
 
     private fun evaluarFinDeRonda() {
-        // Si se acabó el tiempo y era AZUL pero no tocó -> Omisión
         if (!respondioEnEstaRonda && esAzul) {
             erroresOmision++
             txtFeedback.text = "¡TARDAS!"
             txtFeedback.setTextColor(Color.LTGRAY)
         }
 
-        // Limpiar visualmente (breve pausa en negro/gris)
         cardEstimulo.setCardBackgroundColor(Color.parseColor("#1E293B"))
         txtIcono.text = ""
         esperandoRespuesta = false
 
-        // Siguiente ronda
-        handler.postDelayed({
-            siguienteEstimulo()
-        }, 200) // Breve pausa entre estímulos
+        handler.postDelayed({ siguienteEstimulo() }, 200)
     }
 
     private fun finalizarPrueba() {
         if (isFinishing) return
 
-        // Cálculo de nota
-        // Penalizamos mucho los impulsos (tocar naranja)
-        // HTML Logic: let s=100-(t7False*20)-((5-Math.min(5,t7Hits))*10);
-        // Adaptación:
-        var penalizacion = (erroresImpulso * 20) + (erroresOmision * 10)
-        var notaFinal = 100 - penalizacion
-        if (notaFinal < 0) notaFinal = 0
+        val penalizacion = (erroresImpulso * 20) + (erroresOmision * 10)
+        val notaFinal = (100 - penalizacion).coerceIn(0, 100)
 
         CortexManager.guardarPuntaje("t7", notaFinal)
+
+        // --- ✅ REGISTRO DE MÉTRICAS DETALLADO ---
+        val details = mapOf(
+            "tiempos_reaccion_ms" to tiemposDeReaccionGo,
+            "errores_impulso" to erroresImpulso,
+            "errores_omision" to erroresOmision
+        )
+        CortexManager.logPerformanceMetric("t7", notaFinal, details)
 
         val mensaje = "Impulsos fallidos: $erroresImpulso\nOmisiones: $erroresOmision"
 

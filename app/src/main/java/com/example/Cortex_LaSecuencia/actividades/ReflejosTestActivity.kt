@@ -52,11 +52,7 @@ class ReflejosTestActivity : AppCompatActivity() {
         val intentoActual = CortexManager.obtenerIntentoActual("t1")
         txtIntento.text = "INTENTO $intentoActual/2"
 
-        btnReflejo.setOnClickListener {
-            if (testEnProgreso) {
-                procesarClic()
-            }
-        }
+        btnReflejo.setOnClickListener { if (testEnProgreso) procesarClic() }
 
         handler.postDelayed({ if (!isFinishing) iniciarTest() }, 1000)
         iniciarSentinelCamara()
@@ -70,7 +66,6 @@ class ReflejosTestActivity : AppCompatActivity() {
         txtEstado.text = "ESPERE"
         txtEstado.setTextColor(Color.WHITE)
         iconoEstado.text = ""
-        iconoEstado.alpha = 0.3f
         txtFeedback.visibility = TextView.GONE
 
         val tiempoEspera = (2000 + (Math.random() * 3000)).toLong()
@@ -83,9 +78,7 @@ class ReflejosTestActivity : AppCompatActivity() {
         tiempoInicio = System.currentTimeMillis()
         btnReflejo.setCardBackgroundColor(Color.parseColor("#10B981"))
         txtEstado.text = "YA!"
-        txtEstado.setTextColor(Color.parseColor("#000000"))
-        iconoEstado.text = ""
-        iconoEstado.alpha = 1.0f
+        txtEstado.setTextColor(Color.BLACK)
     }
 
     private fun procesarClic() {
@@ -96,28 +89,31 @@ class ReflejosTestActivity : AppCompatActivity() {
 
         val eraPrimerIntento = CortexManager.obtenerIntentoActual("t1") == 1
         val puntaje: Int
+        val tiempoReaccion: Long
         val errorAnticipacion: Boolean
 
         if (botonActivo) {
-            val tiempoReaccion = System.currentTimeMillis() - tiempoInicio
+            tiempoReaccion = System.currentTimeMillis() - tiempoInicio
             puntaje = calcularPuntaje(tiempoReaccion)
             errorAnticipacion = false
-            CortexManager.guardarPuntaje("t1", puntaje)
-
-            if (eraPrimerIntento && puntaje < 95) {
-                recreate()
-            } else {
-                mostrarResultado(puntaje, tiempoReaccion, false)
-            }
         } else {
+            tiempoReaccion = -1 // No aplica
             puntaje = 0
             errorAnticipacion = true
-            CortexManager.guardarPuntaje("t1", puntaje)
-            if (eraPrimerIntento) {
-                recreate()
-            } else {
-                mostrarResultado(0, 0, true)
-            }
+        }
+
+        // --- ✅ REGISTRO DE MÉTRICAS DETALLADO ---
+        val details = mapOf(
+            "tiempo_reaccion_ms" to tiempoReaccion,
+            "error_anticipacion" to errorAnticipacion
+        )
+        CortexManager.logPerformanceMetric("t1", puntaje, details)
+        CortexManager.guardarPuntaje("t1", puntaje)
+
+        if (eraPrimerIntento && puntaje < 80) {
+            recreate()
+        } else {
+            mostrarResultado(puntaje, tiempoReaccion, errorAnticipacion)
         }
     }
 
@@ -131,12 +127,10 @@ class ReflejosTestActivity : AppCompatActivity() {
 
     private fun mostrarResultado(puntaje: Int, tiempoMs: Long, errorAnticipacion: Boolean) {
         val mensaje = when {
-            errorAnticipacion -> "PRESIONASTE ANTES DE TIEMPO!\n\nDebes esperar hasta que el circulo se ponga VERDE.\n\nNota: 0%"
-            tiempoMs < 200 -> "INCREIBLE!\n\nTiempo: ${tiempoMs}ms\nReflejos de elite.\n\nNota: $puntaje%"
-            tiempoMs < 300 -> "EXCELENTE!\n\nTiempo: ${tiempoMs}ms\nMuy buen reflejo.\n\nNota: $puntaje%"
-            tiempoMs < 400 -> "BUENO\n\nTiempo: ${tiempoMs}ms\nReflejo aceptable.\n\nNota: $puntaje%"
-            tiempoMs < 500 -> "LENTO\n\nTiempo: ${tiempoMs}ms\nPodrias mejorar.\n\nNota: $puntaje%"
-            else -> "MUY LENTO\n\nTiempo: ${tiempoMs}ms\nPosible fatiga detectada.\n\nNota: $puntaje%"
+            errorAnticipacion -> "PRESIONASTE ANTES DE TIEMPO!\n\nDebes esperar a que el círculo se ponga VERDE.\n\nNota: 0%"
+            tiempoMs < 200 -> "¡INCREÍBLE!\n\nTiempo: ${tiempoMs}ms\nReflejos de élite.\n\nNota: $puntaje%"
+            tiempoMs < 400 -> "MUY BIEN\n\nTiempo: ${tiempoMs}ms\nBuen reflejo.\n\nNota: $puntaje%"
+            else -> "LENTO\n\nTiempo: ${tiempoMs}ms\nPosible fatiga detectada.\n\nNota: $puntaje%"
         }
 
         AlertDialog.Builder(this)
@@ -157,38 +151,24 @@ class ReflejosTestActivity : AppCompatActivity() {
                 if (isFinishing || isDestroyed) return@addListener
                 cameraProvider = cameraProviderFuture.get()
                 val previewView = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
-                preview = Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                }
-                imageAnalyzer = ImageAnalysis.Builder()
-                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .build()
-                    .also {
-                        it.setAnalyzer(ContextCompat.getMainExecutor(this)) { imageProxy ->
-                            if (!isFinishing && !isDestroyed && testEnProgreso) {
-                                analizarRostro(imageProxy)
-                            } else {
-                                imageProxy.close()
-                            }
-                        }
+                preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
+                imageAnalyzer = ImageAnalysis.Builder().build().also {
+                    it.setAnalyzer(ContextCompat.getMainExecutor(this)) { imageProxy ->
+                        if (!isFinishing && testEnProgreso) analizarRostro(imageProxy) else imageProxy.close()
                     }
+                }
                 cameraProvider?.unbindAll()
                 cameraProvider?.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalyzer)
-            } catch (e: Exception) {
-            }
+            } catch (e: Exception) { /* Ignorar error */ }
         }, ContextCompat.getMainExecutor(this))
     }
 
     @OptIn(ExperimentalGetImage::class)
     private fun analizarRostro(imageProxy: ImageProxy) {
-        val mediaImage = imageProxy.image
-        if (mediaImage != null) {
-            val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+        imageProxy.image?.let {
+            val image = InputImage.fromMediaImage(it, imageProxy.imageInfo.rotationDegrees)
             FaceDetection.getClient().process(image)
-                .addOnSuccessListener { faces -> { /* No-op */ } }
                 .addOnCompleteListener { imageProxy.close() }
-        } else {
-            imageProxy.close()
         }
     }
 

@@ -18,6 +18,7 @@ import androidx.core.animation.doOnEnd
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
 import kotlin.math.abs
+import kotlin.random.Random
 
 class AnticipacionTestActivity : AppCompatActivity() {
 
@@ -30,9 +31,9 @@ class AnticipacionTestActivity : AppCompatActivity() {
 
     private var animador: ObjectAnimator? = null
     private var juegoActivo = false
-    private var testIniciado = false // Para controlar que el test no empiece hasta después de la cuenta atrás
+    private var testIniciado = false
+    private var duracionAnimacionActual: Long = 0
 
-    // Control de intentos
     private var intentosRealizados = 0
     private val MAX_INTENTOS = 2
 
@@ -47,9 +48,7 @@ class AnticipacionTestActivity : AppCompatActivity() {
         orientationOverlay = findViewById(R.id.orientation_overlay)
         countdownText = findViewById(R.id.txt_countdown)
 
-        btnFrenar.setOnClickListener {
-            if (juegoActivo) frenarVehiculo()
-        }
+        btnFrenar.setOnClickListener { if (juegoActivo) frenarVehiculo() }
         
         verificarOrientacion()
     }
@@ -60,9 +59,7 @@ class AnticipacionTestActivity : AppCompatActivity() {
     }
 
     private fun verificarOrientacion() {
-        // Si el test ya empezó, no hacemos nada
         if (testIniciado) return
-
         if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             orientationOverlay.visibility = View.GONE
             iniciarCuentaRegresiva()
@@ -72,19 +69,14 @@ class AnticipacionTestActivity : AppCompatActivity() {
     }
 
     private fun iniciarCuentaRegresiva() {
-        testIniciado = true // Marcamos que el proceso de inicio ha comenzado
+        testIniciado = true
         countdownText.visibility = View.VISIBLE
 
         object : CountDownTimer(4000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val segundos = millisUntilFinished / 1000
-                if (segundos > 0) {
-                    countdownText.text = segundos.toString()
-                } else {
-                    countdownText.text = "¡YA!"
-                }
+                countdownText.text = if (segundos > 0) segundos.toString() else "¡YA!"
             }
-
             override fun onFinish() {
                 countdownText.visibility = View.GONE
                 programarInicioCarrera()
@@ -93,22 +85,21 @@ class AnticipacionTestActivity : AppCompatActivity() {
     }
 
     private fun programarInicioCarrera() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            iniciarCarrera()
-        }, 500) // Pequeña pausa después de la cuenta atrás
+        vehiculo.translationX = 0f
+        Handler(Looper.getMainLooper()).postDelayed({ iniciarCarrera() }, 500)
     }
 
     private fun iniciarCarrera() {
         if (isFinishing) return
-
         juegoActivo = true
         val anchoPista = pista.width.toFloat()
         val anchoVehiculo = vehiculo.width.toFloat()
-
         vehiculo.translationX = 0f
+        
+        duracionAnimacionActual = (2200 + Random.nextFloat() * 1000).toLong()
 
         animador = ObjectAnimator.ofFloat(vehiculo, "translationX", 0f, anchoPista - anchoVehiculo).apply {
-            duration = 2500
+            duration = duracionAnimacionActual
             interpolator = LinearInterpolator()
             doOnEnd { if (juegoActivo) evaluarFrenado(falloTotal = true) }
             start()
@@ -125,35 +116,43 @@ class AnticipacionTestActivity : AppCompatActivity() {
         intentosRealizados++
 
         val puntaje: Int
-        val mensaje: String
+        var mensaje: String
+        val diferenciaAbsoluta: Float
 
         if (falloTotal) {
             puntaje = 0
             mensaje = "¡NO FRENASTE! ❌"
+            diferenciaAbsoluta = -1f // Valor para indicar fallo
         } else {
             val centroVehiculo = vehiculo.x + vehiculo.width / 2
             val centroMeta = zonaMeta.x + zonaMeta.width / 2
-            val diferencia = abs(centroVehiculo - centroMeta)
-            val radioMeta = zonaMeta.width / 2
+            diferenciaAbsoluta = abs(centroVehiculo - centroMeta)
+            
+            val diferenciaPorcentual = (diferenciaAbsoluta / pista.width) * 100
+            val penalizacion = (diferenciaPorcentual * 5).toInt()
+            puntaje = (100 - penalizacion).coerceIn(0, 100)
 
-            puntaje = when {
-                diferencia < radioMeta * 0.5 -> 100
-                diferencia < radioMeta -> 80
-                else -> 0
+            mensaje = when {
+                puntaje >= 95 -> "¡PRECISIÓN PERFECTA! 😎"
+                puntaje >= 70 -> "Buen cálculo."
+                else -> "CALIBRACIÓN NECESARIA ⚠️"
             }
-            mensaje = if (puntaje >= 80) "¡PRECISIÓN PERFECTA! 😎" else "CALIBRACIÓN NECESARIA ⚠️"
         }
 
+        // --- ✅ REGISTRO DE MÉTRICAS DETALLADO ---
+        val details = mapOf(
+            "distancia_del_centro_px" to diferenciaAbsoluta,
+            "duracion_animacion_ms" to duracionAnimacionActual,
+            "fallo_por_no_frenar" to falloTotal
+        )
+        CortexManager.logPerformanceMetric("t3", puntaje, details)
         CortexManager.guardarPuntaje("t3", puntaje, intentosRealizados == 1)
 
         if (puntaje >= 80) {
             mostrarExito(puntaje, mensaje)
         } else {
-            if (intentosRealizados < MAX_INTENTOS) {
-                mostrarDialogoReintento(mensaje)
-            } else {
-                mostrarFalloFinal(mensaje)
-            }
+            if (intentosRealizados < MAX_INTENTOS) mostrarDialogoReintento(mensaje)
+            else mostrarFalloFinal(mensaje)
         }
     }
 
@@ -163,9 +162,7 @@ class AnticipacionTestActivity : AppCompatActivity() {
             .setTitle("INTENTO FALLIDO")
             .setMessage("$razonFallo\n\nQueda 1 intento.")
             .setCancelable(false)
-            .setPositiveButton("REINTENTAR") { _, _ ->
-                programarInicioCarrera()
-            }
+            .setPositiveButton("REINTENTAR") { _, _ -> programarInicioCarrera() }
             .show()
     }
 
