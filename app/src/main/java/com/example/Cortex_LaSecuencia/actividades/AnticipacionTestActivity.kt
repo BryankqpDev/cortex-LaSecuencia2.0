@@ -1,13 +1,17 @@
 package com.example.Cortex_LaSecuencia.actividades
 
 import android.animation.ObjectAnimator
+import android.content.res.Configuration
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.animation.LinearInterpolator
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.animation.doOnEnd
@@ -21,9 +25,12 @@ class AnticipacionTestActivity : AppCompatActivity() {
     private lateinit var zonaMeta: View
     private lateinit var btnFrenar: Button
     private lateinit var pista: View
+    private lateinit var orientationOverlay: FrameLayout
+    private lateinit var countdownText: TextView
 
     private var animador: ObjectAnimator? = null
     private var juegoActivo = false
+    private var testIniciado = false // Para controlar que el test no empiece hasta después de la cuenta atrás
 
     // Control de intentos
     private var intentosRealizados = 0
@@ -37,19 +44,58 @@ class AnticipacionTestActivity : AppCompatActivity() {
         zonaMeta = findViewById(R.id.zona_meta)
         btnFrenar = findViewById(R.id.btn_frenar)
         pista = findViewById(R.id.pista_container)
+        orientationOverlay = findViewById(R.id.orientation_overlay)
+        countdownText = findViewById(R.id.txt_countdown)
 
         btnFrenar.setOnClickListener {
             if (juegoActivo) frenarVehiculo()
         }
+        
+        verificarOrientacion()
+    }
 
-        // Inicia el primer intento
-        programarInicioCarrera()
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        verificarOrientacion()
+    }
+
+    private fun verificarOrientacion() {
+        // Si el test ya empezó, no hacemos nada
+        if (testIniciado) return
+
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            orientationOverlay.visibility = View.GONE
+            iniciarCuentaRegresiva()
+        } else {
+            orientationOverlay.visibility = View.VISIBLE
+        }
+    }
+
+    private fun iniciarCuentaRegresiva() {
+        testIniciado = true // Marcamos que el proceso de inicio ha comenzado
+        countdownText.visibility = View.VISIBLE
+
+        object : CountDownTimer(4000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val segundos = millisUntilFinished / 1000
+                if (segundos > 0) {
+                    countdownText.text = segundos.toString()
+                } else {
+                    countdownText.text = "¡YA!"
+                }
+            }
+
+            override fun onFinish() {
+                countdownText.visibility = View.GONE
+                programarInicioCarrera()
+            }
+        }.start()
     }
 
     private fun programarInicioCarrera() {
         Handler(Looper.getMainLooper()).postDelayed({
             iniciarCarrera()
-        }, 1000)
+        }, 500) // Pequeña pausa después de la cuenta atrás
     }
 
     private fun iniciarCarrera() {
@@ -59,14 +105,12 @@ class AnticipacionTestActivity : AppCompatActivity() {
         val anchoPista = pista.width.toFloat()
         val anchoVehiculo = vehiculo.width.toFloat()
 
-        vehiculo.translationX = 0f // Reset posición
+        vehiculo.translationX = 0f
 
         animador = ObjectAnimator.ofFloat(vehiculo, "translationX", 0f, anchoPista - anchoVehiculo).apply {
             duration = 2500
             interpolator = LinearInterpolator()
-            doOnEnd {
-                if (juegoActivo) evaluarFrenado(falloTotal = true)
-            }
+            doOnEnd { if (juegoActivo) evaluarFrenado(falloTotal = true) }
             start()
         }
     }
@@ -80,79 +124,66 @@ class AnticipacionTestActivity : AppCompatActivity() {
     private fun evaluarFrenado(falloTotal: Boolean) {
         intentosRealizados++
 
-        var puntaje = 0
-        var mensaje = ""
+        val puntaje: Int
+        val mensaje: String
 
         if (falloTotal) {
             puntaje = 0
             mensaje = "¡NO FRENASTE! ❌"
         } else {
-            val centroVehiculo = vehiculo.x + (vehiculo.width / 2)
-            val centroMeta = zonaMeta.x + (zonaMeta.width / 2)
+            val centroVehiculo = vehiculo.x + vehiculo.width / 2
+            val centroMeta = zonaMeta.x + zonaMeta.width / 2
             val diferencia = abs(centroVehiculo - centroMeta)
             val radioMeta = zonaMeta.width / 2
 
             puntaje = when {
-                diferencia < (radioMeta * 0.5) -> 100
+                diferencia < radioMeta * 0.5 -> 100
                 diferencia < radioMeta -> 80
-                diferencia < (radioMeta * 1.5) -> 40
                 else -> 0
             }
-            mensaje = if (puntaje >= 80) "¡EXCELENTE! 😎" else "CALIBRACIÓN NECESARIA ⚠️"
+            mensaje = if (puntaje >= 80) "¡PRECISIÓN PERFECTA! 😎" else "CALIBRACIÓN NECESARIA ⚠️"
         }
 
-        // --- LÓGICA DE DECISIÓN ---
+        CortexManager.guardarPuntaje("t3", puntaje, intentosRealizados == 1)
 
         if (puntaje >= 80) {
-            // CASO A: APROBÓ -> Siguiente nivel
             mostrarExito(puntaje, mensaje)
         } else {
-            // CASO B: FALLÓ
             if (intentosRealizados < MAX_INTENTOS) {
-                // Le queda 1 intento -> Reintento rápido (mismo nivel, no reinicia activity)
                 mostrarDialogoReintento(mensaje)
             } else {
-                // Se acabaron los intentos -> REINICIAR DESDE EL PRINCIPIO (Loop)
-                reiniciarNivelCompleto(mensaje)
+                mostrarFalloFinal(mensaje)
             }
         }
     }
 
     private fun mostrarDialogoReintento(razonFallo: String) {
         if (isFinishing) return
-
         AlertDialog.Builder(this)
-            .setTitle("INTENTO FALLIDO ($intentosRealizados/$MAX_INTENTOS)")
-            .setMessage("$razonFallo\n\nTe queda 1 oportunidad más.\n¡Concéntrate!")
+            .setTitle("INTENTO FALLIDO")
+            .setMessage("$razonFallo\n\nQueda 1 intento.")
             .setCancelable(false)
             .setPositiveButton("REINTENTAR") { _, _ ->
-                vehiculo.translationX = 0f
                 programarInicioCarrera()
             }
             .show()
     }
 
-    private fun reiniciarNivelCompleto(razonFallo: String) {
+    private fun mostrarFalloFinal(razonFallo: String) {
         if (isFinishing) return
-
-        // No guardamos puntaje porque vamos a reiniciar
         AlertDialog.Builder(this)
-            .setTitle("¡INTENTOS AGOTADOS! ❌")
-            .setMessage("$razonFallo\n\nHas fallado los 2 intentos.\nLa prueba se reiniciará desde el principio.")
+            .setTitle("PRUEBA FALLIDA ❌")
+            .setMessage("$razonFallo\n\nNo has superado la prueba de anticipación.")
             .setCancelable(false)
-            .setPositiveButton("REINICIAR T3") { _, _ ->
-                // ESTO REINICIA LA ACTIVIDAD DESDE CERO
-                // (Como si acabara de entrar, reset de vidas a 0)
-                recreate()
+            .setPositiveButton("CONTINUAR") { _, _ ->
+                CortexManager.navegarAlSiguiente(this)
+                finish()
             }
             .show()
     }
 
     private fun mostrarExito(puntaje: Int, mensaje: String) {
         if (isFinishing) return
-
-        CortexManager.guardarPuntaje("t3", puntaje)
-
         AlertDialog.Builder(this)
             .setTitle("PRUEBA SUPERADA ✅")
             .setMessage("Precisión: $puntaje%\n$mensaje")

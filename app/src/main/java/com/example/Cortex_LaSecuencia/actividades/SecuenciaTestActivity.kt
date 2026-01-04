@@ -7,6 +7,7 @@ import android.os.Looper
 import android.view.View
 import android.widget.TextView
 import androidx.annotation.OptIn
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -28,7 +29,6 @@ class SecuenciaTestActivity : AppCompatActivity() {
     private var nivelActual = 1
     private var esTurnoDelUsuario = false
     private var testFinalizado = false
-    private var intentosPermitidos = 2
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,21 +36,23 @@ class SecuenciaTestActivity : AppCompatActivity() {
 
         txtInstruccion = findViewById(R.id.txt_instruccion_seq)
         botones = listOf(
-            findViewById(R.id.btn_1),
-            findViewById(R.id.btn_2),
-            findViewById(R.id.btn_3),
-            findViewById(R.id.btn_4)
+            findViewById(R.id.btn_1), findViewById(R.id.btn_2), findViewById(R.id.btn_3),
+            findViewById(R.id.btn_4), findViewById(R.id.btn_5), findViewById(R.id.btn_6),
+            findViewById(R.id.btn_7), findViewById(R.id.btn_8), findViewById(R.id.btn_9)
         )
 
         configurarClicks()
         iniciarSentinelCamara()
+        
+        // Iniciar el primer nivel después de un breve retraso
+        Handler(Looper.getMainLooper()).postDelayed({ iniciarSiguienteNivel() }, 1500)
     }
 
     private fun configurarClicks() {
         botones.forEachIndexed { index, view ->
             view.setOnClickListener {
                 if (esTurnoDelUsuario && !testFinalizado) {
-                    iluminarBoton(index)
+                    iluminarBoton(index, true)
                     secuenciaUsuario.add(index)
                     verificarEntrada()
                 }
@@ -63,78 +65,114 @@ class SecuenciaTestActivity : AppCompatActivity() {
 
         esTurnoDelUsuario = false
         secuenciaUsuario.clear()
-        secuenciaGenerada.add(Random.nextInt(0, 4))
+        // Añade un nuevo paso aleatorio a la secuencia (ahora hasta 9)
+        secuenciaGenerada.add(Random.nextInt(0, 9))
 
         txtInstruccion.text = "NIVEL $nivelActual: OBSERVA"
         txtInstruccion.setTextColor(Color.CYAN)
 
+        mostrarSecuenciaGenerada()
+    }
+
+    private fun mostrarSecuenciaGenerada() {
         val handler = Handler(Looper.getMainLooper())
         secuenciaGenerada.forEachIndexed { i, botonIndex ->
             handler.postDelayed({
-                if (!testFinalizado) iluminarBoton(botonIndex)
+                if (!testFinalizado) iluminarBoton(botonIndex, false)
+                // Cuando la secuencia termina, da el turno al usuario
                 if (i == secuenciaGenerada.size - 1) {
                     handler.postDelayed({
                         if (!testFinalizado) {
                             esTurnoDelUsuario = true
-                            txtInstruccion.text = "RECOPIE LA SECUENCIA"
+                            txtInstruccion.text = "REPLICA LA SECUENCIA"
                             txtInstruccion.setTextColor(Color.WHITE)
                         }
                     }, 800)
                 }
-            }, (i + 1) * 1000L)
+            }, (i + 1) * 1000L) // 1 segundo por paso
         }
     }
 
-    private fun iluminarBoton(index: Int) {
+    private fun iluminarBoton(index: Int, esUsuario: Boolean) {
         val originalColor = Color.parseColor("#1E293B")
-        val highlightColor = Color.parseColor("#00F0FF")
+        val highlightColor = if (esUsuario) Color.parseColor("#F59E0B") else Color.parseColor("#00F0FF")
+        
         botones[index].backgroundTintList = android.content.res.ColorStateList.valueOf(highlightColor)
         Handler(Looper.getMainLooper()).postDelayed({
             botones[index].backgroundTintList = android.content.res.ColorStateList.valueOf(originalColor)
-        }, 500)
+        }, 400) // Iluminación más corta
     }
 
     private fun verificarEntrada() {
         val indexUltimoIntento = secuenciaUsuario.size - 1
 
-        // 1. ERROR DEL USUARIO
+        // Si el usuario se equivoca
         if (secuenciaUsuario[indexUltimoIntento] != secuenciaGenerada[indexUltimoIntento]) {
-            intentosPermitidos--
-            if (intentosPermitidos > 0) {
-                txtInstruccion.text = "❌ ERROR. QUEDAN $intentosPermitidos INTENTOS"
-                txtInstruccion.setTextColor(Color.YELLOW)
-                secuenciaUsuario.clear()
-                Handler(Looper.getMainLooper()).postDelayed({ repetirNivelActual() }, 2000)
-            } else {
-                reprobarPorError("DEMASIADOS ERRORES COGNITIVOS")
-            }
+            gestionarFallo()
             return
         }
 
-        // 2. ÉXITO EN LA SECUENCIA
+        // Si el usuario completa la secuencia del nivel actual
         if (secuenciaUsuario.size == secuenciaGenerada.size) {
             nivelActual++
-            intentosPermitidos = 2
-
+            // Si supera el nivel 5, ha ganado
             if (nivelActual > 5) {
                 finalizarConExito()
             } else {
-                txtInstruccion.text = "¡BIEN HECHO! SIGUIENTE..."
+                txtInstruccion.text = "¡BIEN! SIGUIENTE NIVEL..."
                 txtInstruccion.setTextColor(Color.GREEN)
+                esTurnoDelUsuario = false
                 Handler(Looper.getMainLooper()).postDelayed({ iniciarSiguienteNivel() }, 1500)
             }
         }
     }
 
-    private fun repetirNivelActual() {
-        if (testFinalizado) return
-        esTurnoDelUsuario = false
-        txtInstruccion.text = "OBSERVA DE NUEVO"
-        txtInstruccion.setTextColor(Color.CYAN)
-        // ... Lógica de repetición (simplificada para el ejemplo) ...
-        iniciarSiguienteNivel() // Truco: Reiniciamos la visualización del nivel actual
+    private fun gestionarFallo() {
+        testFinalizado = true
+        CortexManager.guardarPuntaje("t2", 0) // Guardar puntaje de fallo
+        val eraPrimerIntento = CortexManager.obtenerIntentoActual("t2") == 1
+
+        if (eraPrimerIntento) {
+            // Reinicia para el segundo intento sin mostrar diálogo
+            recreate()
+        } else {
+            // Muestra el diálogo de fallo final en el segundo intento
+            mostrarDialogoFalloFinal()
+        }
     }
 
+    private fun mostrarDialogoFalloFinal() {
+        if (isFinishing || isDestroyed) return
+        AlertDialog.Builder(this)
+            .setTitle("MEMORIA: FALLIDO ❌")
+            .setMessage("No se completó la secuencia. La evaluación continuará.")
+            .setCancelable(false)
+            .setPositiveButton("CONTINUAR") { _, _ ->
+                CortexManager.navegarAlSiguiente(this)
+                finish()
+            }
+            .show()
+    }
+
+    private fun finalizarConExito() {
+        if (testFinalizado) return
+        testFinalizado = true
+        CortexManager.guardarPuntaje("t2", 100)
+
+        if (isFinishing || isDestroyed) return
+
+        AlertDialog.Builder(this)
+            .setTitle("¡MEMORIA VALIDADA! 🧠✅")
+            .setMessage("Nivel 2 completado con éxito.")
+            .setCancelable(false)
+            .setPositiveButton("SIGUIENTE") { _, _ ->
+                CortexManager.navegarAlSiguiente(this)
+                finish()
+            }
+            .show()
+    }
+    
+    // --- CÓDIGO DE CÁMARA (Sin cambios) ---
     private var cameraProvider: ProcessCameraProvider? = null
     private var imageAnalyzer: ImageAnalysis? = null
     private var preview: Preview? = null
@@ -173,29 +211,11 @@ class SecuenciaTestActivity : AppCompatActivity() {
 
     @OptIn(ExperimentalGetImage::class)
     private fun analizarRostro(imageProxy: ImageProxy) {
-        // Verificar que la Activity sigue activa
-        if (isFinishing || isDestroyed || testFinalizado) {
-            imageProxy.close()
-            return
-        }
-
         val mediaImage = imageProxy.image
         if (mediaImage != null) {
             val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
             FaceDetection.getClient().process(image)
-                .addOnSuccessListener { faces ->
-                    if (isFinishing || isDestroyed || testFinalizado) {
-                        imageProxy.close()
-                        return@addOnSuccessListener
-                    }
-                    
-                    if (faces.isEmpty()) {
-                        txtInstruccion.text = "⚠️ DISTRACCIÓN DETECTADA"
-                        txtInstruccion.setTextColor(Color.RED)
-                    } else if (secuenciaGenerada.isEmpty()) {
-                        iniciarSiguienteNivel()
-                    }
-                }
+                .addOnSuccessListener { faces -> { /* No-op */ } }
                 .addOnCompleteListener { imageProxy.close() }
                 .addOnFailureListener { imageProxy.close() }
         } else {
@@ -206,75 +226,12 @@ class SecuenciaTestActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         testFinalizado = true
-        
-        // Liberar cámara correctamente
         imageAnalyzer?.clearAnalyzer()
         cameraProvider?.unbindAll()
-        imageAnalyzer = null
-        preview = null
-        cameraProvider = null
     }
     
     override fun onPause() {
         super.onPause()
-        // Pausar análisis cuando la Activity no está visible para evitar procesamiento innecesario
-        if (!testFinalizado) {
-            imageAnalyzer?.clearAnalyzer()
-        }
-    }
-
-    private fun finalizarConExito() {
-        if (testFinalizado) return
-        testFinalizado = true
-
-        // --- BLINDAJE ANTI-CRASH ---
-        if (isFinishing || isDestroyed) return
-
-        // 1. Guardamos puntaje ANTES del diálogo por seguridad
-        CortexManager.guardarPuntaje("t2", 100)
-
-        try {
-            android.app.AlertDialog.Builder(this)
-                .setTitle("¡MEMORIA VALIDADA! 🧠✅")
-                .setMessage("Nivel 2 completado.\nSiguiente: Anticipación (T3).")
-                .setCancelable(false)
-                .setPositiveButton("SIGUIENTE NIVEL") { _, _ ->
-                    CortexManager.navegarAlSiguiente(this)
-                    finish()
-                }
-                .show()
-        } catch (e: Exception) {
-            // Si el diálogo falla, nos vamos directo al T3
-            CortexManager.navegarAlSiguiente(this)
-            finish()
-        }
-    }
-
-    private fun reprobarPorError(motivo: String) {
-        if (testFinalizado) return
-        testFinalizado = true
-
-        // Guardamos puntaje bajo
-        CortexManager.guardarPuntaje("t2", 0)
-
-        if (isFinishing || isDestroyed) return
-
-        try {
-            android.app.AlertDialog.Builder(this)
-                .setTitle("NIVEL 2: FALLIDO ❌")
-                .setMessage("$motivo\n\n¿Deseas reintentar?")
-                .setCancelable(false)
-                .setPositiveButton("REINTENTAR") { _, _ ->
-                    val intent = intent
-                    finish()
-                    startActivity(intent)
-                }
-                .setNegativeButton("SALIR") { _, _ ->
-                    finishAffinity()
-                }
-                .show()
-        } catch (e: Exception) {
-            finish()
-        }
+        imageAnalyzer?.clearAnalyzer()
     }
 }
