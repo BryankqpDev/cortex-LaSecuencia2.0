@@ -37,7 +37,7 @@
         <activity
             android:name=".actividades.IntroTestActivity"
             android:exported="false"
-            android:screenOrientation="portrait" />
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".actividades.ReflejosTestActivity"
             android:exported="false"

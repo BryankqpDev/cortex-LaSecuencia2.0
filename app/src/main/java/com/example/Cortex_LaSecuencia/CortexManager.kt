@@ -15,6 +15,7 @@ import com.example.Cortex_LaSecuencia.actividades.EspacialTestActivity
 import com.example.Cortex_LaSecuencia.actividades.DecisionTestActivity
 import com.example.Cortex_LaSecuencia.actividades.ReporteFinalActivity
 import com.example.Cortex_LaSecuencia.actividades.IntroTestActivity
+import com.example.Cortex_LaSecuencia.actividades.RastreoTestActivity
 
 object CortexManager {
 
@@ -219,7 +220,7 @@ object CortexManager {
             "t5" -> Intent(context, AtencionTestActivity::class.java)
             "t6" -> Intent(context, EscaneoTestActivity::class.java)
             "t7" -> Intent(context, ImpulsoTestActivity::class.java)
-            //"t8" -> Intent(context, RastreoTestActivity::class.java)
+            "t8" -> Intent(context,RastreoTestActivity::class.java)
             "t9" -> Intent(context, EspacialTestActivity::class.java)
             "t10" -> Intent(context, DecisionTestActivity::class.java)
             else -> null
