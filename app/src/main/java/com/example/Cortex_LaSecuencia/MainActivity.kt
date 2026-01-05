@@ -6,9 +6,9 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog // Importante para la alerta de Admin
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.example.Cortex_LaSecuencia.actividades.WelcomeActivity // Si decides usarla después
+import com.example.Cortex_LaSecuencia.actividades.WelcomeActivity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -17,9 +17,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main) // Asegúrate que tu XML se llame así
+        setContentView(R.layout.activity_main)
 
-        // 1. Identificar los componentes (Usando los IDs de tu NUEVO XML)
         val etEmpresa = findViewById<EditText>(R.id.et_empresa)
         val etSupervisor = findViewById<EditText>(R.id.et_supervisor)
         val etNombre = findViewById<EditText>(R.id.et_nombre)
@@ -30,22 +29,33 @@ class MainActivity : AppCompatActivity() {
         val btnSiguiente = findViewById<Button>(R.id.btn_siguiente)
         val btnAdmin = findViewById<Button>(R.id.btn_admin)
 
-        // 2. Configurar el botón SIGUIENTE
         btnSiguiente.setOnClickListener {
-            // Obtener texto limpio
             val empresa = etEmpresa.text.toString().trim().uppercase()
             val supervisor = etSupervisor.text.toString().trim().uppercase()
             val nombre = etNombre.text.toString().trim().uppercase()
             val dni = etDni.text.toString().trim()
             val unidad = etUnidad.text.toString().trim().uppercase()
-
-            // Obtener selección del Spinner (Desplegable)
             val equipoSeleccionado = spinnerEquipo.selectedItem.toString()
 
-            // Validaciones
-            if (empresa.isEmpty() || supervisor.isEmpty() || nombre.isEmpty() || dni.isEmpty()) {
+            // --- VALIDACIONES ---
+            if (empresa.isEmpty() || supervisor.isEmpty() || nombre.isEmpty() || dni.isEmpty() || unidad.isEmpty()) {
                 Toast.makeText(this, "⚠️ Faltan datos obligatorios", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
+            }
+
+            if (dni.length != 8) {
+                etDni.error = "El DNI debe tener 8 dígitos."
+                etDni.requestFocus()
+                return@setOnClickListener
+            }
+
+            // --- ✅ NUEVA VALIDACIÓN PARA PLACA ---
+            if (!esPlacaValida(unidad)) {
+                etUnidad.error = "Placa inválida (ej: ABC-123 o 1234-AB)"
+                etUnidad.requestFocus()
+                return@setOnClickListener
+            } else {
+                etUnidad.error = null
             }
 
             if (equipoSeleccionado.startsWith("-")) {
@@ -53,72 +63,77 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Capturar Fecha y Hora (Para Admin/Data)
+            // --- FIN VALIDACIONES ---
+
             val now = Date()
             val fechaHoy = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(now)
             val horaHoy = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(now)
 
-            // Crear el objeto Operador completo
             val nuevoOperador = Operador(
-                nombre = nombre,
-                dni = dni,
-                empresa = empresa,
-                supervisor = supervisor,
-                equipo = equipoSeleccionado,
-                unidad = unidad,
-                fecha = fechaHoy, // Vital para el Excel
-                hora = horaHoy
+                nombre = nombre, dni = dni, empresa = empresa,
+                supervisor = supervisor, equipo = equipoSeleccionado, unidad = unidad,
+                fecha = fechaHoy, hora = horaHoy
             )
 
-            // Guardar en el Cerebro de la App
             CortexManager.operadorActual = nuevoOperador
-
             Toast.makeText(this, "Bienvenido, $nombre", Toast.LENGTH_SHORT).show()
 
-            // Ir a la pantalla Welcome (como en HTML)
             val intent = Intent(this, WelcomeActivity::class.java)
             startActivity(intent)
         }
 
-        // 3. Configurar el botón ADMIN (Con contraseña)
-        btnAdmin.setOnClickListener {
-            mostrarDialogoAdmin()
-        }
+        btnAdmin.setOnClickListener { mostrarDialogoAdmin() }
     }
 
-    // Función auxiliar para pedir contraseña
+    /**
+     * ✅ NUEVA FUNCIÓN: Valida el formato de la placa peruana.
+     */
+    private fun esPlacaValida(placa: String): Boolean {
+        // 1. Normalizar la placa: quitar guiones, espacios y a mayúsculas.
+        val placaNormalizada = placa.replace(Regex("[\\s-]"), "").uppercase()
+
+        if (placaNormalizada.length != 6) return false
+
+        // 2. Regla 1: Formato Auto (3 Letras, 3 Números)
+        val formatoAuto = "^[A-Z]{3}[0-9]{3}$"
+        if (placaNormalizada.matches(Regex(formatoAuto))) {
+            return true
+        }
+
+        // 3. Regla 2: Formato Moto (4 Números, 2 Letras)
+        val formatoMoto = "^[0-9]{4}[A-Z]{2}$"
+        if (placaNormalizada.matches(Regex(formatoMoto))) {
+            return true
+        }
+        
+        // Si no cumple ninguna regla, es inválida
+        return false
+    }
+
     private fun mostrarDialogoAdmin() {
-        val inputPassword = EditText(this)
-        inputPassword.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
-        inputPassword.hint = "Código (1007)"
-        inputPassword.gravity = android.view.Gravity.CENTER
+        val inputPassword = EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            hint = "Código (1007)"
+            gravity = android.view.Gravity.CENTER
+            setTextColor(android.graphics.Color.BLACK)
+        }
 
-        // Ajuste visual para que se vea bien en fondo oscuro
-        inputPassword.setTextColor(android.graphics.Color.BLACK)
-
-        val container = android.widget.FrameLayout(this)
-        val params = android.widget.FrameLayout.LayoutParams(
-            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-        )
-        params.leftMargin = 50
-        params.rightMargin = 50
-        inputPassword.layoutParams = params
-        container.addView(inputPassword)
+        val container = android.widget.FrameLayout(this).apply {
+            val params = android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { leftMargin = 50; rightMargin = 50 }
+            addView(inputPassword, params)
+        }
 
         AlertDialog.Builder(this)
             .setTitle("ACCESO SUPERVISOR 🔒")
             .setMessage("Ingrese código de seguridad:")
             .setView(container)
             .setPositiveButton("ENTRAR") { _, _ ->
-                val codigo = inputPassword.text.toString()
-                if (codigo == "1007") {
+                if (inputPassword.text.toString() == "1007") {
                     Toast.makeText(this, "Acceso Autorizado ✅", Toast.LENGTH_SHORT).show()
-
-                    // --- AQUÍ CONECTAS LA NUEVA PANTALLA ---
-                    val intent = Intent(this, AdminActivity::class.java)
-                    startActivity(intent)
-
+                    startActivity(Intent(this, AdminActivity::class.java))
                 } else {
                     Toast.makeText(this, "⛔ Código Incorrecto", Toast.LENGTH_SHORT).show()
                 }

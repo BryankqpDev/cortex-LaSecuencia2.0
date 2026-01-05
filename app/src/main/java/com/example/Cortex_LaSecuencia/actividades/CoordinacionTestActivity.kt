@@ -1,8 +1,7 @@
 package com.example.Cortex_LaSecuencia.actividades
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.CountDownTimer
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
@@ -14,103 +13,138 @@ import java.util.Random
 
 class CoordinacionTestActivity : AppCompatActivity() {
 
+    // Referencias UI
     private lateinit var containerJuego: FrameLayout
     private lateinit var txtContador: TextView
+    private lateinit var lblIntento: TextView // 1. Nueva referencia para el XML corregido
 
-    private var puntosAtrapados = 0
-    private val META_PUNTOS = 5
-    private var tiempoInicio: Long = 0
-    private var erroresDistractor = 0 // ✅ NUEVO: Contador de errores
+    // Variables del juego
+    private var hitsCount = 0
+    private val TARGET_HITS = 5
+    private var startTime: Long = 0
+    private var gameStarted = false
+    private var intentoActual = 1
 
     private val random = Random()
-    private var juegoActivo = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Asegúrate de que el XML se llame exactamente así:
         setContentView(R.layout.activity_coordinacion_test)
 
+        // Inicialización de Vistas
         containerJuego = findViewById(R.id.container_juego)
         txtContador = findViewById(R.id.txt_contador)
+        lblIntento = findViewById(R.id.lbl_t10) // Vinculamos el ID del XML corregido
 
-        txtContador.text = "¡ATRAPA 5 AMARILLAS!"
+        // Obtener intento desde tu Manager
+        intentoActual = CortexManager.obtenerIntentoActual("t4")
 
-        Handler(Looper.getMainLooper()).postDelayed({ iniciarJuego() }, 1000)
+        // Seteamos el texto del intento inmediatamente
+        lblIntento.text = "INTENTO $intentoActual/2"
+
+        // Iniciar test
+        containerJuego.post { startTest() }
     }
 
-    private fun iniciarJuego() {
-        juegoActivo = true
-        tiempoInicio = System.currentTimeMillis()
-        generarEntidad()
+    private fun startTest() {
+        hitsCount = 0
+        gameStarted = false
+        containerJuego.removeAllViews()
+
+        // 2. Durante la cuenta regresiva, mostramos el mensaje en txtContador
+        lblIntento.text = "INTENTO $intentoActual/2"
+
+        object : CountDownTimer(4000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val segundos = millisUntilFinished / 1000
+                // Usamos el color blanco o llamativo para la cuenta regresiva
+                txtContador.text = if (segundos > 0) "Prepárate... $segundos" else "¡YA!"
+            }
+
+            override fun onFinish() {
+                gameStarted = true
+                startTime = System.currentTimeMillis()
+                updateProgressText() // Aquí cambiamos al texto de puntaje
+                spawnDot()
+            }
+        }.start()
     }
 
-    private fun generarEntidad() {
-        if (!juegoActivo || isFinishing) return
+    private fun spawnDot() {
+        if (!gameStarted || hitsCount >= TARGET_HITS) return
 
-        val view = View(this)
-        val esObjetivo = random.nextBoolean() // 50% de ser objetivo
+        val areaWidth = containerJuego.width
+        val areaHeight = containerJuego.height
 
-        if (esObjetivo) {
-            view.setBackgroundResource(R.drawable.circulo_amarillo)
-            view.setOnClickListener {
-                if (!juegoActivo) return@setOnClickListener
-                puntosAtrapados++
-                txtContador.text = "ATRAPADOS: $puntosAtrapados / $META_PUNTOS"
-                containerJuego.removeView(view)
-
-                if (puntosAtrapados >= META_PUNTOS) {
-                    finalizarJuego()
-                } else {
-                    generarEntidad()
-                }
-            }
-        } else {
-            view.setBackgroundResource(R.drawable.circulo_rojo)
-            view.setOnClickListener {
-                if (!juegoActivo) return@setOnClickListener
-                erroresDistractor++ // ✅ INCREMENTA CONTADOR
-                containerJuego.removeView(view) // El distractor también desaparece
-                generarEntidad() // Genera el siguiente
-            }
-        }
-
-        val sizePx = (60 * resources.displayMetrics.density).toInt()
-        val params = FrameLayout.LayoutParams(sizePx, sizePx)
-        val maxX = containerJuego.width - sizePx
-        val maxY = containerJuego.height - sizePx
-
-        if (maxX <= 0 || maxY <= 0) {
-            Handler(Looper.getMainLooper()).postDelayed({ generarEntidad() }, 100)
+        // Seguridad por si la vista no se ha medido aún
+        if (areaWidth == 0 || areaHeight == 0) {
+            containerJuego.post { spawnDot() }
             return
         }
-        params.leftMargin = random.nextInt(maxX)
-        params.topMargin = random.nextInt(maxY)
 
-        view.layoutParams = params
-        containerJuego.addView(view)
+        // Crear el punto dinámicamente
+        val dotSizePx = (50 * resources.displayMetrics.density).toInt()
+        val dot = View(this).apply {
+            layoutParams = FrameLayout.LayoutParams(dotSizePx, dotSizePx).apply {
+                // Posición aleatoria dentro de los límites
+                leftMargin = random.nextInt((areaWidth - dotSizePx).coerceAtLeast(1))
+                topMargin = random.nextInt((areaHeight - dotSizePx).coerceAtLeast(1))
+            }
+            // NOTA: Asegúrate de tener este drawable (ver abajo si te falta)
+            setBackgroundResource(R.drawable.circulo_amarillo)
+            setOnClickListener { onDotClicked(this) }
+        }
+        containerJuego.addView(dot)
     }
 
-    private fun finalizarJuego() {
-        if (!juegoActivo) return
-        juegoActivo = false
+    private fun onDotClicked(dot: View) {
+        if (!gameStarted) return
 
-        val tiempoTotal = System.currentTimeMillis() - tiempoInicio
-        val tiempoBase = 3000
-        val penalizacion = if (tiempoTotal > tiempoBase) ((tiempoTotal - tiempoBase) / 50).toInt() else 0
-        val puntaje = (100 - penalizacion).coerceIn(0, 100)
+        hitsCount++
+        updateProgressText() // Actualizamos contador
+        containerJuego.removeView(dot)
 
-        CortexManager.guardarPuntaje("t4", puntaje)
+        if (hitsCount >= TARGET_HITS) {
+            finishAttempt()
+        } else {
+            spawnDot()
+        }
+    }
 
-        // --- ✅ REGISTRO DE MÉTRICAS DETALLADO ---
-        val details = mapOf(
-            "tiempo_total_ms" to tiempoTotal,
-            "errores_distractor" to erroresDistractor
-        )
-        CortexManager.logPerformanceMetric("t4", puntaje, details)
+    // 3. Método actualizado para usar las dos etiquetas separadas del XML
+    private fun updateProgressText() {
+        lblIntento.text = "INTENTO $intentoActual/2"
+        txtContador.text = "ATRAPADOS: $hitsCount / $TARGET_HITS"
+    }
 
-        if (isFinishing) return
+    private fun finishAttempt() {
+        gameStarted = false
+        val totalTime = System.currentTimeMillis() - startTime
+        val score = calculateScore(totalTime)
 
-        val mensaje = "Tiempo total: ${tiempoTotal}ms\nErrores: $erroresDistractor\nNota: $puntaje%"
+        // Lógica de guardado
+        val details = mapOf("tiempo_total_ms" to totalTime, "errores_distractor" to 0)
+        CortexManager.logPerformanceMetric("t4", score, details)
+        CortexManager.guardarPuntaje("t4", score)
 
+        if (intentoActual == 1 && score < 80) {
+            // Reinicia la actividad para el segundo intento
+            recreate()
+        } else {
+            showFinalDialog(score, totalTime)
+        }
+    }
+
+    private fun calculateScore(timeMs: Long): Int {
+        val baseTime = 3000L // 3 segundos es el tiempo ideal
+        if (timeMs <= baseTime) return 100
+        val penalty = ((timeMs - baseTime) / 50).toInt()
+        return (100 - penalty).coerceIn(0, 100)
+    }
+
+    private fun showFinalDialog(score: Int, timeMs: Long) {
+        val mensaje = "Tiempo: ${timeMs}ms\nNota: $score%"
         AlertDialog.Builder(this)
             .setTitle("COORDINACIÓN COMPLETADA")
             .setMessage(mensaje)
@@ -124,6 +158,6 @@ class CoordinacionTestActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        juegoActivo = false
+        gameStarted = false
     }
 }
