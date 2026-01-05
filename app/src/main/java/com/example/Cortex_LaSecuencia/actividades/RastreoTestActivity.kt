@@ -1,6 +1,7 @@
 package com.example.Cortex_LaSecuencia.actividades
 
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -29,7 +30,8 @@ class RastreoTestActivity : AppCompatActivity() {
     private var animacionActiva = false
     private var testFinalizado = false
     private var animacionRunnable: Runnable? = null
-    private var tiempoInicioSeleccion: Long = 0 // ✅ NUEVO: Para medir tiempo de decisión
+    private var tiempoInicioSeleccion: Long = 0
+    private var intentoActual = 1 // Control de intento
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,7 +42,8 @@ class RastreoTestActivity : AppCompatActivity() {
         btnConfirmar = findViewById(R.id.btn_confirmar)
         txtIntento = findViewById(R.id.txt_intento)
 
-        val intentoActual = CortexManager.obtenerIntentoActual("t8")
+        // Inicializamos intento
+        intentoActual = CortexManager.obtenerIntentoActual("t8")
         txtIntento.text = "INTENTO $intentoActual/2"
 
         btnConfirmar.setOnClickListener { if (!testFinalizado) verificarSeleccion() }
@@ -49,7 +52,7 @@ class RastreoTestActivity : AppCompatActivity() {
     }
 
     private fun iniciarTest() {
-        txtMensaje.text = "Memorice las 2 AZULES..."
+        txtMensaje.text = "Memoriza las 2 AZULES..."
         btnConfirmar.visibility = View.GONE
         indicesSeleccionados.clear()
         indicesObjetivo.clear()
@@ -68,28 +71,34 @@ class RastreoTestActivity : AppCompatActivity() {
                 val angulo = Random.nextFloat() * 2f * Math.PI.toFloat()
                 bola.vx = kotlin.math.cos(angulo) * velocidad
                 bola.vy = kotlin.math.sin(angulo) * velocidad
+
+                // Tamaño fijo para que sean redondas
                 val tamaño = (40 * resources.displayMetrics.density).toInt()
                 bola.layoutParams = FrameLayout.LayoutParams(tamaño, tamaño)
+
                 bolas.add(bola)
                 areaRastreo.addView(bola)
                 bola.actualizarPosicion(ancho, alto)
             }
 
+            // Seleccionamos objetivos (0 y 1)
             indicesObjetivo.addAll(listOf(0, 1))
-            bolas[0].cambiarColor(Color.parseColor("#3B82F6"))
-            bolas[1].cambiarColor(Color.parseColor("#3B82F6"))
+            bolas[0].cambiarColor(Color.parseColor("#3B82F6")) // Azul
+            bolas[1].cambiarColor(Color.parseColor("#3B82F6")) // Azul
 
+            // 2 segundos para memorizar
             handler.postDelayed({ if (!isFinishing) iniciarAnimacion() }, 2000)
         }
     }
 
     private fun iniciarAnimacion() {
+        // Todas se vuelven blancas para confundir
         bolas.forEach { it.cambiarColor(Color.WHITE) }
         txtMensaje.text = "Rastreando..."
         animacionActiva = true
 
         var pasos = 0
-        val maxPasos = 300
+        val maxPasos = 300 // Duración de la animación
 
         animacionRunnable = object : Runnable {
             override fun run() {
@@ -100,18 +109,21 @@ class RastreoTestActivity : AppCompatActivity() {
                 bolas.forEach { bola ->
                     bola.posX += bola.vx
                     bola.posY += bola.vy
+
+                    // Rebote en paredes
                     if (bola.posX <= 0.05f || bola.posX >= 0.95f) bola.vx *= -1
                     if (bola.posY <= 0.05f || bola.posY >= 0.95f) bola.vy *= -1
+
                     bola.actualizarPosicion(ancho, alto)
                 }
 
                 pasos++
                 if (pasos >= maxPasos) {
                     animacionActiva = false
-                    txtMensaje.text = "Toque los 2 objetivos:"
+                    txtMensaje.text = "Selecciona los 2 objetivos:"
                     habilitarSeleccion()
                 } else {
-                    handler.postDelayed(this, 16)
+                    handler.postDelayed(this, 16) // ~60 FPS
                 }
             }
         }
@@ -119,15 +131,19 @@ class RastreoTestActivity : AppCompatActivity() {
     }
 
     private fun habilitarSeleccion() {
-        tiempoInicioSeleccion = System.currentTimeMillis() // ✅ INICIA CRONÓMETRO DE DECISIÓN
+        tiempoInicioSeleccion = System.currentTimeMillis()
         btnConfirmar.visibility = View.GONE
 
         bolas.forEachIndexed { indice, bola ->
             bola.setOnClickListener {
-                if (testFinalizado || indicesSeleccionados.size >= 2 || indicesSeleccionados.contains(indice)) return@setOnClickListener
+                if (testFinalizado || indicesSeleccionados.contains(indice)) return@setOnClickListener
+
+                // Si ya seleccionó 2, no deja seleccionar más a menos que deseleccione (simplificado: max 2)
+                if (indicesSeleccionados.size >= 2) return@setOnClickListener
 
                 indicesSeleccionados.add(indice)
-                bola.cambiarColor(Color.parseColor("#F59E0B"))
+                bola.cambiarColor(Color.parseColor("#F59E0B")) // Naranja (Seleccionado)
+
                 btnConfirmar.text = "CONFIRMAR (${indicesSeleccionados.size})"
 
                 if (indicesSeleccionados.size == 2) {
@@ -142,21 +158,25 @@ class RastreoTestActivity : AppCompatActivity() {
         animacionActiva = false
         animacionRunnable?.let { handler.removeCallbacks(it) }
 
-        val tiempoDecision = System.currentTimeMillis() - tiempoInicioSeleccion // ✅ CALCULA TIEMPO
+        val tiempoDecision = System.currentTimeMillis() - tiempoInicioSeleccion
 
+        // Revelamos los verdaderos objetivos en Verde
         indicesObjetivo.forEach { bolas[it].cambiarColor(Color.parseColor("#10B981")) }
 
         var aciertos = 0
         indicesSeleccionados.forEach {
-            if (indicesObjetivo.contains(it)) aciertos++
-            else bolas[it].cambiarColor(Color.parseColor("#EF4444"))
+            if (indicesObjetivo.contains(it)) {
+                aciertos++
+            } else {
+                // Si seleccionó uno incorrecto, lo marcamos en Rojo
+                bolas[it].cambiarColor(Color.parseColor("#EF4444"))
+            }
         }
 
+        // Puntuación estricta: 2 aciertos = 100, 1 acierto = 50, 0 = 0
         val puntaje = when (aciertos) { 2 -> 100; 1 -> 50; else -> 0 }
-        val mensaje = when (aciertos) { 2 -> "Perfecto! +100"; 1 -> "1 correcta +50"; else -> "Fallaste +0" }
-        txtMensaje.text = mensaje
 
-        // --- ✅ REGISTRO DE MÉTRICAS DETALLADO ---
+        // Guardamos métricas
         val details = mapOf(
             "tiempo_decision_ms" to tiempoDecision,
             "aciertos" to aciertos,
@@ -164,33 +184,49 @@ class RastreoTestActivity : AppCompatActivity() {
             "seleccionados" to indicesSeleccionados
         )
         CortexManager.logPerformanceMetric("t8", puntaje, details)
+        CortexManager.guardarPuntaje("t8", puntaje)
 
-        handler.postDelayed({ mostrarResultado(puntaje, aciertos) }, 2000)
+        // Delay pequeño para que el usuario vea el resultado visual antes del dialog
+        handler.postDelayed({
+            manejarContinuacion(puntaje, aciertos)
+        }, 1500)
     }
 
-    private fun mostrarResultado(puntaje: Int, aciertos: Int) {
-        val mensaje = when (aciertos) {
-            2 -> "EXCELENTE!\n\nIdentificaste correctamente los 2 objetivos.\n\nNota: $puntaje%"
-            1 -> "REGULAR\n\nIdentificaste solo 1 objetivo de los 2.\n\nNota: $puntaje%"
-            else -> "FALLASTE\n\nNo identificaste ninguno de los objetivos.\n\nNota: $puntaje%"
+    private fun manejarContinuacion(puntaje: Int, aciertos: Int) {
+        if (isFinishing) return
+
+        val esReintento: Boolean = (intentoActual == 1 && puntaje < 80) // Solo pasa con 100 (2 aciertos)
+
+        val titulo: String
+        val mensajeBase = when (aciertos) {
+            2 -> "¡EXCELENTE! 🎯\nIdentificaste los 2 objetivos."
+            1 -> "REGULAR ⚠️\nIdentificaste solo 1 objetivo."
+            else -> "FALLASTE ❌\nPerdiste el rastro por completo."
+        }
+        val textoBoton: String
+
+        if (esReintento) {
+            titulo = "RASTREO INCOMPLETO"
+            // Mensaje que explica que debe repetir
+            textoBoton = "INTENTO 2"
+        } else {
+            titulo = if (puntaje == 100) "RASTREO PERFECTO ✅" else "TEST FINALIZADO"
+            textoBoton = "SIGUIENTE TEST" // Si es el último test, esto llevará al Resumen
         }
 
         AlertDialog.Builder(this)
-            .setTitle("RASTREO (MOT)")
-            .setMessage(mensaje)
+            .setTitle(titulo)
+            .setMessage("$mensajeBase\nNota: $puntaje%")
             .setCancelable(false)
-            .setPositiveButton("CONTINUAR") { _, _ -> manejarContinuacion(puntaje) }
+            .setPositiveButton(textoBoton) { _, _ ->
+                if (esReintento) {
+                    recreate()
+                } else {
+                    CortexManager.navegarAlSiguiente(this)
+                    finish()
+                }
+            }
             .show()
-    }
-
-    private fun manejarContinuacion(puntaje: Int) {
-        CortexManager.guardarPuntaje("t8", puntaje)
-        if (CortexManager.obtenerIntentoActual("t8") == 1 && puntaje < 80) {
-            recreate()
-        } else {
-            CortexManager.navegarAlSiguiente(this)
-            finish()
-        }
     }
 
     override fun onDestroy() {
@@ -198,26 +234,34 @@ class RastreoTestActivity : AppCompatActivity() {
         animacionActiva = false
         animacionRunnable?.let { handler.removeCallbacks(it) }
     }
-    
-    // Clase BallView (sin cambios)
+
+    // Clase BallView Mejorada (Círculos perfectos con ShapeDrawable)
     private class BallView(context: android.content.Context, val indice: Int) : View(context) {
         var posX: Float = 0f; var posY: Float = 0f; var vx: Float = 0f; var vy: Float = 0f
-        init { 
-            setBackgroundColor(Color.WHITE)
-            layoutParams = FrameLayout.LayoutParams((40 * resources.displayMetrics.density).toInt(), (40 * resources.displayMetrics.density).toInt())
+
+        private val drawable = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(Color.WHITE)
+            setStroke(2, Color.BLACK) // Borde negro para verlas mejor
         }
-        override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-            super.onSizeChanged(w, h, oldw, oldh)
-            clipToOutline = true
-            outlineProvider = object : android.view.ViewOutlineProvider() {
-                override fun getOutline(view: View, outline: android.graphics.Outline) { outline.setOval(0, 0, view.width, view.height) }
-            }
+
+        init {
+            background = drawable
         }
-        fun cambiarColor(color: Int) { setBackgroundColor(color) }
+
+        fun cambiarColor(color: Int) {
+            drawable.setColor(color)
+            invalidate()
+        }
+
         fun actualizarPosicion(ancho: Float, alto: Float) {
             val params = layoutParams as FrameLayout.LayoutParams
-            params.leftMargin = (posX * ancho - width / 2).toInt()
-            params.topMargin = (posY * alto - height / 2).toInt()
+            // Aseguramos que no se salga de los márgenes
+            val left = (posX * ancho - width / 2).toInt().coerceIn(0, (ancho - width).toInt())
+            val top = (posY * alto - height / 2).toInt().coerceIn(0, (alto - height).toInt())
+
+            params.leftMargin = left
+            params.topMargin = top
             layoutParams = params
         }
     }
