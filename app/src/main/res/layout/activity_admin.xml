@@ -67,10 +67,12 @@
             android:layout_height="60dp"
             android:text="📄 DESCARGAR EXCEL COMPLETO"
             android:backgroundTint="#10B981"
-            android:textColor="#000000"
+            android:textColor="@color/white"
             android:textStyle="bold"
             android:textSize="16sp"
-            android:layout_marginBottom="15dp"/>
+            android:layout_marginBottom="15dp"
+            android:background="@drawable/bg_boton_redondeado"
+            />
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_volver_inicio"
@@ -91,7 +93,9 @@
             android:backgroundTint="#EF4444"
             android:textColor="#FFFFFF"
             android:textStyle="bold"
-            android:textSize="16sp"/>
+            android:textSize="16sp"
+            android:background="@drawable/bg_boton_redondeado"
+            />
 
     </LinearLayout>
 </ScrollView>
