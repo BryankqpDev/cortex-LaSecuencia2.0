@@ -72,6 +72,8 @@
         android:text="🛑 FRENAR"
         android:textSize="30sp"
         android:textStyle="bold"
+        android:textColor="@color/white"
+        android:background="@drawable/bg_boton_redondeado"
         android:backgroundTint="#EF4444"
         android:layout_margin="20dp"
         app:layout_constraintBottom_toBottomOf="parent"

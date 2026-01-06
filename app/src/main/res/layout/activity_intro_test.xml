@@ -11,13 +11,14 @@
         android:layout_height="wrap_content"
         android:padding="20dp">
 
-        <!-- Briefing Card (igual que Welcome) -->
         <androidx.cardview.widget.CardView
             android:id="@+id/briefing_card"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:layout_marginEnd="20dp"
+            android:layout_marginTop="60dp"
+            android:layout_marginBottom="60dp"
             app:cardBackgroundColor="@color/cortex_card_bg"
             app:cardCornerRadius="20dp"
             app:cardElevation="0dp"
@@ -26,9 +27,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:layout_marginTop="60dp"
-            android:layout_marginBottom="60dp">
+            app:layout_constraintBottom_toBottomOf="parent">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -37,59 +36,72 @@
                 android:padding="25dp"
                 android:gravity="center">
 
-                <!-- Icon -->
                 <TextView
                     android:id="@+id/intro_icon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🧠"
+                    android:text="⚡"
+                    android:textColor="@color/cortex_primary"
                     android:textSize="48sp"
                     android:layout_marginBottom="10dp" />
 
-                <!-- Title -->
                 <TextView
                     android:id="@+id/intro_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1. REFLEJOS"
+                    android:text="@string/t1_title"
                     android:textColor="@color/cortex_text_primary"
                     android:textSize="22sp"
                     android:textStyle="bold"
                     android:gravity="center"
-                    android:layout_marginBottom="10dp" />
+                    android:layout_marginBottom="15dp" />
 
-                <!-- Demo Box (placeholder visual) -->
-                <View
-                    android:id="@+id/intro_demo"
+                <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
                     android:background="@drawable/bg_demo_box"
-                    android:layout_marginBottom="20dp" />
+                    android:layout_marginBottom="25dp">
 
-                <!-- Description -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⚡"
+                        android:textColor="#FFFFFF"
+                        android:textSize="24sp"
+                        android:layout_gravity="center"/>
+                </FrameLayout>
+
                 <TextView
-                    android:id="@+id/intro_desc"
+                    android:id="@+id/desc_analysis"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Descripción del test..."
+                    android:text="@string/t1_analysis"
+                    android:textColor="@color/cortex_text_primary"
+                    android:textSize="14sp"
+                    android:gravity="start"
+                    android:layout_marginBottom="15dp" />
+
+                <TextView
+                    android:id="@+id/desc_mission"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/t1_mission"
                     android:textColor="@color/cortex_text_primary"
                     android:textSize="14sp"
                     android:lineSpacingExtra="4dp"
                     android:gravity="start"
-                    android:layout_marginBottom="20dp"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp" />
+                    android:layout_marginBottom="25dp" />
 
-                <!-- Button -->
                 <Button
                     android:id="@+id/btn_entendido"
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
-                    android:text="¡ENTENDIDO! 👍"
+                    android:text="@string/btn_entendido_ok"
                     android:textColor="@color/cortex_text_primary"
-                    android:backgroundTint="@color/cortex_primary"
                     android:textStyle="bold"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    android:background="@drawable/bg_boton_redondeado"
+                    />
 
             </LinearLayout>
 

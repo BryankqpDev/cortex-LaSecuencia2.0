@@ -76,7 +76,7 @@ class AnticipacionTestActivity : AppCompatActivity() {
         val anchoVehiculo = vehiculo.width.toFloat()
         vehiculo.translationX = 0f
 
-        duracionAnimacionActual = (1200 + Random.nextFloat() * 800).toLong()
+        duracionAnimacionActual = (600 + Random.nextFloat() * 400).toLong()
 
         animador = ObjectAnimator.ofFloat(vehiculo, "translationX", 0f, anchoPista - anchoVehiculo).apply {
             duration = duracionAnimacionActual
