@@ -106,6 +106,7 @@
             android:textColor="#FFFFFF"
             android:paddingStart="15dp"
             android:inputType="number"
+            android:maxLength="8"
             android:layout_marginBottom="15dp"/>
 
         <TextView

@@ -15,6 +15,7 @@ import com.example.Cortex_LaSecuencia.R
 import com.example.Cortex_LaSecuencia.utils.AudioManager
 import com.example.Cortex_LaSecuencia.utils.PDFGenerator
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 
 class ReporteFinalActivity : AppCompatActivity() {
 
@@ -22,17 +23,17 @@ class ReporteFinalActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_reporte_final)
 
+        // === INICIALIZAR COMPONENTES ===
         val txtIcono = findViewById<TextView>(R.id.txt_icono_estado)
         val txtPuntaje = findViewById<TextView>(R.id.txt_puntaje_global)
         val txtEstado = findViewById<TextView>(R.id.txt_estado_texto)
         val txtMensaje = findViewById<TextView>(R.id.txt_mensaje_feedback)
         val containerResultados = findViewById<LinearLayout>(R.id.container_resultados)
         val btnReiniciar = findViewById<Button>(R.id.btn_reiniciar)
+        val btnDescargarPDF = findViewById<Button>(R.id.btn_descargar_pdf) // NUEVO
 
-        // 1. Obtener Datos
+        // === OBTENER RESULTADOS ===
         val resultados = CortexManager.obtenerResultados()
-
-        // Diccionario para traducir códigos (t1-t10) a nombres bonitos
         val nombresPruebas = mapOf(
             "t1" to "Reflejos",
             "t2" to "Memoria",
@@ -46,132 +47,220 @@ class ReporteFinalActivity : AppCompatActivity() {
             "t10" to "Decisión"
         )
 
+        // === CALCULAR PROMEDIO ===
         var sumaNotas = 0
-        var totalTests = 0
-
-        // 2. Llenar la lista dinámicamente
-        // Ordenamos por clave (t1, t2, t3...) para que salgan en orden
         resultados.toSortedMap().forEach { (key, nota) ->
             sumaNotas += nota
-            totalTests++
-
-            val nombreReal = nombresPruebas[key] ?: key.uppercase()
-            agregarFila(containerResultados, nombreReal, nota)
+            agregarFila(containerResultados, nombresPruebas[key] ?: key.uppercase(), nota)
         }
 
-        // 3. Calcular Promedio
-        val promedio = if (totalTests > 0) sumaNotas / totalTests else 0
+        val promedio = if (resultados.isNotEmpty()) sumaNotas / resultados.size else 0
         txtPuntaje.text = "$promedio%"
 
-        // 4. Lógica de Aprobación (Threshold: 75%)
+        // === DETERMINAR SI ES APTO ===
         val esApto = promedio >= 75
-        val nombreUsuario = CortexManager.operadorActual?.nombre ?: "OPERADOR"
-        val primerNombre = nombreUsuario.split(" ")[0] // Solo el primer nombre
+        val nombreUsuario = CortexManager.operadorActual?.nombre?.split(" ")?.get(0) ?: "OPERADOR"
 
-        // Registrar evaluación en historial
+        // Registrar en historial
         CortexManager.registrarEvaluacion(promedio, esApto)
 
+        // === CONFIGURAR UI SEGÚN RESULTADO ===
         if (esApto) {
-            // --- CASO APTO ---
+            // ✅ APTO
             txtIcono.text = "😎✅"
             txtEstado.text = "APTO"
-            txtEstado.setTextColor(Color.parseColor("#10B981")) // Verde
+            txtEstado.setTextColor(Color.parseColor("#10B981"))
             txtPuntaje.setTextColor(Color.parseColor("#10B981"))
-            txtMensaje.text = "¡Bien hecho, $primerNombre! ❤️\nTU FAMILIA TE ESPERA EN CASA."
-
+            txtMensaje.text = "¡Bien hecho, $nombreUsuario! ❤️\nTU FAMILIA TE ESPERA EN CASA."
             btnReiniciar.isEnabled = true
-            btnReiniciar.background.setTint(Color.parseColor("#2563EB")) // Azul
-            
-            // Hablar resultado (como en HTML)
+            btnReiniciar.background.setTint(Color.parseColor("#2563EB"))
             AudioManager.hablar("Felicidades. Maneje con cuidado. Su familia lo espera.")
         } else {
-            // --- CASO NO APTO ---
+            // ❌ NO APTO
             txtIcono.text = "😴🚫"
             txtEstado.text = "NO APTO"
-            txtEstado.setTextColor(Color.parseColor("#EF4444")) // Rojo
+            txtEstado.setTextColor(Color.parseColor("#EF4444"))
             txtPuntaje.setTextColor(Color.parseColor("#EF4444"))
-            txtMensaje.text = "Hola $primerNombre. Parece que no descansaste bien.\nSISTEMA BLOQUEADO (24H)."
-
-            // Bloqueo real (24h)
+            txtMensaje.text = "Hola $nombreUsuario. Parece que no descansaste bien.\nSISTEMA BLOQUEADO (24H)."
             CortexManager.bloquearSistema(this)
             btnReiniciar.text = "DESBLOQUEO DE SUPERVISOR 🔒"
-            btnReiniciar.background.setTint(Color.parseColor("#334155")) // Gris oscuro
-            
-            // Hablar resultado (como en HTML)
+            btnReiniciar.background.setTint(Color.parseColor("#334155"))
             AudioManager.hablar("Lo siento. No cumple con el estándar de seguridad. Sistema bloqueado.")
         }
 
-        // Generar PDF automáticamente (como en HTML: genPDF se llama automáticamente)
-        try {
-            val operador = CortexManager.operadorActual
-            if (operador != null) {
-                val pdfFile = PDFGenerator.generarPDF(this, operador, resultados)
-                Toast.makeText(this, "PDF generado: ${pdfFile.name}", Toast.LENGTH_SHORT).show()
-            }
-        } catch (e: Exception) {
-            Toast.makeText(this, "Error al generar PDF: ${e.message}", Toast.LENGTH_SHORT).show()
+        // === GENERAR PDF AUTOMÁTICAMENTE ===
+        generarPDFAutomatico(resultados)
+
+        // === BOTÓN: DESCARGAR PDF MANUALMENTE ===
+        btnDescargarPDF.setOnClickListener {
+            generarPDFManual(resultados)
         }
 
-        // 5. Botón de Reinicio / Desbloqueo
+        // === BOTÓN: REINICIAR / DESBLOQUEAR ===
         btnReiniciar.setOnClickListener {
             if (!esApto) {
-                // Desbloqueo de supervisor
-                val codigo = android.widget.EditText(this).apply {
-                    inputType = android.text.InputType.TYPE_CLASS_NUMBER
-                    hint = "Código (1007)"
-                }
-                androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setTitle("DESBLOQUEO DE SUPERVISOR")
-                    .setView(codigo)
-                    .setPositiveButton("DESBLOQUEAR") { _, _ ->
-                        if (CortexManager.verificarCodigoSupervisor(codigo.text.toString())) {
-                            CortexManager.desbloquearSistema(this)
-                            Toast.makeText(this, "BLOQUEO LEVANTADO", Toast.LENGTH_SHORT).show()
-                            CortexManager.resetearEvaluacion()
-                            val intent = Intent(this, MainActivity::class.java)
-                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            startActivity(intent)
-                            finish()
-                        } else {
-                            Toast.makeText(this, "CÓDIGO INCORRECTO", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    .setNegativeButton("CANCELAR", null)
-                    .show()
+                mostrarDialogoDesbloqueo()
             } else {
-                // Reinicio normal
-                CortexManager.resetearEvaluacion()
-                val intent = Intent(this, MainActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
-                finish()
+                reiniciarApp()
             }
         }
     }
 
-    // Función auxiliar para crear filas visuales (Nombre ....... 100%)
+    /**
+     * Generar PDF automáticamente al mostrar resultados
+     */
+    private fun generarPDFAutomatico(resultados: Map<String, Int>) {
+        try {
+            CortexManager.operadorActual?.let { operador ->
+                val pdfFile = PDFGenerator.generarPDF(
+                    context = this,
+                    operador = operador,
+                    resultados = resultados,
+                    fotoBitmap = null // Puedes capturar foto si tienes
+                )
+
+                if (pdfFile != null) {
+                    Toast.makeText(
+                        this,
+                        "✅ PDF generado automáticamente\nGuardado en: Descargas",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } ?: run {
+                Toast.makeText(
+                    this,
+                    "⚠️ Error: No hay datos del operador",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(
+                this,
+                "❌ Error al generar PDF: ${e.message}",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    /**
+     * Generar PDF manualmente cuando el usuario presiona el botón
+     */
+    private fun generarPDFManual(resultados: Map<String, Int>) {
+        try {
+            CortexManager.operadorActual?.let { operador ->
+                val pdfFile = PDFGenerator.generarPDF(
+                    context = this,
+                    operador = operador,
+                    resultados = resultados,
+                    fotoBitmap = null
+                )
+
+                if (pdfFile != null) {
+                    // Mostrar diálogo con información
+                    AlertDialog.Builder(this)
+                        .setTitle("✅ PDF Generado")
+                        .setMessage(
+                            "Archivo: ${pdfFile.name}\n\n" +
+                                    "Ubicación: Descargas\n\n" +
+                                    "El PDF contiene el reporte completo de la evaluación."
+                        )
+                        .setPositiveButton("ENTENDIDO", null)
+                        .show()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            AlertDialog.Builder(this)
+                .setTitle("❌ Error")
+                .setMessage("No se pudo generar el PDF:\n${e.message}")
+                .setPositiveButton("CERRAR", null)
+                .show()
+        }
+    }
+
+    /**
+     * Mostrar diálogo para desbloqueo de supervisor
+     */
+    private fun mostrarDialogoDesbloqueo() {
+        val inputCodigo = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or
+                    android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            hint = "Código (1007)"
+            gravity = Gravity.CENTER
+        }
+
+        val container = android.widget.FrameLayout(this).apply {
+            val params = android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            params.leftMargin = 50
+            params.rightMargin = 50
+            inputCodigo.layoutParams = params
+            addView(inputCodigo)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("🔓 DESBLOQUEO DE SUPERVISOR")
+            .setMessage("Ingrese código de autorización:")
+            .setView(container)
+            .setPositiveButton("DESBLOQUEAR") { _, _ ->
+                val codigo = inputCodigo.text.toString()
+                if (CortexManager.verificarCodigoSupervisor(codigo)) {
+                    CortexManager.desbloquearSistema(this)
+                    Toast.makeText(this, "✅ BLOQUEO LEVANTADO", Toast.LENGTH_SHORT).show()
+                    AudioManager.hablar("Sistema desbloqueado")
+                    reiniciarApp()
+                } else {
+                    Toast.makeText(this, "❌ CÓDIGO INCORRECTO", Toast.LENGTH_SHORT).show()
+                    AudioManager.hablar("Código incorrecto")
+                }
+            }
+            .setNegativeButton("CANCELAR", null)
+            .show()
+    }
+
+    /**
+     * Reiniciar aplicación
+     */
+    private fun reiniciarApp() {
+        CortexManager.resetearEvaluacion()
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+
+    /**
+     * Agregar fila de resultado a la lista
+     */
     private fun agregarFila(container: LinearLayout, nombre: String, nota: Int) {
-        val row = LinearLayout(this)
-        row.orientation = LinearLayout.HORIZONTAL
-        row.setPadding(0, 16, 0, 16)
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, 16, 0, 16)
+        }
 
-        val txtNombre = TextView(this)
-        txtNombre.text = nombre
-        txtNombre.setTextColor(Color.WHITE)
-        txtNombre.textSize = 16f
-        txtNombre.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        val txtNombre = TextView(this).apply {
+            text = nombre
+            setTextColor(Color.WHITE)
+            textSize = 16f
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+        }
 
-        val txtNota = TextView(this)
-        txtNota.text = "$nota%"
-        txtNota.textSize = 16f
-        txtNota.typeface = Typeface.DEFAULT_BOLD
-        txtNota.gravity = Gravity.END
-
-        // Color de la nota individual
-        if (nota >= 75) {
-            txtNota.setTextColor(Color.parseColor("#10B981")) // Verde
-        } else {
-            txtNota.setTextColor(Color.parseColor("#EF4444")) // Rojo
+        val txtNota = TextView(this).apply {
+            text = "$nota%"
+            textSize = 16f
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.END
+            setTextColor(
+                if (nota >= 75) Color.parseColor("#10B981")
+                else Color.parseColor("#EF4444")
+            )
         }
 
         row.addView(txtNombre)

@@ -16,202 +16,112 @@ import com.example.Cortex_LaSecuencia.actividades.DecisionTestActivity
 import com.example.Cortex_LaSecuencia.actividades.ReporteFinalActivity
 import com.example.Cortex_LaSecuencia.actividades.IntroTestActivity
 
+// --- ✅ NUEVO: CLASE DE DATOS PARA MÉTRICAS DETALLADAS ---
+data class TestMetricLog(
+    val testId: String,
+    val attempt: Int,
+    val score: Int,
+    val timestamp: Long = System.currentTimeMillis(),
+    val details: Map<String, Any> = mapOf()
+)
+
 object CortexManager {
 
     private const val PREFS_NAME = "CortexPrefs"
     private const val KEY_LOCK_UNTIL = "cortex_lock_until"
-    private const val KEY_HISTORIAL = "cortex_historial"
 
-    // Datos del operador actual
     var operadorActual: Operador? = null
 
-    // Mapa para guardar los puntajes (Ej: "t1" -> 100)
+    // Sistema de puntuación principal
     private val resultados = mutableMapOf<String, Int>()
-    
-    // Sistema de intentos (como en HTML: currentAttempt, tempScores)
-    private val intentosPorTest = mutableMapOf<String, Int>() // "t1" -> 1 o 2
-    private val puntajesTemporales = mutableMapOf<String, MutableList<Int>>() // "t1" -> [85, 90]
+    private val intentosPorTest = mutableMapOf<String, Int>()
+    private val puntajesTemporales = mutableMapOf<String, MutableList<Int>>()
 
-    // --- ✅ NUEVO: LISTA PARA EL HISTORIAL GLOBAL (ADMIN) ---
+    // --- ✅ NUEVO: LOG DE RENDIMIENTO DETALLADO ---
+    val performanceLog = mutableListOf<TestMetricLog>()
+    
+    // --- ✅ NUEVO: HISTORIAL GLOBAL PARA ADMIN ---
     val historialGlobal = mutableListOf<RegistroData>()
 
-    // LISTA ORDENADA DE TESTS (10 tests como en HTML)
-    private val listaDeTests = listOf(
-        "t1", // Reflejos
-        "t2", // Memoria Secuencial
-        "t3", // Anticipación
-        "t4", // Coordinación
-        "t5", // Atención
-        "t6", // Escaneo
-        "t7", // Impulso
-        "t8", // Rastreo (MOT)
-        "t9", // Espacial
-        "t10" // Decisión
-    )
+    private val listaDeTests = listOf("t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10")
 
-    // Información de cada test (igual que en HTML)
-    data class TestInfo(
-        val title: String,
-        val icon: String,
-        val desc: String
-    )
+    data class TestInfo(val title: String, val icon: String, val desc: String)
 
     private val testInfos = mapOf(
-        "t1" to TestInfo(
-            title = "1. REFLEJOS",
-            icon = "⚡",
-            desc = "🧠 ANÁLISIS CEREBRAL: Medición de fatiga y vía retino-cortical.\n\n🏁 TU MISIÓN: El botón está GRIS. Espera... Cuando se ponga VERDE 🟩 ¡Presiona al instante! Si tardas, el sistema detecta 'microsueño'."
-        ),
-        "t2" to TestInfo(
-            title = "2. MEMORIA",
-            icon = "🧠",
-            desc = "🧠 ANÁLISIS CEREBRAL: Memoria de trabajo y retención visual.\n\n🏁 TU MISIÓN: Memoriza el patrón de luces que se encienden ✨. Luego toca los mismos cuadros en el mismo orden."
-        ),
-        "t3" to TestInfo(
-            title = "3. ANTICIPACIÓN",
-            icon = "⏱️",
-            desc = "🧠 ANÁLISIS CEREBRAL: Lóbulo Parietal (Cálculo Espacio-Tiempo).\n\n🏁 TU MISIÓN: El camión 🚛 acelerará por la pista. Calcula bien su movimiento y frena 🛑 exactamente cuando esté dentro de la ZONA VERDE."
-        ),
-        "t4" to TestInfo(
-            title = "4. COORDINACIÓN",
-            icon = "🎯",
-            desc = "🧠 ANÁLISIS CEREBRAL: Precisión motora fina y cerebelo.\n\n🏁 TU MISIÓN: Aparecerán bolitas amarillas 🟡. Sé rápido y atrapa exactamente 5 con tu dedo."
-        ),
-        "t5" to TestInfo(
-            title = "5. ATENCIÓN",
-            icon = "👁️",
-            desc = "🧠 ANÁLISIS CEREBRAL: Inhibición de distractores (Stroop).\n\n🏁 TU MISIÓN: ¡Cuidado con la trampa! Mira el COLOR DE LA TINTA 🎨, no leas la palabra. Si dice 'ROJO' pero es verde, presiona VERDE."
-        ),
-        "t6" to TestInfo(
-            title = "6. ESCANEO",
-            icon = "🔍",
-            desc = "🧠 ANÁLISIS CEREBRAL: Búsqueda visual en entornos complejos.\n\n🏁 TU MISIÓN: Te diré un número arriba (ej: 45). Búscalo rápido 🔎 entre todos los números de abajo y tócalo."
-        ),
-        "t7" to TestInfo(
-            title = "7. IMPULSO",
-            icon = "✋",
-            desc = "🧠 ANÁLISIS CEREBRAL: Control de impulsos (Corteza Prefrontal).\n\n🏁 TU MISIÓN:\n💎 AZUL = ¡TOCA!\n❌ NARANJA = ¡NO TOQUES! (Contrólate)."
-        ),
-        "t8" to TestInfo(
-            title = "8. RASTREO",
-            icon = "📍",
-            desc = "🧠 ANÁLISIS CEREBRAL: Conciencia Situacional (MOT).\n\n🏁 TU MISIÓN: Mira las 2 bolitas AZULES 🔵🔵. Se volverán blancas y se mezclarán. Síguelas con la vista 👀. Al final, dime cuáles eran."
-        ),
-        "t9" to TestInfo(
-            title = "9. ESPACIAL",
-            icon = "🧭",
-            desc = "🧠 ANÁLISIS CEREBRAL: Orientación y conflicto direccional.\n\n🏁 TU MISIÓN:\n🟦 Flecha AZUL: Marca su dirección real.\n🟥 Flecha ROJA: ¡Marca la dirección CONTRARIA!"
-        ),
-        "t10" to TestInfo(
-            title = "10. DECISIÓN",
-            icon = "⚖️",
-            desc = "🧠 ANÁLISIS CEREBRAL: Flexibilidad Cognitiva.\n\n🏁 TU MISIÓN: La regla cambia:\n🟦 Si es AZUL = Toca el número MAYOR.\n🟧 Si es NARANJA = Toca el número MENOR."
-        )
+        "t1" to TestInfo("1. REFLEJOS", "⚡", "Medición de fatiga y vía retino-cortical..."),
+        "t2" to TestInfo("2. MEMORIA", "🧠", "Memoria de trabajo y retención visual..."),
+        "t3" to TestInfo("3. ANTICIPACIÓN", "⏱️", "Lóbulo Parietal (Cálculo Espacio-Tiempo)..."),
+        "t4" to TestInfo("4. COORDINACIÓN", "🎯", "Precisión motora fina y cerebelo..."),
+        "t5" to TestInfo("5. ATENCIÓN", "👁️", "Inhibición de distractores (Stroop)..."),
+        "t6" to TestInfo("6. ESCANEO", "🔍", "Búsqueda visual en entornos complejos..."),
+        "t7" to TestInfo("7. IMPULSO", "✋", "Control de impulsos (Corteza Prefrontal)..."),
+        "t8" to TestInfo("8. RASTREO", "📍", "Conciencia Situacional (MOT)..."),
+        "t9" to TestInfo("9. ESPACIAL", "🧭", "Orientación y conflicto direccional..."),
+        "t10" to TestInfo("10. DECISIÓN", "⚖️", "Flexibilidad Cognitiva...")
     )
 
-    fun obtenerInfoTest(testId: String): TestInfo {
-        return testInfos[testId] ?: testInfos["t1"]!!
-    }
+    fun obtenerInfoTest(testId: String): TestInfo = testInfos[testId]!!
 
-    // Función para guardar notas individuales (con sistema de intentos)
+    // --- ✅ NUEVO: FUNCIÓN PARA REGISTRAR MÉTRICAS DETALLADAS ---
+    fun logPerformanceMetric(testId: String, score: Int, details: Map<String, Any>) {
+        val log = TestMetricLog(
+            testId = testId,
+            attempt = obtenerIntentoActual(testId),
+            score = score,
+            details = details
+        )
+        performanceLog.add(log)
+    }
+    
     fun guardarPuntaje(testId: String, puntaje: Int, esPrimerIntento: Boolean = true) {
         val puntajeClamp = puntaje.coerceIn(0, 100)
-        
-        if (esPrimerIntento) {
-            val intentoActual = intentosPorTest[testId] ?: 1
-            
-            if (intentoActual == 1) {
-                // Primer intento
-                if (puntajeClamp >= 95) {
-                    // Excelente, pasa directo (como en HTML)
-                    resultados[testId] = puntajeClamp
-                    intentosPorTest[testId] = 1
-                    puntajesTemporales.remove(testId)
-                } else {
-                    // Necesita segundo intento
-                    puntajesTemporales.getOrPut(testId) { mutableListOf() }.add(puntajeClamp)
-                    intentosPorTest[testId] = 2
-                }
+        val intentoActual = intentosPorTest.getOrPut(testId) { 1 }
+
+        if (intentoActual == 1) {
+            if (puntajeClamp >= 80) { // Umbral de éxito para no repetir
+                resultados[testId] = puntajeClamp
             } else {
-                // Segundo intento - promediar
                 puntajesTemporales.getOrPut(testId) { mutableListOf() }.add(puntajeClamp)
-                val promedio = (puntajesTemporales[testId]!!.sum() / puntajesTemporales[testId]!!.size).coerceIn(0, 100)
-                resultados[testId] = promedio
-                intentosPorTest[testId] = 2
-                puntajesTemporales.remove(testId)
+                intentosPorTest[testId] = 2 // Marcar para segundo intento
             }
         } else {
-            // Guardado directo (sin sistema de intentos)
-            resultados[testId] = puntajeClamp
+            puntajesTemporales.getOrPut(testId) { mutableListOf() }.add(puntajeClamp)
+            val promedio = (puntajesTemporales[testId]!!.sum() / puntajesTemporales[testId]!!.size).coerceIn(0, 100)
+            resultados[testId] = promedio
         }
     }
-    
-    fun obtenerIntentoActual(testId: String): Int {
-        return intentosPorTest[testId] ?: 1
-    }
-    
-    fun obtenerPuntajeTemporal(testId: String): Int? {
-        return puntajesTemporales[testId]?.lastOrNull()
-    }
 
-    fun obtenerResultados(): Map<String, Int> {
-        return resultados
-    }
+    fun obtenerIntentoActual(testId: String): Int = intentosPorTest.getOrPut(testId) { 1 }
 
-    // --- ✅ NUEVO: FUNCIÓN PARA GUARDAR EN LA BASE DE DATOS (HISTORIAL) ---
+    fun obtenerResultados(): Map<String, Int> = resultados
+
     fun registrarEvaluacion(notaFinal: Int, esApto: Boolean) {
-        operadorActual?.let { op ->
-            val estadoTexto = if (esApto) "APTO" else "NO APTO"
-
-            // Creamos el registro con todos los datos
-            val nuevoRegistro = RegistroData(
-                fecha = op.fecha,
-                hora = op.hora,
-                supervisor = op.supervisor,
-                nombre = op.nombre,
-                dni = op.dni,
-                equipo = op.equipo,
-                nota = notaFinal,
-                estado = estadoTexto
-            )
-
-            // Lo guardamos en la lista global
-            historialGlobal.add(nuevoRegistro)
+        operadorActual?.let {
+            val reg = RegistroData(it.fecha, it.hora, it.supervisor, it.nombre, it.dni, it.equipo, notaFinal, if (esApto) "APTO" else "NO APTO")
+            historialGlobal.add(reg)
         }
     }
 
-    // --- LÓGICA DE NAVEGACIÓN INTELIGENTE ---
     fun navegarAlSiguiente(context: Context) {
-        var ultimoIndiceCompletado = -1
-
-        for (i in listaDeTests.indices) {
-            val idTest = listaDeTests[i]
-            if (resultados.containsKey(idTest)) {
-                ultimoIndiceCompletado = i
-            }
-        }
-
-        val siguienteIndice = ultimoIndiceCompletado + 1
-
-        if (siguienteIndice < listaDeTests.size) {
-            val siguienteTestId = listaDeTests[siguienteIndice]
-            
-            // Navegar primero a IntroTestActivity (como en HTML: prepTest)
+        val ultimoCompletado = listaDeTests.lastOrNull { resultados.containsKey(it) }
+        val indiceUltimo = if (ultimoCompletado == null) -1 else listaDeTests.indexOf(ultimoCompletado)
+        
+        val proximoTestId = if (indiceUltimo + 1 < listaDeTests.size) listaDeTests[indiceUltimo + 1] else null
+        
+        if (proximoTestId != null) {
             val intent = Intent(context, IntroTestActivity::class.java)
-            intent.putExtra("TEST_ID", siguienteTestId)
+            intent.putExtra("TEST_ID", proximoTestId)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             context.startActivity(intent)
         } else {
-            // FIN DE TODO -> IR AL REPORTE FINAL
             val intent = Intent(context, ReporteFinalActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             context.startActivity(intent)
         }
     }
 
-    // Obtener Intent del test correspondiente (usado desde IntroTestActivity)
     fun obtenerIntentTest(context: Context, testId: String): Intent? {
-        val intent = when (testId) {
+        return when (testId) {
             "t1" -> Intent(context, ReflejosTestActivity::class.java)
             "t2" -> Intent(context, SecuenciaTestActivity::class.java)
             "t3" -> Intent(context, AnticipacionTestActivity::class.java)
@@ -224,82 +134,36 @@ object CortexManager {
             "t10" -> Intent(context, DecisionTestActivity::class.java)
             else -> null
         }
-        return intent
     }
 
-    // Limpia todo para un nuevo operador
     fun resetearEvaluacion() {
         resultados.clear()
         intentosPorTest.clear()
         puntajesTemporales.clear()
+        performanceLog.clear() // Limpiar el nuevo log
         operadorActual = null
     }
 
-    // --- SISTEMA DE BLOQUEO (24h) ---
-    // Variable estática para contexto de aplicación (se inicializa en SplashActivity)
+    // --- Lógica de bloqueo (sin cambios) ---
     private var appContext: Context? = null
-
-    fun inicializarContexto(context: Context) {
-        appContext = context.applicationContext
-    }
-
+    fun inicializarContexto(context: Context) { appContext = context.applicationContext }
     fun estaBloqueado(): Boolean {
-        val context = appContext ?: return false
-        val prefs = getSharedPreferences(context)
-        val lockUntil = prefs.getLong(KEY_LOCK_UNTIL, 0)
+        val lockUntil = appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)?.getLong(KEY_LOCK_UNTIL, 0) ?: 0
         return lockUntil > System.currentTimeMillis()
     }
-
-    fun obtenerTiempoDesbloqueo(): Long {
-        val context = appContext ?: return 0
-        val prefs = getSharedPreferences(context)
-        return prefs.getLong(KEY_LOCK_UNTIL, 0)
-    }
-
+    fun obtenerTiempoDesbloqueo(): Long = appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)?.getLong(KEY_LOCK_UNTIL, 0) ?: 0
     fun bloquearSistema(context: Context) {
-        val prefs = getSharedPreferences(context)
-        val unlockTime = System.currentTimeMillis() + (24 * 60 * 60 * 1000) // 24 horas
-        prefs.edit().putLong(KEY_LOCK_UNTIL, unlockTime).apply()
+        val unlockTime = System.currentTimeMillis() + 24 * 60 * 60 * 1000
+        appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)?.edit()?.putLong(KEY_LOCK_UNTIL, unlockTime)?.apply()
     }
-
     fun desbloquearSistema(context: Context) {
-        val prefs = getSharedPreferences(context)
-        prefs.edit().remove(KEY_LOCK_UNTIL).apply()
+        appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)?.edit()?.remove(KEY_LOCK_UNTIL)?.apply()
     }
-
-    fun verificarCodigoSupervisor(codigo: String): Boolean {
-        return codigo == "1007"
-    }
-
-    private fun getSharedPreferences(context: Context): SharedPreferences {
-        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    }
-
-    // --- PERSISTENCIA DE HISTORIAL ---
-    fun cargarHistorial(context: Context) {
-        val prefs = getSharedPreferences(context)
-        val historialJson = prefs.getString(KEY_HISTORIAL, null)
-        if (historialJson != null) {
-            // TODO: Implementar deserialización JSON si es necesario
-            // Por ahora mantenemos en memoria
-        }
-    }
-
-    fun guardarHistorial(context: Context) {
-        val prefs = getSharedPreferences(context)
-        // TODO: Implementar serialización JSON si es necesario
-        // Por ahora mantenemos en memoria
-    }
+    fun verificarCodigoSupervisor(codigo: String): Boolean = codigo == "1007"
 }
 
-// --- ✅ NUEVO: LA CLASE DE DATOS PARA LA TABLA ---
 data class RegistroData(
-    val fecha: String,
-    val hora: String,
-    val supervisor: String,
-    val nombre: String,
-    val dni: String,
-    val equipo: String,
-    val nota: Int,
-    val estado: String
+    val fecha: String, val hora: String, val supervisor: String,
+    val nombre: String, val dni: String, val equipo: String,
+    val nota: Int, val estado: String
 )

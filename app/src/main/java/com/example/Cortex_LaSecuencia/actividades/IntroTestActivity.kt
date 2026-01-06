@@ -1,6 +1,7 @@
 package com.example.Cortex_LaSecuencia.actividades
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
@@ -12,27 +13,34 @@ import com.example.Cortex_LaSecuencia.utils.AudioManager.TipoSonido
 
 class IntroTestActivity : AppCompatActivity() {
 
+    private lateinit var btnEntendido: Button
+    private lateinit var txtDesc: TextView
+    private lateinit var testId: String
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_intro_test)
 
-        val testId = intent.getStringExtra("TEST_ID") ?: "t1"
+        testId = intent.getStringExtra("TEST_ID") ?: "t1"
         val testInfo = CortexManager.obtenerInfoTest(testId)
 
         val txtIcon = findViewById<TextView>(R.id.intro_icon)
         val txtTitle = findViewById<TextView>(R.id.intro_title)
-        val txtDesc = findViewById<TextView>(R.id.intro_desc)
-        val btnEntendido = findViewById<Button>(R.id.btn_entendido)
+        txtDesc = findViewById(R.id.intro_desc)
+        btnEntendido = findViewById(R.id.btn_entendido)
 
-        // Configurar icono (usando emojis como en HTML)
+        // --- LÓGICA SIMPLIFICADA ---
         txtIcon.text = testInfo.icon
         txtTitle.text = testInfo.title
         txtDesc.text = testInfo.desc
-
-        // Hablar descripción (como en HTML: speak)
         AudioManager.hablar("${testInfo.title}. ${testInfo.desc}")
+        // --- FIN LÓGICA SIMPLIFICADA ---
 
-        // Botón "¡ENTENDIDO!" - navega al test correspondiente
+        // Lógica específica para la orientación del Test 3
+        if (testId == "t3") {
+            verificarOrientacionParaT3()
+        }
+
         btnEntendido.setOnClickListener {
             AudioManager.reproducirSonido(TipoSonido.CLICK)
             AudioManager.hablar("") // Cancelar TTS anterior
@@ -43,5 +51,26 @@ class IntroTestActivity : AppCompatActivity() {
             }
         }
     }
-}
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (this::testId.isInitialized && testId == "t3") {
+            verificarOrientacionParaT3()
+        }
+    }
+
+    private fun verificarOrientacionParaT3() {
+        val testInfo = CortexManager.obtenerInfoTest("t3")
+        val orientationWarning = "\n\n⚠️ ¡GIRA EL DISPOSITIVO EN HORIZONTAL PARA CONTINUAR!"
+
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            btnEntendido.isEnabled = true
+            btnEntendido.text = "¡ENTENDIDO! 👍"
+            txtDesc.text = testInfo.desc // Restaurar descripción original
+        } else {
+            btnEntendido.isEnabled = false
+            btnEntendido.text = "BLOQUEADO (GIRAR)"
+            txtDesc.text = testInfo.desc + orientationWarning
+        }
+    }
+}

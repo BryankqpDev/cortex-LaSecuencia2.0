@@ -3,12 +3,10 @@ package com.example.Cortex_LaSecuencia.actividades
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
-import android.view.View
 import android.widget.GridLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
 import kotlin.random.Random
@@ -21,6 +19,8 @@ class EscaneoTestActivity : AppCompatActivity() {
     private var numeroObjetivo = 0
     private var tiempoInicio: Long = 0
     private var juegoActivo = true
+    private var clicsErroneos = 0
+    private var intentoActual = 1 // Variable para controlar el intento
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,62 +29,50 @@ class EscaneoTestActivity : AppCompatActivity() {
         txtObjetivo = findViewById(R.id.txt_objetivo)
         gridNumeros = findViewById(R.id.grid_numeros)
 
+        // Obtenemos el intento (1 o 2)
+        intentoActual = CortexManager.obtenerIntentoActual("t6")
+
+        // Opcional: Mostrar el intento en la barra de título o agregar un TextView
+        title = "ESCANEO VISUAL - INTENTO $intentoActual/2"
+
         iniciarPrueba()
     }
 
     private fun iniciarPrueba() {
-        // 1. Definir el objetivo (10 a 99)
         numeroObjetivo = Random.nextInt(10, 100)
+
+        // Mostramos el objetivo. Si quieres, puedes concatenar el intento aquí también si no tienes otro lugar
         txtObjetivo.text = numeroObjetivo.toString()
 
-        // 2. Preparar la lista de números (1 objetivo + 15 distractores)
-        val listaNumeros = mutableListOf<Int>()
-        listaNumeros.add(numeroObjetivo)
-
+        val listaNumeros = mutableListOf(numeroObjetivo)
         while (listaNumeros.size < 16) {
             val distractor = Random.nextInt(10, 100)
-            // Evitar duplicar el objetivo en los distractores
-            if (distractor != numeroObjetivo) {
-                listaNumeros.add(distractor)
-            }
+            if (distractor != numeroObjetivo) listaNumeros.add(distractor)
         }
-
-        // Mezclar para que el objetivo aparezca en cualquier lugar
         listaNumeros.shuffle()
 
-        // 3. Llenar la cuadrícula visualmente
         llenarGrid(listaNumeros)
-
-        // 4. Iniciar cronómetro
         tiempoInicio = System.currentTimeMillis()
     }
 
     private fun llenarGrid(numeros: List<Int>) {
         gridNumeros.removeAllViews()
-
         for (num in numeros) {
-            val celda = TextView(this)
-
-            // Estilo visual de cada celda (replicando el CSS .cell)
-            val params = GridLayout.LayoutParams()
-            params.width = 0
-            params.height = 0
-            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-            params.rowSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-            params.setMargins(8, 8, 8, 8) // Gap entre celdas
-
-            celda.layoutParams = params
-            celda.text = num.toString()
-            celda.textSize = 24f
-            celda.setTextColor(Color.WHITE)
-            celda.gravity = Gravity.CENTER
-            celda.setBackgroundColor(Color.parseColor("#1E293B")) // Fondo oscuro azulado
-
-            // Evento de clic
-            celda.setOnClickListener {
-                verificarSeleccion(celda, num)
+            val celda = TextView(this).apply {
+                layoutParams = GridLayout.LayoutParams().apply {
+                    width = 0
+                    height = 0
+                    columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                    rowSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                    setMargins(8, 8, 8, 8)
+                }
+                text = num.toString()
+                textSize = 24f
+                setTextColor(Color.WHITE)
+                gravity = Gravity.CENTER
+                setBackgroundColor(Color.parseColor("#1E293B"))
+                setOnClickListener { verificarSeleccion(this, num) }
             }
-
             gridNumeros.addView(celda)
         }
     }
@@ -93,53 +81,76 @@ class EscaneoTestActivity : AppCompatActivity() {
         if (!juegoActivo) return
 
         if (numeroSeleccionado == numeroObjetivo) {
-            // ¡CORRECTO!
             juegoActivo = false
             vista.setBackgroundColor(Color.parseColor("#10B981")) // Verde
             vista.setTextColor(Color.BLACK)
-
             calcularPuntajeYFinalizar()
         } else {
-            // ERROR (Distractor)
-            // Solo feedback visual, no termina el juego (el usuario debe seguir buscando)
+            clicsErroneos++
             vista.setBackgroundColor(Color.parseColor("#EF4444")) // Rojo
-            vista.alpha = 0.5f
+            vista.alpha = 0.5f // Desvanecer error
         }
     }
 
     private fun calcularPuntajeYFinalizar() {
-        val tiempoFinal = System.currentTimeMillis()
-        val duracion = tiempoFinal - tiempoInicio
+        val duracion = System.currentTimeMillis() - tiempoInicio
 
-        // Fórmula de tu HTML: Math.round(100-((Date.now()-st-1500)/50))
-        // Base: 1500ms (1.5s). Por cada 50ms extra, baja 1 punto.
-        var puntaje = 100
-        if (duracion > 1500) {
-            val penalizacion = ((duracion - 1500) / 50).toInt()
-            puntaje = 100 - penalizacion
-        }
+        // 1. Penalización por Tiempo:
+        // Base: 2000ms (2s) es aceptable. Por cada 50ms extra, baja 1 punto.
+        val penalizacionTiempo = if (duracion > 2000) ((duracion - 2000) / 50).toInt() else 0
 
-        // Límites (0 a 100)
-        if (puntaje < 0) puntaje = 0
-        if (puntaje > 100) puntaje = 100
+        // 2. Penalización por Errores:
+        // Cada error resta 10 puntos (para evitar adivinanzas)
+        val penalizacionErrores = clicsErroneos * 10
 
-        finalizarActivity(puntaje, duracion)
-    }
+        val puntaje = (100 - penalizacionTiempo - penalizacionErrores).coerceIn(0, 100)
 
-    private fun finalizarActivity(puntaje: Int, tiempoMs: Long) {
-        if (isFinishing) return
-
+        // Registro de métricas
+        val details = mapOf(
+            "tiempo_total_ms" to duracion,
+            "clics_erroneos" to clicsErroneos
+        )
+        CortexManager.logPerformanceMetric("t6", puntaje, details)
         CortexManager.guardarPuntaje("t6", puntaje)
 
-        val mensaje = if (puntaje >= 75) "¡Velocidad Óptima!" else "Reacción lenta."
+        // --- LÓGICA DE EXONERACIÓN ---
+        if (intentoActual == 1 && puntaje < 80) {
+            // Reprobó intento 1 -> Manda repetir
+            mostrarDialogoFin(puntaje, duracion, esReintento = true)
+        } else {
+            // Aprobó intento 1 O es intento 2 -> Siguiente
+            mostrarDialogoFin(puntaje, duracion, esReintento = false)
+        }
+    }
+
+    private fun mostrarDialogoFin(puntaje: Int, tiempoMs: Long, esReintento: Boolean) {
+        if (isFinishing) return
+
+        val titulo: String
+        val mensaje: String
+        val textoBoton: String
+
+        if (esReintento) {
+            titulo = "INTENTO FALLIDO ⚠️"
+            mensaje = "Tiempo: ${tiempoMs}ms\nErrores: $clicsErroneos\nNota: $puntaje%\n\nNecesitas ser más rápido y preciso. Tienes un segundo intento."
+            textoBoton = "INTENTO 2"
+        } else {
+            titulo = if (puntaje >= 80) "ESCANEO ÓPTIMO ✅" else "TEST FINALIZADO"
+            mensaje = "Tiempo Final: ${tiempoMs}ms\nErrores: $clicsErroneos\nNota Final: $puntaje%"
+            textoBoton = "SIGUIENTE TEST"
+        }
 
         AlertDialog.Builder(this)
-            .setTitle("ESCANEO COMPLETADO")
-            .setMessage("Tiempo: ${tiempoMs}ms\nNota: $puntaje%\n$mensaje")
+            .setTitle(titulo)
+            .setMessage(mensaje)
             .setCancelable(false)
-            .setPositiveButton("SIGUIENTE") { _, _ ->
-                CortexManager.navegarAlSiguiente(this)
-                finish()
+            .setPositiveButton(textoBoton) { _, _ ->
+                if (esReintento) {
+                    recreate() // Recarga la actividad para el segundo intento
+                } else {
+                    CortexManager.navegarAlSiguiente(this)
+                    finish()
+                }
             }
             .show()
     }

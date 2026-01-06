@@ -74,4 +74,7 @@ dependencies {
     implementation("com.itextpdf:itext7-core:7.2.5")
     // Google Fonts
     implementation("androidx.compose.ui:ui-text-google-fonts:1.5.4")
+    // iTextPDF para generar PDFs
+    implementation("com.itextpdf:itextg:5.5.10")
+// ... tus otras dependencias
 }

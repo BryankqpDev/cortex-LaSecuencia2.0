@@ -1,9 +1,7 @@
 package com.example.Cortex_LaSecuencia.actividades
 
-import android.graphics.Color
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.CountDownTimer
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
@@ -15,22 +13,19 @@ import java.util.Random
 
 class CoordinacionTestActivity : AppCompatActivity() {
 
+    // Referencias UI
     private lateinit var containerJuego: FrameLayout
     private lateinit var txtContador: TextView
+    private lateinit var lblIntento: TextView
 
-    private var puntosAtrapados = 0
-    private val META_PUNTOS = 5
+    // Variables del juego
+    private var hitsCount = 0
+    private val TARGET_HITS = 5
+    private var startTime: Long = 0
+    private var gameStarted = false
+    private var intentoActual = 1
 
     private val random = Random()
-    private var juegoActivo = true
-    private val handler = Handler(Looper.getMainLooper())
-
-    // Keys para guardar la velocidad dentro de cada vista
-    private val TAG_VX = R.id.tag_vx_key // Necesitaremos definir esto en resources
-    private val TAG_VY = R.id.tag_vy_key // Necesitaremos definir esto en resources
-
-    // Velocidad base (pixeles por frame)
-    private val VELOCIDAD_BASE = 15f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,163 +33,144 @@ class CoordinacionTestActivity : AppCompatActivity() {
 
         containerJuego = findViewById(R.id.container_juego)
         txtContador = findViewById(R.id.txt_contador)
+        lblIntento = findViewById(R.id.lbl_t10)
 
-        txtContador.text = "¡ATRAPA 5 AMARILLAS! (Rebotan)"
+        intentoActual = CortexManager.obtenerIntentoActual("t4")
+        lblIntento.text = "INTENTO $intentoActual/2"
 
-        // Iniciar el juego después de 1 segundo
-        handler.postDelayed({
-            iniciarGenerador()
-            iniciarMotorFisica()
-        }, 1000)
+        containerJuego.post { startTest() }
     }
 
-    // --- 1. GENERADOR DE BOLITAS (El que las crea) ---
-    private fun iniciarGenerador() {
-        val generador = object : Runnable {
-            override fun run() {
-                if (juegoActivo && !isFinishing) {
-                    spawnearEntidadRebotante()
-                    // Aparece una nueva cada 800ms (ajústalo según dificultad)
-                    handler.postDelayed(this, 800)
-                }
+    private fun startTest() {
+        hitsCount = 0
+        gameStarted = false
+        containerJuego.removeAllViews()
+        lblIntento.text = "INTENTO $intentoActual/2"
+        txtContador.text = "PREPÁRATE..."
+
+        object : CountDownTimer(4000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val segundos = millisUntilFinished / 1000
+                txtContador.text = if (segundos > 0) "Comienza en... $segundos" else "¡YA!"
             }
+
+            override fun onFinish() {
+                gameStarted = true
+                startTime = System.currentTimeMillis()
+                updateProgressText()
+                spawnDot()
+            }
+        }.start()
+    }
+
+    private fun spawnDot() {
+        if (!gameStarted || hitsCount >= TARGET_HITS) return
+
+        val areaWidth = containerJuego.width
+        val areaHeight = containerJuego.height
+
+        if (areaWidth == 0 || areaHeight == 0) {
+            containerJuego.post { spawnDot() }
+            return
         }
-        handler.post(generador)
-    }
 
-    // --- 2. MOTOR DE FÍSICA (El que las mueve y hace rebotar) ---
-    private fun iniciarMotorFisica() {
-        val physicsLoop = object : Runnable {
-            override fun run() {
-                if (!juegoActivo) return
-                actualizarPosicionesYRebotes()
-                // Ejecutar esto aprox 60 veces por segundo (cada 16ms)
-                handler.postDelayed(this, 16)
+        val dotSizePx = (50 * resources.displayMetrics.density).toInt()
+        val dot = View(this).apply {
+            layoutParams = FrameLayout.LayoutParams(dotSizePx, dotSizePx).apply {
+                leftMargin = random.nextInt((areaWidth - dotSizePx).coerceAtLeast(1))
+                topMargin = random.nextInt((areaHeight - dotSizePx).coerceAtLeast(1))
             }
+            setBackgroundResource(R.drawable.circulo_amarillo)
+            setOnClickListener { onDotClicked(this) }
         }
-        handler.post(physicsLoop)
+        containerJuego.addView(dot)
     }
 
-    private fun actualizarPosicionesYRebotes() {
-        val containerW = containerJuego.width.toFloat()
-        val containerH = containerJuego.height.toFloat()
+    private fun onDotClicked(dot: View) {
+        if (!gameStarted) return
 
-        // Recorremos todas las bolitas que hay en pantalla
-        for (i in 0 until containerJuego.childCount) {
-            val bolita = containerJuego.getChildAt(i)
+        hitsCount++
+        updateProgressText()
+        containerJuego.removeView(dot)
 
-            // Obtenemos sus velocidades actuales (si no tienen, usamos 0)
-            var vx = bolita.getTag(TAG_VX) as? Float ?: 0f
-            var vy = bolita.getTag(TAG_VY) as? Float ?: 0f
-
-            // Calculamos nueva posición
-            var nextX = bolita.x + vx
-            var nextY = bolita.y + vy
-            val size = bolita.width.toFloat()
-
-            // --- LÓGICA DE REBOTE ---
-
-            // Rebote Horizontal (Izquierda / Derecha)
-            if (nextX < 0) {
-                nextX = 0f
-                vx = -vx // Invertir dirección X
-            } else if (nextX + size > containerW) {
-                nextX = containerW - size
-                vx = -vx // Invertir dirección X
-            }
-
-            // Rebote Vertical (Arriba / Abajo)
-            if (nextY < 0) {
-                nextY = 0f
-                vy = -vy // Invertir dirección Y
-            } else if (nextY + size > containerH) {
-                nextY = containerH - size
-                vy = -vy // Invertir dirección Y
-            }
-
-            // Aplicamos la nueva posición y guardamos las nuevas velocidades
-            bolita.x = nextX
-            bolita.y = nextY
-            bolita.setTag(TAG_VX, vx)
-            bolita.setTag(TAG_VY, vy)
-        }
-    }
-
-    private fun spawnearEntidadRebotante() {
-        if (!juegoActivo || containerJuego.width == 0) return
-
-        val view = View(this)
-
-        // Decidir tipo (Amarillo objetivo vs Rojo distractor)
-        val esAmarillo = random.nextInt(100) < 40 // 40% chance amarillo
-        if (esAmarillo) {
-            view.setBackgroundResource(R.drawable.circulo_amarillo)
-            view.tag = "OBJETIVO"
+        if (hitsCount >= TARGET_HITS) {
+            finishAttempt()
         } else {
-            view.setBackgroundResource(R.drawable.circulo_rojo)
-            view.tag = "DISTRACTOR"
-        }
-
-        val sizePx = (55 * resources.displayMetrics.density).toInt()
-        val params = FrameLayout.LayoutParams(sizePx, sizePx)
-        view.layoutParams = params
-
-        // Posición inicial ALEATORIA dentro de la pantalla
-        val maxX = containerJuego.width - sizePx
-        val maxY = containerJuego.height - sizePx
-        view.x = random.nextInt(maxX).toFloat()
-        view.y = random.nextInt(maxY).toFloat()
-
-        // Velocidad inicial ALEATORIA (Dirección y magnitud)
-        // vx va de -VELOCIDAD_BASE a +VELOCIDAD_BASE
-        val vx = (random.nextFloat() * 2 - 1) * VELOCIDAD_BASE
-        val vy = (random.nextFloat() * 2 - 1) * VELOCIDAD_BASE
-
-        // Guardamos la velocidad en la vista para que el motor de física la use
-        view.setTag(TAG_VX, vx)
-        view.setTag(TAG_VY, vy)
-
-        containerJuego.addView(view)
-
-        // Interacción (Tap)
-        view.setOnClickListener {
-            if (view.tag == "OBJETIVO") {
-                puntosAtrapados++
-                txtContador.text = "ATRAPADOS: $puntosAtrapados / $META_PUNTOS"
-                txtContador.setTextColor(Color.GREEN)
-                containerJuego.removeView(view)
-                if (puntosAtrapados >= META_PUNTOS) finalizarJuego()
-            } else {
-                txtContador.text = "¡CUIDADO CON LAS ROJAS!"
-                txtContador.setTextColor(Color.RED)
-                view.alpha = 0.5f
-            }
+            spawnDot()
         }
     }
 
-    private fun finalizarJuego() {
-        if (!juegoActivo) return
-        juegoActivo = false
-        handler.removeCallbacksAndMessages(null) // Detener motor y generador
+    private fun updateProgressText() {
+        lblIntento.text = "INTENTO $intentoActual/2"
+        txtContador.text = "ATRAPADOS: $hitsCount / $TARGET_HITS"
+    }
 
-        CortexManager.guardarPuntaje("t4", 100)
+    // --- AQUÍ ESTÁ LA LÓGICA DE EXONERACIÓN CORREGIDA ---
+    private fun finishAttempt() {
+        gameStarted = false
+        val totalTime = System.currentTimeMillis() - startTime
+        val score = calculateScore(totalTime)
 
-        if (isFinishing) return
+        // Guardado de métricas
+        val details = mapOf("tiempo_total_ms" to totalTime, "velocidad_media" to totalTime/TARGET_HITS)
+        CortexManager.logPerformanceMetric("t4", score, details)
+        CortexManager.guardarPuntaje("t4", score)
+
+        // Lógica de decisión: ¿Repite o Avanza?
+        if (intentoActual == 1 && score < 80) {
+            // Reprobó el primer intento -> REPETIR
+            showFinalDialog(score, totalTime, esReintento = true)
+        } else {
+            // Aprobó (>80) o es el segundo intento -> AVANZAR
+            showFinalDialog(score, totalTime, esReintento = false)
+        }
+    }
+
+    private fun calculateScore(timeMs: Long): Int {
+        // Base: 3000ms (3 segundos) para 5 toques es lo ideal (100 pts)
+        // Penalización: Pierdes 1 punto por cada 50ms extra.
+        // Si tardas 4000ms -> Pierdes 20 pts -> Nota 80 (Límite para aprobar)
+        val baseTime = 3000L
+        if (timeMs <= baseTime) return 100
+        val penalty = ((timeMs - baseTime) / 50).toInt()
+        return (100 - penalty).coerceIn(0, 100)
+    }
+
+    // --- DIALOGO INTELIGENTE QUE MANEJA EL REINTENTO ---
+    private fun showFinalDialog(score: Int, timeMs: Long, esReintento: Boolean) {
+        if (isFinishing) return // Evita errores si la app se cerró
+
+        val titulo: String
+        val mensaje: String
+        val textoBoton: String
+
+        if (esReintento) {
+            titulo = "MUY LENTO ⚠️"
+            mensaje = "Tiempo: ${timeMs}ms\nNota: $score%\n\nNecesitas ser más rápido (mínimo 80%) para aprobar. Tienes un segundo intento."
+            textoBoton = "INTENTO 2"
+        } else {
+            titulo = if(score >= 80) "¡RÁPIDO Y PRECISO! ⚡" else "TEST FINALIZADO"
+            mensaje = "Tiempo: ${timeMs}ms\nNota Final: $score%"
+            textoBoton = "SIGUIENTE TEST"
+        }
 
         AlertDialog.Builder(this)
-            .setTitle("COORDINACIÓN SUPERADA ⚡")
-            .setMessage("Objetivos dinámicos capturados.\nPrueba finalizada.")
+            .setTitle(titulo)
+            .setMessage(mensaje)
             .setCancelable(false)
-            .setPositiveButton("FINALIZAR EVALUACIÓN") { _, _ ->
-                CortexManager.navegarAlSiguiente(this)
-                finish()
+            .setPositiveButton(textoBoton) { _, _ ->
+                if (esReintento) {
+                    recreate() // Reinicia la Activity para el intento 2
+                } else {
+                    CortexManager.navegarAlSiguiente(this) // Se va a la siguiente pantalla
+                    finish()
+                }
             }
             .show()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        juegoActivo = false
-        handler.removeCallbacksAndMessages(null)
+        gameStarted = false
     }
 }
