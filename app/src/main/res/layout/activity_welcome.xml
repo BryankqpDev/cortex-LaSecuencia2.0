@@ -97,8 +97,10 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="⚡"
+                            android:textColor="@color/cortex_primary"
                             android:textSize="24sp"
                             android:layout_marginBottom="5dp" />
+
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -126,6 +128,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="🎯"
+                            android:textColor="@color/cortex_primary"
                             android:textSize="24sp"
                             android:layout_marginBottom="5dp" />
 
@@ -154,6 +157,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="🧠"
+                            android:textColor="@color/cortex_primary"
                             android:textSize="24sp"
                             android:layout_marginBottom="5dp" />
 
@@ -188,10 +192,11 @@
                     android:id="@+id/btn_start_eval"
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
-                    android:text="INICIAR EVALUACIÓN 🚀"
+                    android:text="INICIAR EVALUACIÓN"
                     android:textColor="@color/cortex_text_primary"
                     android:backgroundTint="@color/cortex_primary"
                     android:textStyle="bold"
+                    android:background="@drawable/bg_boton_redondeado"
                     android:textSize="16sp"
                     android:letterSpacing="0.05" />
 
