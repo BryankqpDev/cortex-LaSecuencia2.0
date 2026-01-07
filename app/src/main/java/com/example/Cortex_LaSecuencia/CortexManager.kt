@@ -3,6 +3,7 @@ package com.example.Cortex_LaSecuencia
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.util.Log
 import com.example.Cortex_LaSecuencia.actividades.AnticipacionTestActivity
 import com.example.Cortex_LaSecuencia.actividades.ReflejosTestActivity
 import com.example.Cortex_LaSecuencia.actividades.SecuenciaTestActivity
@@ -15,6 +16,7 @@ import com.example.Cortex_LaSecuencia.actividades.EspacialTestActivity
 import com.example.Cortex_LaSecuencia.actividades.DecisionTestActivity
 import com.example.Cortex_LaSecuencia.actividades.ReporteFinalActivity
 import com.example.Cortex_LaSecuencia.actividades.IntroTestActivity
+import com.google.firebase.database.FirebaseDatabase
 
 // --- ✅ NUEVO: CLASE DE DATOS PARA MÉTRICAS DETALLADAS ---
 data class TestMetricLog(
@@ -39,7 +41,7 @@ object CortexManager {
 
     // --- ✅ NUEVO: LOG DE RENDIMIENTO DETALLADO ---
     val performanceLog = mutableListOf<TestMetricLog>()
-    
+
     // --- ✅ NUEVO: HISTORIAL GLOBAL PARA ADMIN ---
     val historialGlobal = mutableListOf<RegistroData>()
 
@@ -72,7 +74,7 @@ object CortexManager {
         )
         performanceLog.add(log)
     }
-    
+
     fun guardarPuntaje(testId: String, puntaje: Int, esPrimerIntento: Boolean = true) {
         val puntajeClamp = puntaje.coerceIn(0, 100)
         val intentoActual = intentosPorTest.getOrPut(testId) { 1 }
@@ -102,12 +104,36 @@ object CortexManager {
         }
     }
 
+    fun registrarNube(notaFinal: Int, esApto: Boolean) {
+        operadorActual?.let {
+
+            val reg = RegistroData(it.fecha, it.hora, it.supervisor, it.nombre, it.dni, it.equipo, notaFinal, if (esApto) "APTO" else "NO APTO")
+            historialGlobal.add(reg)
+
+            val dbRef = FirebaseDatabase.getInstance()
+                .getReference("registros")
+
+            val key = dbRef.push().key
+
+            if (key != null) {
+                dbRef.child(key).setValue(reg)
+                    .addOnSuccessListener {
+                        Log.d("FIREBASE", "Registro guardado correctamente")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("FIREBASE", "Error al guardar", e)
+                    }
+            }
+        }
+    }
+
+
     fun navegarAlSiguiente(context: Context) {
         val ultimoCompletado = listaDeTests.lastOrNull { resultados.containsKey(it) }
         val indiceUltimo = if (ultimoCompletado == null) -1 else listaDeTests.indexOf(ultimoCompletado)
-        
+
         val proximoTestId = if (indiceUltimo + 1 < listaDeTests.size) listaDeTests[indiceUltimo + 1] else null
-        
+
         if (proximoTestId != null) {
             val intent = Intent(context, IntroTestActivity::class.java)
             intent.putExtra("TEST_ID", proximoTestId)

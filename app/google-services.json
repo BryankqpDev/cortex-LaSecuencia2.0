@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "10692984066",
+    "project_id": "cortex-lasecuencia",
+    "storage_bucket": "cortex-lasecuencia.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:10692984066:android:fae650a28348759fe5561b",
+        "android_client_info": {
+          "package_name": "com.example.Cortex_LaSecuencia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCa3oJvTRqdmNnaJ7p4dCPmFStG5YEs8Gk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

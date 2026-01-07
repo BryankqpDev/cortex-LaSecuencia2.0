@@ -64,6 +64,9 @@ class ReporteFinalActivity : AppCompatActivity() {
         // Guardar en base de datos interna
         CortexManager.registrarEvaluacion(promedio, esApto)
 
+        //Guardar en FIREBASE u OTRO
+        CortexManager.registrarNube(promedio, esApto)
+
         if (esApto) {
             // --- ESCENARIO APTO (VERDE) ---
             txtIcono.text = "😎✅"

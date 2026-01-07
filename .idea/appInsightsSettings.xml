@@ -9,10 +9,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.Cortex_LaSecuencia" />
+                  <option name="mobileSdkAppId" value="1:10692984066:android:fae650a28348759fe5561b" />
+                  <option name="projectId" value="cortex-lasecuencia" />
+                  <option name="projectNumber" value="10692984066" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
