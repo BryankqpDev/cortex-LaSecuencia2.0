@@ -6,7 +6,16 @@
     android:layout_height="match_parent"
     android:background="#0B1121">
 
-    <!-- Contenido del test principal -->
+    <!-- ✅ VISOR DE CÁMARA (Esquina Superior Derecha) -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/viewFinder"
+        android:layout_width="100dp"
+        android:layout_height="130dp"
+        android:layout_margin="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Título y Subtítulo -->
     <TextView
         android:id="@+id/txt_titulo_t3"
         android:layout_width="wrap_content"
@@ -15,7 +24,7 @@
         android:textColor="#00F0FF"
         android:textSize="22sp"
         android:textStyle="bold"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="20dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -26,17 +35,17 @@
         android:layout_height="wrap_content"
         android:text="Frena en la ZONA VERDE"
         android:textColor="#94A3B8"
-        android:layout_marginTop="5dp"
         app:layout_constraintTop_toBottomOf="@id/txt_titulo_t3"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Área de Juego (Pista) -->
     <FrameLayout
         android:id="@+id/pista_container"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="80dp"
         android:background="#0F172A"
-        android:layout_marginHorizontal="10dp"
+        android:layout_marginHorizontal="40dp"
         app:layout_constraintBottom_toTopOf="@+id/btn_frenar"
         app:layout_constraintTop_toBottomOf="@+id/txt_subtitulo_t3">
 
@@ -45,95 +54,45 @@
             android:layout_width="80dp"
             android:layout_height="match_parent"
             android:layout_gravity="end"
-            android:layout_marginEnd="50dp"
+            android:layout_marginEnd="60dp"
             android:background="#4410B981" />
-
-        <View
-            android:layout_width="80dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="end"
-            android:layout_marginEnd="50dp"
-            android:background="@drawable/borde_zona_verde" />
 
         <ImageView
             android:id="@+id/img_vehiculo"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_gravity="center_vertical|start"
             android:src="@android:drawable/ic_menu_send" 
             app:tint="#FFFFFF"
             android:rotation="90"/>
     </FrameLayout>
 
+    <!-- Botón de Frenado -->
     <Button
         android:id="@+id/btn_frenar"
         android:layout_width="0dp"
-        android:layout_height="120dp"
+        android:layout_height="100dp"
         android:text="🛑 FRENAR"
-        android:textSize="30sp"
+        android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="@color/white"
-        android:background="@drawable/bg_boton_redondeado"
         android:backgroundTint="#EF4444"
         android:layout_margin="20dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Cuenta regresiva (inicialmente oculta) -->
+    <!-- Contador de inicio -->
     <TextView
         android:id="@+id/txt_countdown"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="3"
         android:textColor="@android:color/white"
-        android:textSize="90sp"
+        android:textSize="60sp"
         android:textStyle="bold"
         android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Superposición para aviso de orientación (inicialmente oculta) -->
-    <FrameLayout
-        android:id="@+id/orientation_overlay"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="#D90B1121" 
-        android:visibility="gone"
-        android:clickable="true"
-        android:focusable="true"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:padding="20dp">
-
-            <ImageView
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:src="@android:drawable/ic_menu_rotate" 
-                app:tint="#FFFFFF" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Gire el dispositivo para continuar"
-                android:textColor="@android:color/white"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:layout_marginTop="20dp"
-                android:textAlignment="center"/>
-
-        </LinearLayout>
-    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

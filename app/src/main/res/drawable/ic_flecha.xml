@@ -1,9 +1,41 @@
+<!-- Guardar este archivo en: res/drawable/ic_flecha_espacial_v2.xml -->
+<!-- Esta es una versión más estilizada y moderna de la flecha -->
+
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="100dp"
-    android:height="100dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
+    android:width="140dp"
+    android:height="140dp"
+    android:viewportWidth="140"
+    android:viewportHeight="140">
+
+    <!-- Flecha estilo moderno con líneas gruesas -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M12,4l-1.41,1.41L16.17,11H4v2h12.17l-5.58,5.59L12,20l8,-8z"/>
+        android:strokeWidth="0"
+        android:pathData="
+            M 70,15
+            L 110,60
+            L 85,60
+            L 85,110
+            L 55,110
+            L 55,60
+            L 30,60
+            Z"/>
+
+    <!-- Sombra interna para dar profundidad (opcional) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="
+            M 70,15
+            L 110,60
+            L 85,60
+            L 85,110
+            L 55,110
+            L 55,60
+            L 30,60
+            Z"/>
+
 </vector>

@@ -1,6 +1,7 @@
 package com.example.Cortex_LaSecuencia.actividades
 
 import android.animation.ObjectAnimator
+import android.graphics.Color
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
@@ -11,14 +12,14 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.animation.doOnEnd
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import kotlin.math.abs
 import kotlin.random.Random
 
-class AnticipacionTestActivity : AppCompatActivity() {
+class AnticipacionTestActivity : TestBaseActivity() {
 
     private lateinit var vehiculo: ImageView
     private lateinit var zonaMeta: View
@@ -33,6 +34,8 @@ class AnticipacionTestActivity : AppCompatActivity() {
     private var intentosRealizados = 0
     private val MAX_INTENTOS = 2
 
+    override fun obtenerTestId(): String = "t3"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_anticipacion_test)
@@ -43,12 +46,18 @@ class AnticipacionTestActivity : AppCompatActivity() {
         pista = findViewById(R.id.pista_container)
         countdownText = findViewById(R.id.txt_countdown)
 
-        btnFrenar.setOnClickListener { if (juegoActivo) frenarVehiculo() }
+        btnFrenar.setOnClickListener { if (juegoActivo && !testFinalizado) frenarVehiculo() }
+
+        // --- ✅ ACTIVAR SENTINEL (CÁMARA) ---
+        // Debemos asegurarnos de que el XML tenga un PreviewView con este ID
+        val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
+        configurarSentinel(viewFinder, null)
 
         iniciarCuentaRegresiva()
     }
 
     private fun iniciarCuentaRegresiva() {
+        if (testFinalizado) return
         countdownText.visibility = View.VISIBLE
 
         object : CountDownTimer(4000, 1000) {
@@ -56,7 +65,6 @@ class AnticipacionTestActivity : AppCompatActivity() {
                 val segundos = millisUntilFinished / 1000
                 countdownText.text = if (segundos > 0) segundos.toString() else "¡YA!"
             }
-
             override fun onFinish() {
                 countdownText.visibility = View.GONE
                 programarInicioCarrera()
@@ -65,18 +73,19 @@ class AnticipacionTestActivity : AppCompatActivity() {
     }
 
     private fun programarInicioCarrera() {
+        if (testFinalizado) return
         vehiculo.translationX = 0f
         Handler(Looper.getMainLooper()).postDelayed({ iniciarCarrera() }, 500)
     }
 
     private fun iniciarCarrera() {
-        if (isFinishing) return
+        if (isFinishing || testFinalizado) return
         juegoActivo = true
         val anchoPista = pista.width.toFloat()
         val anchoVehiculo = vehiculo.width.toFloat()
         vehiculo.translationX = 0f
 
-        duracionAnimacionActual = (600 + Random.nextFloat() * 400).toLong()
+        duracionAnimacionActual = (1200 + Random.nextFloat() * 800).toLong()
 
         animador = ObjectAnimator.ofFloat(vehiculo, "translationX", 0f, anchoPista - anchoVehiculo).apply {
             duration = duracionAnimacionActual
@@ -93,10 +102,11 @@ class AnticipacionTestActivity : AppCompatActivity() {
     }
 
     private fun evaluarFrenado(falloTotal: Boolean) {
+        if (testFinalizado) return
         intentosRealizados++
 
-        val puntaje: Int
-        val mensaje: String
+        var puntaje: Int
+        var mensaje: String
         val diferenciaAbsoluta: Float
 
         if (falloTotal) {
@@ -110,7 +120,7 @@ class AnticipacionTestActivity : AppCompatActivity() {
 
             val diferenciaPorcentual = (diferenciaAbsoluta / pista.width) * 100
             val penalizacion = (diferenciaPorcentual * 6).toInt()
-            puntaje = (100 - penalizacion).coerceIn(0, 100)
+            puntaje = (100 - penalizacion - penalizacionPorAusencia).coerceIn(0, 100) // ✅ APLICA PENALIZACIÓN
 
             mensaje = when {
                 puntaje >= 90 -> "¡PRECISIÓN PERFECTA! 😎"
@@ -120,20 +130,21 @@ class AnticipacionTestActivity : AppCompatActivity() {
         }
 
         val intentoActual = CortexManager.obtenerIntentoActual("t3")
-        val details = mapOf("distancia_px" to diferenciaAbsoluta, "velocidad_ms" to duracionAnimacionActual, "fallo_total" to falloTotal)
+        val details = mapOf("distancia_px" to diferenciaAbsoluta, "velocidad_ms" to duracionAnimacionActual, "fallo_total" to falloTotal, "penaliz_ausencia" to penalizacionPorAusencia)
         CortexManager.logPerformanceMetric("t3", puntaje, details)
         CortexManager.guardarPuntaje("t3", puntaje)
 
         if (intentoActual == 1 && puntaje < 80) {
+            testFinalizado = true
             mostrarDialogoFin("INTENTO FALLIDO", "$mensaje\nNota: $puntaje%\n\nQueda 1 intento.", true)
         } else {
+            testFinalizado = true
             mostrarDialogoFin(if(puntaje >= 80) "PRUEBA SUPERADA ✅" else "TEST FINALIZADO", "Resultado Final:\nNota: $puntaje%\n$mensaje", false)
         }
     }
 
     private fun mostrarDialogoFin(titulo: String, mensaje: String, esReintento: Boolean) {
         if (isFinishing) return
-
         AlertDialog.Builder(this)
             .setTitle(titulo)
             .setMessage(mensaje)
@@ -146,6 +157,19 @@ class AnticipacionTestActivity : AppCompatActivity() {
                 }
             }
             .show()
+    }
+
+    // --- ✅ PAUSA POR AUSENCIA ---
+    override fun onTestPaused() {
+        animador?.pause()
+        juegoActivo = false
+    }
+
+    override fun onTestResumed() {
+        if (!testFinalizado) {
+            animador?.resume()
+            juegoActivo = true
+        }
     }
 
     override fun onDestroy() {

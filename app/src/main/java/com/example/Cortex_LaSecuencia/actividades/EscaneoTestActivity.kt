@@ -3,24 +3,27 @@ package com.example.Cortex_LaSecuencia.actividades
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
+import android.view.View
 import android.widget.GridLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import kotlin.random.Random
 
-class EscaneoTestActivity : AppCompatActivity() {
+class EscaneoTestActivity : TestBaseActivity() {
 
     private lateinit var txtObjetivo: TextView
     private lateinit var gridNumeros: GridLayout
+    private lateinit var txtFeedback: TextView
 
     private var numeroObjetivo = 0
     private var tiempoInicio: Long = 0
     private var juegoActivo = true
     private var clicsErroneos = 0
-    private var intentoActual = 1 // Variable para controlar el intento
+
+    override fun obtenerTestId(): String = "t6"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,20 +31,17 @@ class EscaneoTestActivity : AppCompatActivity() {
 
         txtObjetivo = findViewById(R.id.txt_objetivo)
         gridNumeros = findViewById(R.id.grid_numeros)
+        txtFeedback = findViewById(R.id.txt_instruccion) // Reutilizamos para feedback de cámara
 
-        // Obtenemos el intento (1 o 2)
-        intentoActual = CortexManager.obtenerIntentoActual("t6")
-
-        // Opcional: Mostrar el intento en la barra de título o agregar un TextView
-        title = "ESCANEO VISUAL - INTENTO $intentoActual/2"
+        // --- ✅ ACTIVAR SENTINEL (CÁMARA) ---
+        val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
+        configurarSentinel(viewFinder, null)
 
         iniciarPrueba()
     }
 
     private fun iniciarPrueba() {
         numeroObjetivo = Random.nextInt(10, 100)
-
-        // Mostramos el objetivo. Si quieres, puedes concatenar el intento aquí también si no tienes otro lugar
         txtObjetivo.text = numeroObjetivo.toString()
 
         val listaNumeros = mutableListOf(numeroObjetivo)
@@ -71,87 +71,71 @@ class EscaneoTestActivity : AppCompatActivity() {
                 setTextColor(Color.WHITE)
                 gravity = Gravity.CENTER
                 setBackgroundColor(Color.parseColor("#1E293B"))
-                setOnClickListener { verificarSeleccion(this, num) }
+                setOnClickListener { if (juegoActivo && !testFinalizado) verificarSeleccion(this, num) }
             }
             gridNumeros.addView(celda)
         }
     }
 
     private fun verificarSeleccion(vista: TextView, numeroSeleccionado: Int) {
-        if (!juegoActivo) return
-
         if (numeroSeleccionado == numeroObjetivo) {
             juegoActivo = false
-            vista.setBackgroundColor(Color.parseColor("#10B981")) // Verde
+            vista.setBackgroundColor(Color.parseColor("#10B981"))
             vista.setTextColor(Color.BLACK)
             calcularPuntajeYFinalizar()
         } else {
             clicsErroneos++
-            vista.setBackgroundColor(Color.parseColor("#EF4444")) // Rojo
-            vista.alpha = 0.5f // Desvanecer error
+            vista.setBackgroundColor(Color.parseColor("#EF4444"))
+            vista.alpha = 0.5f
         }
     }
 
     private fun calcularPuntajeYFinalizar() {
+        testFinalizado = true
         val duracion = System.currentTimeMillis() - tiempoInicio
+        val penalizacionTiempo = if (duracion > 1500) ((duracion - 1500) / 50).toInt() else 0
+        
+        // Aplicar penalizaciones
+        val puntajeBase = (100 - penalizacionTiempo).coerceIn(0, 100)
+        val puntajeFinal = (puntajeBase - penalizacionPorAusencia).coerceIn(0, 100)
 
-        // 1. Penalización por Tiempo:
-        // Base: 2000ms (2s) es aceptable. Por cada 50ms extra, baja 1 punto.
-        val penalizacionTiempo = if (duracion > 2000) ((duracion - 2000) / 50).toInt() else 0
-
-        // 2. Penalización por Errores:
-        // Cada error resta 10 puntos (para evitar adivinanzas)
-        val penalizacionErrores = clicsErroneos * 10
-
-        val puntaje = (100 - penalizacionTiempo - penalizacionErrores).coerceIn(0, 100)
-
-        // Registro de métricas
         val details = mapOf(
             "tiempo_total_ms" to duracion,
-            "clics_erroneos" to clicsErroneos
+            "clics_erroneos" to clicsErroneos,
+            "penaliz_ausencia" to penalizacionPorAusencia
         )
-        CortexManager.logPerformanceMetric("t6", puntaje, details)
-        CortexManager.guardarPuntaje("t6", puntaje)
+        CortexManager.logPerformanceMetric("t6", puntajeFinal, details)
+        CortexManager.guardarPuntaje("t6", puntajeFinal)
 
-        // --- LÓGICA DE EXONERACIÓN ---
-        if (intentoActual == 1 && puntaje < 80) {
-            // Reprobó intento 1 -> Manda repetir
-            mostrarDialogoFin(puntaje, duracion, esReintento = true)
-        } else {
-            // Aprobó intento 1 O es intento 2 -> Siguiente
-            mostrarDialogoFin(puntaje, duracion, esReintento = false)
-        }
+        finalizarActivity(puntajeFinal, duracion)
     }
 
-    private fun mostrarDialogoFin(puntaje: Int, tiempoMs: Long, esReintento: Boolean) {
+    private fun finalizarActivity(puntaje: Int, tiempoMs: Long) {
         if (isFinishing) return
-
-        val titulo: String
-        val mensaje: String
-        val textoBoton: String
-
-        if (esReintento) {
-            titulo = "INTENTO FALLIDO ⚠️"
-            mensaje = "Tiempo: ${tiempoMs}ms\nErrores: $clicsErroneos\nNota: $puntaje%\n\nNecesitas ser más rápido y preciso. Tienes un segundo intento."
-            textoBoton = "INTENTO 2"
-        } else {
-            titulo = if (puntaje >= 80) "ESCANEO ÓPTIMO ✅" else "TEST FINALIZADO"
-            mensaje = "Tiempo Final: ${tiempoMs}ms\nErrores: $clicsErroneos\nNota Final: $puntaje%"
-            textoBoton = "SIGUIENTE TEST"
-        }
+        val mensaje = if (puntaje >= 75) "¡Velocidad Óptima!" else "Reacción lenta."
 
         AlertDialog.Builder(this)
-            .setTitle(titulo)
-            .setMessage(mensaje)
+            .setTitle("ESCANEO COMPLETADO")
+            .setMessage("Tiempo: ${tiempoMs}ms\nNota: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n$mensaje")
             .setCancelable(false)
-            .setPositiveButton(textoBoton) { _, _ ->
-                if (esReintento) {
-                    recreate() // Recarga la actividad para el segundo intento
-                } else {
-                    CortexManager.navegarAlSiguiente(this)
-                    finish()
-                }
+            .setPositiveButton("SIGUIENTE") { _, _ ->
+                CortexManager.navegarAlSiguiente(this)
+                finish()
             }
             .show()
+    }
+
+    override fun onTestPaused() {
+        juegoActivo = false
+        gridNumeros.visibility = View.INVISIBLE
+        txtObjetivo.text = "PAUSA"
+    }
+
+    override fun onTestResumed() {
+        if (!testFinalizado) {
+            juegoActivo = true
+            gridNumeros.visibility = View.VISIBLE
+            txtObjetivo.text = numeroObjetivo.toString()
+        }
     }
 }

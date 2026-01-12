@@ -5,28 +5,17 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.TextView
-import androidx.annotation.OptIn
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ExperimentalGetImage
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.cardview.widget.CardView
-import androidx.core.content.ContextCompat
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.face.FaceDetection
+import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 
-class ReflejosTestActivity : AppCompatActivity() {
+class ReflejosTestActivity : TestBaseActivity() {
 
     private lateinit var btnReflejo: CardView
     private lateinit var txtEstado: TextView
     private lateinit var txtIntento: TextView
-    private lateinit var iconoEstado: TextView
     private lateinit var txtFeedback: TextView
 
     private val handler = Handler(Looper.getMainLooper())
@@ -35,9 +24,7 @@ class ReflejosTestActivity : AppCompatActivity() {
     private var botonActivo = false
     private var testEnProgreso = true
 
-    private var cameraProvider: ProcessCameraProvider? = null
-    private var imageAnalyzer: ImageAnalysis? = null
-    private var preview: Preview? = null
+    override fun obtenerTestId(): String = "t1"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,16 +33,18 @@ class ReflejosTestActivity : AppCompatActivity() {
         btnReflejo = findViewById(R.id.btn_reflejo)
         txtEstado = findViewById(R.id.txt_estado)
         txtIntento = findViewById(R.id.txt_intento)
-        iconoEstado = findViewById(R.id.icono_estado)
         txtFeedback = findViewById(R.id.txt_feedback)
 
         val intentoActual = CortexManager.obtenerIntentoActual("t1")
         txtIntento.text = "INTENTO $intentoActual/2"
 
-        btnReflejo.setOnClickListener { if (testEnProgreso) procesarClic() }
+        btnReflejo.setOnClickListener { if (testEnProgreso && !testFinalizado) procesarClic() }
 
-        handler.postDelayed({ if (!isFinishing) iniciarTest() }, 1000)
-        iniciarSentinelCamara()
+        handler.postDelayed({ if (!isFinishing && !testFinalizado) iniciarTest() }, 1000)
+
+        // --- ✅ CONECTAR CON SENTINEL DE LA BASE ---
+        val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
+        configurarSentinel(viewFinder, txtFeedback)
     }
 
     private fun iniciarTest() {
@@ -65,11 +54,10 @@ class ReflejosTestActivity : AppCompatActivity() {
         btnReflejo.setCardBackgroundColor(Color.parseColor("#334155"))
         txtEstado.text = "ESPERE"
         txtEstado.setTextColor(Color.WHITE)
-        iconoEstado.text = ""
         txtFeedback.visibility = TextView.GONE
 
         val tiempoEspera = (2000 + (Math.random() * 3000)).toLong()
-        esperaRunnable = Runnable { if (!isFinishing && testEnProgreso) activarBoton() }
+        esperaRunnable = Runnable { if (!isFinishing && testEnProgreso && !testFinalizado) activarBoton() }
         handler.postDelayed(esperaRunnable!!, tiempoEspera)
     }
 
@@ -82,7 +70,7 @@ class ReflejosTestActivity : AppCompatActivity() {
     }
 
     private fun procesarClic() {
-        if (!testEnProgreso) return
+        if (!testEnProgreso || testFinalizado) return
 
         esperaRunnable?.let { handler.removeCallbacks(it) }
         testEnProgreso = false
@@ -97,22 +85,20 @@ class ReflejosTestActivity : AppCompatActivity() {
             puntaje = calcularPuntaje(tiempoReaccion)
             errorAnticipacion = false
         } else {
-            tiempoReaccion = -1 // No aplica
+            tiempoReaccion = -1
             puntaje = 0
             errorAnticipacion = true
         }
 
-        // --- ✅ REGISTRO DE MÉTRICAS DETALLADO ---
-        val details = mapOf(
-            "tiempo_reaccion_ms" to tiempoReaccion,
-            "error_anticipacion" to errorAnticipacion
-        )
+        val details = mapOf("tiempo_reaccion_ms" to tiempoReaccion, "error_anticipacion" to errorAnticipacion)
         CortexManager.logPerformanceMetric("t1", puntaje, details)
         CortexManager.guardarPuntaje("t1", puntaje)
 
         if (eraPrimerIntento && puntaje < 80) {
+            testFinalizado = true
             recreate()
         } else {
+            testFinalizado = true
             mostrarResultado(puntaje, tiempoReaccion, errorAnticipacion)
         }
     }
@@ -144,44 +130,23 @@ class ReflejosTestActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun iniciarSentinelCamara() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        cameraProviderFuture.addListener({
-            try {
-                if (isFinishing || isDestroyed) return@addListener
-                cameraProvider = cameraProviderFuture.get()
-                val previewView = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
-                preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
-                imageAnalyzer = ImageAnalysis.Builder().build().also {
-                    it.setAnalyzer(ContextCompat.getMainExecutor(this)) { imageProxy ->
-                        if (!isFinishing && testEnProgreso) analizarRostro(imageProxy) else imageProxy.close()
-                    }
-                }
-                cameraProvider?.unbindAll()
-                cameraProvider?.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalyzer)
-            } catch (e: Exception) { /* Ignorar error */ }
-        }, ContextCompat.getMainExecutor(this))
+    // --- ✅ LÓGICA DE PAUSA/REANUDACIÓN POR SENTINEL ---
+    override fun onTestPaused() {
+        // Si el usuario se va, detenemos el cronómetro de espera
+        esperaRunnable?.let { handler.removeCallbacks(it) }
+        testEnProgreso = false
+        txtEstado.text = "PAUSA"
     }
 
-    @OptIn(ExperimentalGetImage::class)
-    private fun analizarRostro(imageProxy: ImageProxy) {
-        imageProxy.image?.let {
-            val image = InputImage.fromMediaImage(it, imageProxy.imageInfo.rotationDegrees)
-            FaceDetection.getClient().process(image)
-                .addOnCompleteListener { imageProxy.close() }
+    override fun onTestResumed() {
+        // Al volver, reiniciamos el ciclo de espera
+        if (!testFinalizado) {
+            iniciarTest()
         }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        imageAnalyzer?.clearAnalyzer()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         esperaRunnable?.let { handler.removeCallbacks(it) }
-        testEnProgreso = false
-        imageAnalyzer?.clearAnalyzer()
-        cameraProvider?.unbindAll()
     }
 }

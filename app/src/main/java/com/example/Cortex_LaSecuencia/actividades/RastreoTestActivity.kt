@@ -1,7 +1,6 @@
 package com.example.Cortex_LaSecuencia.actividades
 
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -10,12 +9,12 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import kotlin.random.Random
 
-class RastreoTestActivity : AppCompatActivity() {
+class RastreoTestActivity : TestBaseActivity() {
 
     private lateinit var areaRastreo: FrameLayout
     private lateinit var txtMensaje: TextView
@@ -28,10 +27,12 @@ class RastreoTestActivity : AppCompatActivity() {
     private val indicesSeleccionados = mutableListOf<Int>()
 
     private var animacionActiva = false
-    private var testFinalizado = false
-    private var animacionRunnable: Runnable? = null
+    private var faseSeleccionHabilitada = false
+    private var pasosRealizados = 0
+    private val MAX_PASOS = 300
     private var tiempoInicioSeleccion: Long = 0
-    private var intentoActual = 1 // Control de intento
+
+    override fun obtenerTestId(): String = "t8"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,226 +43,221 @@ class RastreoTestActivity : AppCompatActivity() {
         btnConfirmar = findViewById(R.id.btn_confirmar)
         txtIntento = findViewById(R.id.txt_intento)
 
-        // Inicializamos intento
-        intentoActual = CortexManager.obtenerIntentoActual("t8")
+        val intentoActual = CortexManager.obtenerIntentoActual("t8")
         txtIntento.text = "INTENTO $intentoActual/2"
 
-        btnConfirmar.setOnClickListener { if (!testFinalizado) verificarSeleccion() }
+        val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
+        configurarSentinel(viewFinder, null)
+
+        btnConfirmar.setOnClickListener {
+            if (!testFinalizado && faseSeleccionHabilitada) {
+                verificarSeleccion()
+            }
+        }
 
         iniciarTest()
     }
 
     private fun iniciarTest() {
-        txtMensaje.text = "Memoriza las 2 AZULES..."
+        testFinalizado = false
+        animacionActiva = false
+        faseSeleccionHabilitada = false
+        txtMensaje.text = "Memorice las 2 AZULES..."
         btnConfirmar.visibility = View.GONE
         indicesSeleccionados.clear()
         indicesObjetivo.clear()
         bolas.clear()
         areaRastreo.removeAllViews()
+        pasosRealizados = 0
 
         areaRastreo.post {
+            if (testFinalizado) return@post
+
             val ancho = areaRastreo.width.toFloat()
             val alto = areaRastreo.height.toFloat()
 
+            if (ancho <= 0 || alto <= 0) {
+                handler.postDelayed({ iniciarTest() }, 100)
+                return@post
+            }
+
             for (i in 0 until 5) {
                 val bola = BallView(this, i)
-                bola.posX = Random.nextFloat() * 0.7f + 0.15f
-                bola.posY = Random.nextFloat() * 0.7f + 0.15f
-                val velocidad = Random.nextFloat() * 0.015f + 0.025f
+                bola.posX = 0.15f + Random.nextFloat() * 0.7f
+                bola.posY = 0.15f + Random.nextFloat() * 0.7f
+                val velocidad = 0.015f + Random.nextFloat() * 0.015f
                 val angulo = Random.nextFloat() * 2f * Math.PI.toFloat()
                 bola.vx = kotlin.math.cos(angulo) * velocidad
                 bola.vy = kotlin.math.sin(angulo) * velocidad
-
-                // Tamaño fijo para que sean redondas
-                val tamaño = (40 * resources.displayMetrics.density).toInt()
-                bola.layoutParams = FrameLayout.LayoutParams(tamaño, tamaño)
-
                 bolas.add(bola)
                 areaRastreo.addView(bola)
                 bola.actualizarPosicion(ancho, alto)
             }
 
-            // Seleccionamos objetivos (0 y 1)
             indicesObjetivo.addAll(listOf(0, 1))
-            bolas[0].cambiarColor(Color.parseColor("#3B82F6")) // Azul
-            bolas[1].cambiarColor(Color.parseColor("#3B82F6")) // Azul
+            bolas[0].cambiarColor(Color.parseColor("#3B82F6"))
+            bolas[1].cambiarColor(Color.parseColor("#3B82F6"))
 
-            // 2 segundos para memorizar
-            handler.postDelayed({ if (!isFinishing) iniciarAnimacion() }, 2000)
+            handler.postDelayed({
+                if (!testFinalizado && !estaEnPausaPorAusencia) {
+                    iniciarAnimacion()
+                }
+            }, 2000)
+        }
+    }
+
+    private val animacionRunnable = object : Runnable {
+        override fun run() {
+            if (!animacionActiva || testFinalizado || estaEnPausaPorAusencia) return
+
+            val ancho = areaRastreo.width.toFloat()
+            val alto = areaRastreo.height.toFloat()
+            if (ancho <= 0 || alto <= 0) return
+
+            bolas.forEach { bola ->
+                bola.posX += bola.vx
+                bola.posY += bola.vy
+                if (bola.posX <= 0.05f) {
+                    bola.posX = 0.05f
+                    bola.vx = kotlin.math.abs(bola.vx)
+                } else if (bola.posX >= 0.95f) {
+                    bola.posX = 0.95f
+                    bola.vx = -kotlin.math.abs(bola.vx)
+                }
+                if (bola.posY <= 0.05f) {
+                    bola.posY = 0.05f
+                    bola.vy = kotlin.math.abs(bola.vy)
+                } else if (bola.posY >= 0.95f) {
+                    bola.posY = 0.95f
+                    bola.vy = -kotlin.math.abs(bola.vy)
+                }
+                bola.actualizarPosicion(ancho, alto)
+            }
+
+            pasosRealizados++
+            if (pasosRealizados >= MAX_PASOS) {
+                animacionActiva = false
+                handler.post { habilitarSeleccion() }
+            } else {
+                handler.postDelayed(this, 16)
+            }
         }
     }
 
     private fun iniciarAnimacion() {
-        // Todas se vuelven blancas para confundir
+        if (testFinalizado) return
         bolas.forEach { it.cambiarColor(Color.WHITE) }
         txtMensaje.text = "Rastreando..."
         animacionActiva = true
-
-        var pasos = 0
-        val maxPasos = 300 // Duración de la animación
-
-        animacionRunnable = object : Runnable {
-            override fun run() {
-                if (!animacionActiva || testFinalizado) return
-                val ancho = areaRastreo.width.toFloat()
-                val alto = areaRastreo.height.toFloat()
-
-                bolas.forEach { bola ->
-                    bola.posX += bola.vx
-                    bola.posY += bola.vy
-
-                    // Rebote en paredes
-                    if (bola.posX <= 0.05f || bola.posX >= 0.95f) bola.vx *= -1
-                    if (bola.posY <= 0.05f || bola.posY >= 0.95f) bola.vy *= -1
-
-                    bola.actualizarPosicion(ancho, alto)
-                }
-
-                pasos++
-                if (pasos >= maxPasos) {
-                    animacionActiva = false
-                    txtMensaje.text = "Selecciona los 2 objetivos:"
-                    habilitarSeleccion()
-                } else {
-                    handler.postDelayed(this, 16) // ~60 FPS
-                }
-            }
-        }
-        handler.post(animacionRunnable!!)
+        handler.post(animacionRunnable)
     }
 
     private fun habilitarSeleccion() {
+        if (testFinalizado) return
+        faseSeleccionHabilitada = true
         tiempoInicioSeleccion = System.currentTimeMillis()
         btnConfirmar.visibility = View.GONE
+        txtMensaje.text = "Toque los 2 objetivos:"
 
         bolas.forEachIndexed { indice, bola ->
             bola.setOnClickListener {
-                if (testFinalizado || indicesSeleccionados.contains(indice)) return@setOnClickListener
-
-                // Si ya seleccionó 2, no deja seleccionar más a menos que deseleccione (simplificado: max 2)
-                if (indicesSeleccionados.size >= 2) return@setOnClickListener
+                if (!faseSeleccionHabilitada || testFinalizado || estaEnPausaPorAusencia) return@setOnClickListener
+                if (indicesSeleccionados.size >= 2 || indicesSeleccionados.contains(indice)) return@setOnClickListener
 
                 indicesSeleccionados.add(indice)
-                bola.cambiarColor(Color.parseColor("#F59E0B")) // Naranja (Seleccionado)
-
-                btnConfirmar.text = "CONFIRMAR (${indicesSeleccionados.size})"
-
-                if (indicesSeleccionados.size == 2) {
-                    btnConfirmar.visibility = View.VISIBLE
-                }
+                bola.cambiarColor(Color.parseColor("#F59E0B"))
+                btnConfirmar.text = "CONFIRMAR (${indicesSeleccionados.size}/2)"
+                if (indicesSeleccionados.size == 2) btnConfirmar.visibility = View.VISIBLE
             }
         }
     }
 
     private fun verificarSeleccion() {
+        if (testFinalizado) return
         testFinalizado = true
-        animacionActiva = false
-        animacionRunnable?.let { handler.removeCallbacks(it) }
+        faseSeleccionHabilitada = false
+        handler.removeCallbacksAndMessages(null)
 
         val tiempoDecision = System.currentTimeMillis() - tiempoInicioSeleccion
-
-        // Revelamos los verdaderos objetivos en Verde
         indicesObjetivo.forEach { bolas[it].cambiarColor(Color.parseColor("#10B981")) }
 
         var aciertos = 0
         indicesSeleccionados.forEach {
-            if (indicesObjetivo.contains(it)) {
-                aciertos++
-            } else {
-                // Si seleccionó uno incorrecto, lo marcamos en Rojo
-                bolas[it].cambiarColor(Color.parseColor("#EF4444"))
-            }
+            if (indicesObjetivo.contains(it)) aciertos++
+            else bolas[it].cambiarColor(Color.parseColor("#EF4444"))
         }
 
-        // Puntuación estricta: 2 aciertos = 100, 1 acierto = 50, 0 = 0
-        val puntaje = when (aciertos) { 2 -> 100; 1 -> 50; else -> 0 }
+        val puntajeBase = when (aciertos) { 2 -> 100; 1 -> 50; else -> 0 }
+        val puntajeFinal = (puntajeBase - penalizacionPorAusencia).coerceIn(0, 100)
 
-        // Guardamos métricas
-        val details = mapOf(
-            "tiempo_decision_ms" to tiempoDecision,
-            "aciertos" to aciertos,
-            "objetivos" to indicesObjetivo,
-            "seleccionados" to indicesSeleccionados
-        )
-        CortexManager.logPerformanceMetric("t8", puntaje, details)
-        CortexManager.guardarPuntaje("t8", puntaje)
+        CortexManager.logPerformanceMetric("t8", puntajeFinal, mapOf("aciertos" to aciertos, "tiempo_ms" to tiempoDecision))
+        CortexManager.guardarPuntaje("t8", puntajeFinal)
 
-        // Delay pequeño para que el usuario vea el resultado visual antes del dialog
-        handler.postDelayed({
-            manejarContinuacion(puntaje, aciertos)
-        }, 1500)
+        handler.postDelayed({ if (!isFinishing) mostrarResultado(puntajeFinal, aciertos) }, 1500)
     }
 
-    private fun manejarContinuacion(puntaje: Int, aciertos: Int) {
+    private fun mostrarResultado(puntaje: Int, aciertos: Int) {
         if (isFinishing) return
-
-        val esReintento: Boolean = (intentoActual == 1 && puntaje < 80) // Solo pasa con 100 (2 aciertos)
-
-        val titulo: String
-        val mensajeBase = when (aciertos) {
-            2 -> "¡EXCELENTE! 🎯\nIdentificaste los 2 objetivos."
-            1 -> "REGULAR ⚠️\nIdentificaste solo 1 objetivo."
-            else -> "FALLASTE ❌\nPerdiste el rastro por completo."
+        val mensaje = when (aciertos) {
+            2 -> "¡EXCELENTE!\nIdentificaste los 2 objetivos correctamente."
+            1 -> "REGULAR\nSolo identificaste 1 de los 2 objetivos."
+            else -> "FALLASTE\nNo identificaste ningún objetivo."
         }
-        val textoBoton: String
-
-        if (esReintento) {
-            titulo = "RASTREO INCOMPLETO"
-            // Mensaje que explica que debe repetir
-            textoBoton = "INTENTO 2"
-        } else {
-            titulo = if (puntaje == 100) "RASTREO PERFECTO ✅" else "TEST FINALIZADO"
-            textoBoton = "SIGUIENTE TEST" // Si es el último test, esto llevará al Resumen
-        }
+        val mensajeCompleto = "$mensaje\n\nNota: $puntaje%" + (if (penalizacionPorAusencia > 0) "\nPenalización ausencia: -$penalizacionPorAusencia" else "")
 
         AlertDialog.Builder(this)
-            .setTitle(titulo)
-            .setMessage("$mensajeBase\nNota: $puntaje%")
+            .setTitle("RASTREO FINALIZADO")
+            .setMessage(mensajeCompleto)
             .setCancelable(false)
-            .setPositiveButton(textoBoton) { _, _ ->
-                if (esReintento) {
-                    recreate()
-                } else {
-                    CortexManager.navegarAlSiguiente(this)
-                    finish()
-                }
+            .setPositiveButton("CONTINUAR") { _, _ ->
+                if (CortexManager.obtenerIntentoActual("t8") == 1 && puntaje < 80) recreate()
+                else { CortexManager.navegarAlSiguiente(this); finish() }
             }
             .show()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        animacionActiva = false
-        animacionRunnable?.let { handler.removeCallbacks(it) }
+    override fun onTestPaused() {
+        txtMensaje.text = "⏸ PAUSA POR AUSENCIA"
+        handler.removeCallbacksAndMessages(null)
     }
 
-    // Clase BallView Mejorada (Círculos perfectos con ShapeDrawable)
+    override fun onTestResumed() {
+        if (!testFinalizado) {
+            if (animacionActiva) {
+                txtMensaje.text = "Rastreando..."
+                handler.post(animacionRunnable)
+            } else if (faseSeleccionHabilitada) {
+                txtMensaje.text = "Toque los 2 objetivos:"
+            } else if (pasosRealizados == 0) {
+                handler.postDelayed({ if (!testFinalizado && !estaEnPausaPorAusencia) iniciarAnimacion() }, 500)
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        handler.removeCallbacksAndMessages(null)
+    }
+
     private class BallView(context: android.content.Context, val indice: Int) : View(context) {
         var posX: Float = 0f; var posY: Float = 0f; var vx: Float = 0f; var vy: Float = 0f
-
-        private val drawable = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(Color.WHITE)
-            setStroke(2, Color.BLACK) // Borde negro para verlas mejor
-        }
-
         init {
-            background = drawable
+            setBackgroundColor(Color.WHITE)
+            val size = (40 * resources.displayMetrics.density).toInt()
+            layoutParams = FrameLayout.LayoutParams(size, size)
         }
-
-        fun cambiarColor(color: Int) {
-            drawable.setColor(color)
-            invalidate()
+        override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+            super.onSizeChanged(w, h, oldw, oldh)
+            clipToOutline = true
+            outlineProvider = object : android.view.ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: android.graphics.Outline) { outline.setOval(0, 0, view.width, view.height) }
+            }
         }
-
+        fun cambiarColor(color: Int) { setBackgroundColor(color) }
         fun actualizarPosicion(ancho: Float, alto: Float) {
-            val params = layoutParams as FrameLayout.LayoutParams
-            // Aseguramos que no se salga de los márgenes
-            val left = (posX * ancho - width / 2).toInt().coerceIn(0, (ancho - width).toInt())
-            val top = (posY * alto - height / 2).toInt().coerceIn(0, (alto - height).toInt())
-
-            params.leftMargin = left
-            params.topMargin = top
+            val params = layoutParams as? FrameLayout.LayoutParams ?: return
+            params.leftMargin = (posX * ancho - width / 2f).toInt().coerceIn(0, (ancho - width).toInt())
+            params.topMargin = (posY * alto - height / 2f).toInt().coerceIn(0, (alto - height).toInt())
             layoutParams = params
         }
     }

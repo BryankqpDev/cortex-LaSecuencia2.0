@@ -2,170 +2,200 @@ package com.example.Cortex_LaSecuencia.actividades
 
 import android.graphics.Color
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.View
-import android.widget.Button
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import kotlin.random.Random
 
-class EspacialTestActivity : AppCompatActivity() {
+class EspacialTestActivity : TestBaseActivity() {
 
-    private lateinit var txtIntento: TextView
+    private lateinit var imgFlecha: ImageView
     private lateinit var txtInstruccion: TextView
-    private lateinit var txtFlecha: TextView
-    private lateinit var btnArriba: Button
-    private lateinit var btnAbajo: Button
-    private lateinit var btnIzquierda: Button
-    private lateinit var btnDerecha: Button
-
-    private var trials = 0
-    private var score = 0
-    private val MAX_TRIALS = 5
-
-    // Direcciones: 0=Arriba, 90=Derecha, 180=Abajo, 270=Izquierda
-    private var correctDir = 0
-    private var isBlue = true
+    private var direccionCorrecta = 0
+    private var esAzul = true
+    private var rondaActual = 0
+    private val TOTAL_RONDAS = 10
+    private var aciertos = 0
     private var intentoActual = 1
-    private var botonesBloqueados = false // Evita doble click rápido
+
+    override fun obtenerTestId(): String = "t9"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_espacial_test)
 
-        txtIntento = findViewById(R.id.lbl_t9)
-        txtInstruccion = findViewById(R.id.t9_instruccion)
-        txtFlecha = findViewById(R.id.t9_arrow)
-
-        btnArriba = findViewById(R.id.btn_dir_up)
-        btnAbajo = findViewById(R.id.btn_dir_down)
-        btnIzquierda = findViewById(R.id.btn_dir_left)
-        btnDerecha = findViewById(R.id.btn_dir_right)
-
-        // Obtener intento y mostrarlo
+        imgFlecha = findViewById(R.id.img_flecha)
+        txtInstruccion = findViewById(R.id.txt_instruccion)
         intentoActual = CortexManager.obtenerIntentoActual("t9")
-        txtIntento.text = "INTENTO $intentoActual/2"
 
-        btnArriba.setOnClickListener { clickDirection(0) }
-        btnDerecha.setOnClickListener { clickDirection(90) }
-        btnAbajo.setOnClickListener { clickDirection(180) }
-        btnIzquierda.setOnClickListener { clickDirection(270) }
+        // Asegurar visibilidad inicial
+        imgFlecha.alpha = 1.0f
+        imgFlecha.visibility = View.VISIBLE
 
-        // Pequeña pausa antes de empezar
-        Handler(Looper.getMainLooper()).postDelayed({ siguienteTrial() }, 500)
+        val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
+        configurarSentinel(viewFinder, txtInstruccion)
+
+        // Configurar botones direccionales
+        findViewById<ImageButton>(R.id.btn_up).setOnClickListener {
+            if(!estaEnPausaPorAusencia && !testFinalizado) verificarRespuesta(0)
+        }
+        findViewById<ImageButton>(R.id.btn_right).setOnClickListener {
+            if(!estaEnPausaPorAusencia && !testFinalizado) verificarRespuesta(90)
+        }
+        findViewById<ImageButton>(R.id.btn_down).setOnClickListener {
+            if(!estaEnPausaPorAusencia && !testFinalizado) verificarRespuesta(180)
+        }
+        findViewById<ImageButton>(R.id.btn_left).setOnClickListener {
+            if(!estaEnPausaPorAusencia && !testFinalizado) verificarRespuesta(270)
+        }
+
+        // Iniciar primera ronda
+        siguienteRonda()
     }
 
-    private fun siguienteTrial() {
-        if (trials >= MAX_TRIALS) {
+    private fun siguienteRonda() {
+        if (testFinalizado || isFinishing) return
+
+        if (rondaActual >= TOTAL_RONDAS) {
             finalizarTest()
             return
         }
 
-        botonesBloqueados = false
-        val dirs = listOf(0, 90, 180, 270)
-        val arrowDir = dirs[Random.nextInt(dirs.size)]
-        isBlue = Random.nextBoolean() // True = Azul, False = Rojo
+        rondaActual++
 
-        // LÓGICA ESPACIAL:
-        // Azul (isBlue) -> La dirección correcta es la misma de la flecha.
-        // Rojo (!isBlue) -> La dirección correcta es la OPUESTA (+180 grados).
-        correctDir = if (isBlue) {
-            arrowDir
-        } else {
-            (arrowDir + 180) % 360
-        }
+        // Determinar color aleatoriamente
+        esAzul = Random.nextBoolean()
 
-        // Mostrar Flecha
-        txtFlecha.text = when (arrowDir) {
-            0 -> "↑"
-            90 -> "→"
-            180 -> "↓"
-            270 -> "←"
-            else -> "↑"
-        }
+        // Elegir dirección aleatoria
+        // 0° = ARRIBA, 90° = DERECHA, 180° = ABAJO, 270° = IZQUIERDA
+        direccionCorrecta = listOf(0, 90, 180, 270).random()
 
-        // Color de la flecha
-        val colorFlecha = if (isBlue) Color.parseColor("#3B82F6") else Color.parseColor("#EF4444")
-        txtFlecha.setTextColor(colorFlecha)
+        // Actualizar instrucción con progreso
+        actualizarInstruccion()
 
-        // Instrucción visual rápida
-        txtInstruccion.text = if (isBlue) "SIGUE LA FLECHA" else "¡INVIERTE!"
-        txtInstruccion.setTextColor(Color.LTGRAY)
+        // Rotar la flecha a la dirección elegida
+        imgFlecha.rotation = direccionCorrecta.toFloat()
+
+        // Aplicar color según la regla:
+        // AZUL = responder hacia donde apunta la flecha
+        // ROJA = responder OPUESTO a donde apunta la flecha
+        imgFlecha.setColorFilter(
+            if (esAzul) Color.parseColor("#3B82F6") // Azul brillante
+            else Color.parseColor("#EF4444") // Rojo brillante
+        )
+
+        imgFlecha.alpha = 1.0f
+        imgFlecha.visibility = View.VISIBLE
     }
 
-    private fun clickDirection(dir: Int) {
-        if (botonesBloqueados) return
-        botonesBloqueados = true // Bloqueamos hasta el siguiente trial
+    private fun actualizarInstruccion() {
+        if (!estaEnPausaPorAusencia) {
+            val colorEmoji = if (esAzul) "🟦" else "🟥"
+            val colorTexto = if (esAzul) "AZUL" else "ROJA"
+            val accion = if (esAzul) "Dirección Real" else "Dirección CONTRARIA"
 
-        val esCorrecto = (dir == correctDir)
-        if (esCorrecto) {
-            score++
-            txtInstruccion.text = "¡BIEN!"
-            txtInstruccion.setTextColor(Color.GREEN)
+            txtInstruccion.text = "RONDA $rondaActual/$TOTAL_RONDAS\n$colorEmoji FLECHA $colorTexto: $accion"
+            txtInstruccion.setTextColor(Color.WHITE)
+        }
+    }
+
+    private fun verificarRespuesta(direccionUsuario: Int) {
+        if (testFinalizado || estaEnPausaPorAusencia) return
+
+        // Calcular la dirección esperada según el color
+        val direccionEsperada = if (esAzul) {
+            // Si es AZUL, responder hacia donde apunta la flecha
+            direccionCorrecta
         } else {
-            txtInstruccion.text = "FALLO"
-            txtInstruccion.setTextColor(Color.RED)
+            // Si es ROJA, responder al lado OPUESTO (180 grados)
+            (direccionCorrecta + 180) % 360
         }
 
-        trials++
+        // Verificar si el usuario acertó
+        if (direccionUsuario == direccionEsperada) {
+            aciertos++
+            // Feedback visual rápido
+            imgFlecha.alpha = 0.5f
+        }
 
-        // Esperamos 400ms para que el usuario vea si acertó o falló
-        Handler(Looper.getMainLooper()).postDelayed({
-            siguienteTrial()
-        }, 400)
+        // Pequeño delay antes de la siguiente ronda para feedback visual
+        imgFlecha.postDelayed({
+            siguienteRonda()
+        }, 300)
     }
 
     private fun finalizarTest() {
-        // Cálculo de nota: (Aciertos / 5) * 100.  Cada acierto vale 20 pts.
-        val finalScore = (score * 100 / MAX_TRIALS).coerceIn(0, 100)
+        testFinalizado = true
 
-        // Guardamos métricas
-        val details = mapOf("aciertos" to score, "total_trials" to MAX_TRIALS)
-        CortexManager.logPerformanceMetric("t9", finalScore, details)
-        CortexManager.guardarPuntaje("t9", finalScore)
+        val notaBase = (aciertos.toFloat() / TOTAL_RONDAS * 100).toInt()
+        val notaFinal = (notaBase - penalizacionPorAusencia).coerceIn(0, 100)
 
-        // --- LÓGICA DE EXONERACIÓN ---
-        // Necesita 80% (4 de 5) para pasar a la primera.
-        if (intentoActual == 1 && finalScore < 80) {
-            mostrarDialogoFin(finalScore, esReintento = true)
-        } else {
-            mostrarDialogoFin(finalScore, esReintento = false)
-        }
-    }
+        CortexManager.guardarPuntaje("t9", notaFinal)
 
-    private fun mostrarDialogoFin(puntaje: Int, esReintento: Boolean) {
-        if (isFinishing) return
+        val aprobado = notaFinal >= 80
 
-        val titulo: String
-        val mensaje: String
-        val textoBoton: String
-
-        if (esReintento) {
-            titulo = "ORIENTACIÓN CONFUSA ⚠️"
-            mensaje = "Acertaste $score de $MAX_TRIALS.\nNota: $puntaje%\n\nRecuerda: Si es ROJA, presiona el botón CONTRARIO. Inténtalo de nuevo."
-            textoBoton = "INTENTO 2"
-        } else {
-            titulo = if (puntaje >= 80) "BUENA ORIENTACIÓN 🧭" else "TEST FINALIZADO"
-            mensaje = "Resultado: $score de $MAX_TRIALS aciertos.\nNota Final: $puntaje%"
-            textoBoton = "SIGUIENTE TEST"
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle(titulo)
-            .setMessage(mensaje)
-            .setCancelable(false)
-            .setPositiveButton(textoBoton) { _, _ ->
-                if (esReintento) {
+        // Si es el primer intento y no alcanzó 80%, permitir reintento
+        if (intentoActual == 1 && !aprobado) {
+            AlertDialog.Builder(this)
+                .setTitle("⚠️ INTENTO 1 - NO APROBADO")
+                .setMessage(
+                    "━━━━━━━━━━━━━━━━━━━━━━\n" +
+                            "Aciertos: $aciertos/$TOTAL_RONDAS\n" +
+                            "Nota Base: $notaBase%\n" +
+                            "Penalización: -$penalizacionPorAusencia pts\n" +
+                            "Nota Final: $notaFinal%\n" +
+                            "━━━━━━━━━━━━━━━━━━━━━━\n\n" +
+                            "RECUERDA:\n" +
+                            "🟦 AZUL → Presiona donde apunta\n" +
+                            "🟥 ROJA → Presiona dirección opuesta\n\n" +
+                            "Necesitas 80% para aprobar."
+                )
+                .setCancelable(false)
+                .setPositiveButton("🔄 REINTENTAR") { _, _ ->
                     recreate()
-                } else {
+                }
+                .show()
+        } else {
+            // Segundo intento o aprobado
+            val emoji = if (aprobado) "✅" else "❌"
+            val estado = if (aprobado) "APROBADO" else "NO APROBADO"
+
+            AlertDialog.Builder(this)
+                .setTitle("$emoji ORIENTACIÓN ESPACIAL")
+                .setMessage(
+                    "━━━━━━━━━━━━━━━━━━━━━━\n" +
+                            "RESULTADO: $estado\n" +
+                            "━━━━━━━━━━━━━━━━━━━━━━\n\n" +
+                            "Aciertos: $aciertos/$TOTAL_RONDAS\n" +
+                            "Nota Base: $notaBase%\n" +
+                            "Penalización: -$penalizacionPorAusencia pts\n" +
+                            "Nota Final: $notaFinal%"
+                )
+                .setCancelable(false)
+                .setPositiveButton("➡️ SIGUIENTE") { _, _ ->
                     CortexManager.navegarAlSiguiente(this)
                     finish()
                 }
-            }
-            .show()
+                .show()
+        }
+    }
+
+    override fun onTestPaused() {
+        // Ocultar flecha cuando el usuario está ausente
+        imgFlecha.visibility = View.INVISIBLE
+    }
+
+    override fun onTestResumed() {
+        // Mostrar flecha cuando el usuario regresa
+        if (!testFinalizado) {
+            imgFlecha.visibility = View.VISIBLE
+            imgFlecha.alpha = 1.0f
+            actualizarInstruccion()
+        }
     }
 }

@@ -6,19 +6,16 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import java.util.Random
 
-class CoordinacionTestActivity : AppCompatActivity() {
+class CoordinacionTestActivity : TestBaseActivity() {
 
-    // Referencias UI
     private lateinit var containerJuego: FrameLayout
     private lateinit var txtContador: TextView
-    private lateinit var lblIntento: TextView
 
-    // Variables del juego
     private var hitsCount = 0
     private val TARGET_HITS = 5
     private var startTime: Long = 0
@@ -26,6 +23,9 @@ class CoordinacionTestActivity : AppCompatActivity() {
     private var intentoActual = 1
 
     private val random = Random()
+    private var timerInicio: CountDownTimer? = null
+
+    override fun obtenerTestId(): String = "t4"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,10 +33,12 @@ class CoordinacionTestActivity : AppCompatActivity() {
 
         containerJuego = findViewById(R.id.container_juego)
         txtContador = findViewById(R.id.txt_contador)
-        lblIntento = findViewById(R.id.lbl_t10)
-
+        
         intentoActual = CortexManager.obtenerIntentoActual("t4")
-        lblIntento.text = "INTENTO $intentoActual/2"
+
+        // --- ✅ ACTIVAR SENTINEL (CÁMARA) ---
+        val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
+        configurarSentinel(viewFinder, null)
 
         containerJuego.post { startTest() }
     }
@@ -45,30 +47,32 @@ class CoordinacionTestActivity : AppCompatActivity() {
         hitsCount = 0
         gameStarted = false
         containerJuego.removeAllViews()
-        lblIntento.text = "INTENTO $intentoActual/2"
-        txtContador.text = "PREPÁRATE..."
+        updateProgressText()
 
-        object : CountDownTimer(4000, 1000) {
+        timerInicio = object : CountDownTimer(4000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
-                val segundos = millisUntilFinished / 1000
-                txtContador.text = if (segundos > 0) "Comienza en... $segundos" else "¡YA!"
+                if (!testFinalizado) {
+                    val segundos = millisUntilFinished / 1000
+                    txtContador.text = if (segundos > 0) "Prepárate... $segundos" else "¡YA!"
+                }
             }
 
             override fun onFinish() {
-                gameStarted = true
-                startTime = System.currentTimeMillis()
-                updateProgressText()
-                spawnDot()
+                if (!testFinalizado) {
+                    gameStarted = true
+                    startTime = System.currentTimeMillis()
+                    updateProgressText()
+                    spawnDot()
+                }
             }
         }.start()
     }
 
     private fun spawnDot() {
-        if (!gameStarted || hitsCount >= TARGET_HITS) return
+        if (!gameStarted || hitsCount >= TARGET_HITS || testFinalizado) return
 
         val areaWidth = containerJuego.width
         val areaHeight = containerJuego.height
-
         if (areaWidth == 0 || areaHeight == 0) {
             containerJuego.post { spawnDot() }
             return
@@ -87,8 +91,8 @@ class CoordinacionTestActivity : AppCompatActivity() {
     }
 
     private fun onDotClicked(dot: View) {
-        if (!gameStarted) return
-
+        if (!gameStarted || testFinalizado) return
+        
         hitsCount++
         updateProgressText()
         containerJuego.removeView(dot)
@@ -100,77 +104,64 @@ class CoordinacionTestActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateProgressText() {
-        lblIntento.text = "INTENTO $intentoActual/2"
-        txtContador.text = "ATRAPADOS: $hitsCount / $TARGET_HITS"
-    }
-
-    // --- AQUÍ ESTÁ LA LÓGICA DE EXONERACIÓN CORREGIDA ---
     private fun finishAttempt() {
         gameStarted = false
+        testFinalizado = true
         val totalTime = System.currentTimeMillis() - startTime
-        val score = calculateScore(totalTime)
+        
+        // Aplicar penalización por ausencia si hubo distracciones
+        val score = calculateScore(totalTime) - penalizacionPorAusencia
+        val scoreFinal = score.coerceIn(0, 100)
 
-        // Guardado de métricas
-        val details = mapOf("tiempo_total_ms" to totalTime, "velocidad_media" to totalTime/TARGET_HITS)
-        CortexManager.logPerformanceMetric("t4", score, details)
-        CortexManager.guardarPuntaje("t4", score)
+        val details = mapOf("tiempo_total_ms" to totalTime, "penaliz_ausencia" to penalizacionPorAusencia)
+        CortexManager.logPerformanceMetric("t4", scoreFinal, details)
+        CortexManager.guardarPuntaje("t4", scoreFinal)
 
-        // Lógica de decisión: ¿Repite o Avanza?
-        if (intentoActual == 1 && score < 80) {
-            // Reprobó el primer intento -> REPETIR
-            showFinalDialog(score, totalTime, esReintento = true)
+        if (intentoActual == 1 && scoreFinal < 80) {
+            recreate()
         } else {
-            // Aprobó (>80) o es el segundo intento -> AVANZAR
-            showFinalDialog(score, totalTime, esReintento = false)
+            showFinalDialog(scoreFinal, totalTime)
         }
     }
 
     private fun calculateScore(timeMs: Long): Int {
-        // Base: 3000ms (3 segundos) para 5 toques es lo ideal (100 pts)
-        // Penalización: Pierdes 1 punto por cada 50ms extra.
-        // Si tardas 4000ms -> Pierdes 20 pts -> Nota 80 (Límite para aprobar)
         val baseTime = 3000L
         if (timeMs <= baseTime) return 100
         val penalty = ((timeMs - baseTime) / 50).toInt()
         return (100 - penalty).coerceIn(0, 100)
     }
 
-    // --- DIALOGO INTELIGENTE QUE MANEJA EL REINTENTO ---
-    private fun showFinalDialog(score: Int, timeMs: Long, esReintento: Boolean) {
-        if (isFinishing) return // Evita errores si la app se cerró
+    private fun updateProgressText() {
+        txtContador.text = "INTENTO $intentoActual/2 | ATRAPADOS: $hitsCount / $TARGET_HITS"
+    }
 
-        val titulo: String
-        val mensaje: String
-        val textoBoton: String
-
-        if (esReintento) {
-            titulo = "MUY LENTO ⚠️"
-            mensaje = "Tiempo: ${timeMs}ms\nNota: $score%\n\nNecesitas ser más rápido (mínimo 80%) para aprobar. Tienes un segundo intento."
-            textoBoton = "INTENTO 2"
-        } else {
-            titulo = if(score >= 80) "¡RÁPIDO Y PRECISO! ⚡" else "TEST FINALIZADO"
-            mensaje = "Tiempo: ${timeMs}ms\nNota Final: $score%"
-            textoBoton = "SIGUIENTE TEST"
-        }
-
+    private fun showFinalDialog(score: Int, timeMs: Long) {
+        val mensaje = "Tiempo: ${timeMs}ms\nNota: $score%\nPenalización ausencia: -$penalizacionPorAusencia pts"
         AlertDialog.Builder(this)
-            .setTitle(titulo)
+            .setTitle("COORDINACIÓN COMPLETADA")
             .setMessage(mensaje)
             .setCancelable(false)
-            .setPositiveButton(textoBoton) { _, _ ->
-                if (esReintento) {
-                    recreate() // Reinicia la Activity para el intento 2
-                } else {
-                    CortexManager.navegarAlSiguiente(this) // Se va a la siguiente pantalla
-                    finish()
-                }
+            .setPositiveButton("SIGUIENTE") { _, _ ->
+                CortexManager.navegarAlSiguiente(this)
+                finish()
             }
             .show()
     }
 
+    override fun onTestPaused() {
+        gameStarted = false
+        txtContador.text = "PAUSA POR AUSENCIA"
+    }
+
+    override fun onTestResumed() {
+        if (!testFinalizado) {
+            gameStarted = true
+            updateProgressText()
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        gameStarted = false
+        timerInicio?.cancel()
     }
 }
