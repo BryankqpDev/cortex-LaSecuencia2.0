@@ -49,7 +49,6 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // --- ✅ NUEVA VALIDACIÓN PARA PLACA ---
             if (!esPlacaValida(unidad)) {
                 etUnidad.error = "Placa inválida (ej: ABC-123 o 1234-AB)"
                 etUnidad.requestFocus()
@@ -62,8 +61,6 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "⚠️ Seleccione un equipo válido", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-
-            // --- FIN VALIDACIONES ---
 
             val now = Date()
             val fechaHoy = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(now)
@@ -85,28 +82,13 @@ class MainActivity : AppCompatActivity() {
         btnAdmin.setOnClickListener { mostrarDialogoAdmin() }
     }
 
-    /**
-     * ✅ NUEVA FUNCIÓN: Valida el formato de la placa peruana.
-     */
     private fun esPlacaValida(placa: String): Boolean {
-        // 1. Normalizar la placa: quitar guiones, espacios y a mayúsculas.
         val placaNormalizada = placa.replace(Regex("[\\s-]"), "").uppercase()
-
         if (placaNormalizada.length != 6) return false
-
-        // 2. Regla 1: Formato Auto (3 Letras, 3 Números)
         val formatoAuto = "^[A-Z]{3}[0-9]{3}$"
-        if (placaNormalizada.matches(Regex(formatoAuto))) {
-            return true
-        }
-
-        // 3. Regla 2: Formato Moto (4 Números, 2 Letras)
+        if (placaNormalizada.matches(Regex(formatoAuto))) return true
         val formatoMoto = "^[0-9]{4}[A-Z]{2}$"
-        if (placaNormalizada.matches(Regex(formatoMoto))) {
-            return true
-        }
-        
-        // Si no cumple ninguna regla, es inválida
+        if (placaNormalizada.matches(Regex(formatoMoto))) return true
         return false
     }
 
@@ -133,7 +115,10 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("ENTRAR") { _, _ ->
                 if (inputPassword.text.toString() == "1007") {
                     Toast.makeText(this, "Acceso Autorizado ✅", Toast.LENGTH_SHORT).show()
-                    startActivity(Intent(this, AdminActivity::class.java))
+                    
+                    // --- ✅ CAMBIO: AHORA ENVÍA A LOGINACTIVITY ---
+                    val intent = Intent(this, LoginActivity::class.java)
+                    startActivity(intent)
                 } else {
                     Toast.makeText(this, "⛔ Código Incorrecto", Toast.LENGTH_SHORT).show()
                 }

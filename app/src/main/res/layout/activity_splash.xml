@@ -19,22 +19,18 @@
         app:layout_constraintVertical_chainStyle="packed"
         android:layout_marginTop="80dp">
 
-        <!-- Helmet Icon (Background) -->
-        <TextView
+        <ImageView
             android:id="@+id/icon_helmet"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="⛑"
-            android:textSize="144sp"
-            android:textColor="@color/cortex_tech"
-            android:gravity="center"
-            android:textStyle="bold"
+            android:src="@drawable/ic_helmet_mining"
+            android:scaleType="fitCenter"
+            android:alpha="0.8"
             app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Chip Icon (Top) -->
         <TextView
             android:id="@+id/icon_chip"
             android:layout_width="wrap_content"
@@ -48,17 +44,17 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="8dp" />
 
-        <!-- Car Icon (Bottom) -->
-        <TextView
-            android:id="@+id/icon_car"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp"
-            android:text="🚗"
-            android:textSize="64sp"
+        <ImageView
+            android:id="@+id/icon_dumptruck"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/ic_dumptruck"
+            android:contentDescription="Dump Truck"
+            android:scaleType="fitCenter"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginBottom="10dp" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -97,16 +93,17 @@
         android:paddingEnd="20dp" />
 
     <!-- Credits -->
+
     <LinearLayout
         android:id="@+id/credits_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="16dp"
         android:gravity="end"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginBottom="20dp"
-        android:layout_marginEnd="20dp">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <TextView
             android:layout_width="wrap_content"
@@ -118,20 +115,31 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:text="ING. BRAYAM OMAR VILLENA CUBA"
             android:textColor="@color/cortex_text_muted"
             android:textSize="10sp"
-            android:textStyle="bold"
-            android:layout_marginTop="2dp" />
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:text="SOPORTE: 933665602"
             android:textColor="@color/cortex_text_muted"
-            android:textSize="10sp"
-            android:layout_marginTop="2dp" />
+            android:textSize="10sp" />
 
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/img_author"
+        android:layout_width="100dp"
+        android:layout_height="60dp"
+        android:src="@drawable/ic_cat_huan"
+        android:scaleType="fitCenter"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

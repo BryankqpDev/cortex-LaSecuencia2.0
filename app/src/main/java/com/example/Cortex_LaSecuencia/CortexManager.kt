@@ -16,6 +16,7 @@ import com.example.Cortex_LaSecuencia.actividades.EspacialTestActivity
 import com.example.Cortex_LaSecuencia.actividades.DecisionTestActivity
 import com.example.Cortex_LaSecuencia.actividades.ReporteFinalActivity
 import com.example.Cortex_LaSecuencia.actividades.IntroTestActivity
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.FirebaseDatabase
 
 // --- ✅ NUEVO: CLASE DE DATOS PARA MÉTRICAS DETALLADAS ---
@@ -33,6 +34,9 @@ object CortexManager {
     private const val KEY_LOCK_UNTIL = "cortex_lock_until"
 
     var operadorActual: Operador? = null
+    
+    // --- ✅ NUEVO: USUARIO ADMINISTRADOR ACTUAL (Firebase) ---
+    var usuarioAdmin: FirebaseUser? = null
 
     // Sistema de puntuación principal
     private val resultados = mutableMapOf<String, Int>()
@@ -64,7 +68,6 @@ object CortexManager {
 
     fun obtenerInfoTest(testId: String): TestInfo = testInfos[testId]!!
 
-    // --- ✅ NUEVO: FUNCIÓN PARA REGISTRAR MÉTRICAS DETALLADAS ---
     fun logPerformanceMetric(testId: String, score: Int, details: Map<String, Any>) {
         val log = TestMetricLog(
             testId = testId,
@@ -80,11 +83,11 @@ object CortexManager {
         val intentoActual = intentosPorTest.getOrPut(testId) { 1 }
 
         if (intentoActual == 1) {
-            if (puntajeClamp >= 80) { // Umbral de éxito para no repetir
+            if (puntajeClamp >= 80) { 
                 resultados[testId] = puntajeClamp
             } else {
                 puntajesTemporales.getOrPut(testId) { mutableListOf() }.add(puntajeClamp)
-                intentosPorTest[testId] = 2 // Marcar para segundo intento
+                intentosPorTest[testId] = 2 
             }
         } else {
             puntajesTemporales.getOrPut(testId) { mutableListOf() }.add(puntajeClamp)
@@ -106,34 +109,22 @@ object CortexManager {
 
     fun registrarNube(notaFinal: Int, esApto: Boolean) {
         operadorActual?.let {
-
             val reg = RegistroData(it.fecha, it.hora, it.supervisor, it.nombre, it.dni, it.equipo, notaFinal, if (esApto) "APTO" else "NO APTO")
             historialGlobal.add(reg)
-
-            val dbRef = FirebaseDatabase.getInstance()
-                .getReference("registros")
-
+            val dbRef = FirebaseDatabase.getInstance().getReference("registros")
             val key = dbRef.push().key
-
             if (key != null) {
                 dbRef.child(key).setValue(reg)
-                    .addOnSuccessListener {
-                        Log.d("FIREBASE", "Registro guardado correctamente")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e("FIREBASE", "Error al guardar", e)
-                    }
+                    .addOnSuccessListener { Log.d("FIREBASE", "Registro guardado correctamente") }
+                    .addOnFailureListener { e -> Log.e("FIREBASE", "Error al guardar", e) }
             }
         }
     }
 
-
     fun navegarAlSiguiente(context: Context) {
         val ultimoCompletado = listaDeTests.lastOrNull { resultados.containsKey(it) }
         val indiceUltimo = if (ultimoCompletado == null) -1 else listaDeTests.indexOf(ultimoCompletado)
-
         val proximoTestId = if (indiceUltimo + 1 < listaDeTests.size) listaDeTests[indiceUltimo + 1] else null
-
         if (proximoTestId != null) {
             val intent = Intent(context, IntroTestActivity::class.java)
             intent.putExtra("TEST_ID", proximoTestId)
@@ -166,7 +157,7 @@ object CortexManager {
         resultados.clear()
         intentosPorTest.clear()
         puntajesTemporales.clear()
-        performanceLog.clear() // Limpiar el nuevo log
+        performanceLog.clear()
         operadorActual = null
     }
 

@@ -55,7 +55,13 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation("androidx.cardview:cardview:1.0.0")
-    implementation(libs.firebase.database)
+    
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -63,20 +69,22 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    
     // Dependencias de Cámara para Sentinel
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.face.detection)
+    
     // Librería para crear Excel
     implementation("org.apache.poi:poi:5.2.3")
     implementation("org.apache.poi:poi-ooxml:5.2.3")
-    // Librería para generar PDF
-    implementation("com.itextpdf:itext7-core:7.2.5")
+    
     // Google Fonts
     implementation("androidx.compose.ui:ui-text-google-fonts:1.5.4")
+    
     // iTextPDF para generar PDFs
+    implementation("com.itextpdf:itext7-core:7.2.5")
     implementation("com.itextpdf:itextg:5.5.10")
-// ... tus otras dependencias
 }

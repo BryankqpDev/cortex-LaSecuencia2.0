@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -35,9 +36,8 @@ class SplashActivity : AppCompatActivity() {
 
         // Animaciones
         val logoContainer = findViewById<ConstraintLayout>(R.id.logo_container)
-        val iconHelmet = findViewById<TextView>(R.id.icon_helmet)
         val iconChip = findViewById<TextView>(R.id.icon_chip)
-        val iconCar = findViewById<TextView>(R.id.icon_car)
+        val iconCar = findViewById<ImageView>(R.id.icon_dumptruck)
         val txtTitle = findViewById<TextView>(R.id.txt_title)
 
         // Animación de entrada del logo

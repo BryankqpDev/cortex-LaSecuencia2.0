@@ -31,67 +31,91 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+
+        <!-- ✅ NUEVA ACTIVIDAD REGISTRADA -->
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity
             android:name=".actividades.WelcomeActivity"
             android:exported="false" />
+            
         <activity
             android:name=".actividades.IntroTestActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden" />
+            
         <activity
             android:name=".actividades.ReflejosTestActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
+            
         <activity
             android:name=".actividades.SecuenciaTestActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
+            
         <activity
             android:name=".actividades.AnticipacionTestActivity"
             android:exported="false"
             android:screenOrientation="landscape"
             tools:ignore="LockedOrientationActivity" />
+            
         <activity
             android:name=".actividades.CoordinacionTestActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
+            
         <activity
             android:name=".actividades.AtencionTestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+            
         <activity
             android:name=".actividades.EscaneoTestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+            
         <activity
             android:name=".actividades.ImpulsoTestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+            
         <activity
             android:name=".actividades.RastreoTestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+            
         <activity
             android:name=".actividades.EspacialTestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+            
         <activity
             android:name=".actividades.DecisionTestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+            
         <activity
             android:name=".actividades.ReporteFinalActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+            
         <activity
-            android:name=".AdminActivity" android:exported="false" />
+            android:name=".AdminActivity" 
+            android:exported="false" />
+            
         <activity
             android:name=".LockedActivity"
             android:exported="false"

@@ -21,6 +21,9 @@ googleGmsGoogleServices = "4.4.4"
 firebaseDatabase = "22.0.1"
 firebaseFirestoreKtx = "26.0.2"
 
+firebaseBom = "33.7.0"              # ← AGREGAR ESTO
+firebaseAuth = "23.1.0"             # ← AGREGAR ESTO
+
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
