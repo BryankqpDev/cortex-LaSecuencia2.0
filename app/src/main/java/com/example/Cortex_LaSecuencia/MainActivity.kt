@@ -37,7 +37,6 @@ class MainActivity : AppCompatActivity() {
             val unidad = etUnidad.text.toString().trim().uppercase()
             val equipoSeleccionado = spinnerEquipo.selectedItem.toString()
 
-            // --- VALIDACIONES ---
             if (empresa.isEmpty() || supervisor.isEmpty() || nombre.isEmpty() || dni.isEmpty() || unidad.isEmpty()) {
                 Toast.makeText(this, "⚠️ Faltan datos obligatorios", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -45,85 +44,54 @@ class MainActivity : AppCompatActivity() {
 
             if (dni.length != 8) {
                 etDni.error = "El DNI debe tener 8 dígitos."
-                etDni.requestFocus()
                 return@setOnClickListener
             }
 
             if (!esPlacaValida(unidad)) {
-                etUnidad.error = "Placa inválida (ej: ABC-123 o 1234-AB)"
-                etUnidad.requestFocus()
-                return@setOnClickListener
-            } else {
-                etUnidad.error = null
-            }
-
-            if (equipoSeleccionado.startsWith("-")) {
-                Toast.makeText(this, "⚠️ Seleccione un equipo válido", Toast.LENGTH_SHORT).show()
+                etUnidad.error = "Placa inválida"
                 return@setOnClickListener
             }
 
-            val now = Date()
-            val fechaHoy = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(now)
-            val horaHoy = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(now)
+            // --- ✅ SOLUCIÓN: INICIAR SESIÓN ANÓNIMA PARA PERMISOS DE STORAGE ---
+            btnSiguiente.isEnabled = false
+            btnSiguiente.text = "AUTENTICANDO..."
 
-            val nuevoOperador = Operador(
-                nombre = nombre, dni = dni, empresa = empresa,
-                supervisor = supervisor, equipo = equipoSeleccionado, unidad = unidad,
-                fecha = fechaHoy, hora = horaHoy
+            CortexManager.autenticarConductorAnonimo(
+                onSuccess = {
+                    val nuevoOperador = Operador(
+                        nombre = nombre, dni = dni, empresa = empresa,
+                        supervisor = supervisor, equipo = equipoSeleccionado, unidad = unidad,
+                        fecha = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
+                        hora = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                    )
+                    CortexManager.operadorActual = nuevoOperador
+                    
+                    // Ir a biometría con sesión activa
+                    startActivity(Intent(this, BiometriaActivity::class.java))
+                    btnSiguiente.isEnabled = true
+                    btnSiguiente.text = "SIGUIENTE ➔"
+                },
+                onError = { error ->
+                    Toast.makeText(this, "Error de conexión: $error", Toast.LENGTH_LONG).show()
+                    btnSiguiente.isEnabled = true
+                    btnSiguiente.text = "SIGUIENTE ➔"
+                }
             )
-
-            CortexManager.operadorActual = nuevoOperador
-            Toast.makeText(this, "Bienvenido, $nombre", Toast.LENGTH_SHORT).show()
-
-            val intent = Intent(this, WelcomeActivity::class.java)
-            startActivity(intent)
         }
 
         btnAdmin.setOnClickListener { mostrarDialogoAdmin() }
     }
 
     private fun esPlacaValida(placa: String): Boolean {
-        val placaNormalizada = placa.replace(Regex("[\\s-]"), "").uppercase()
-        if (placaNormalizada.length != 6) return false
-        val formatoAuto = "^[A-Z]{3}[0-9]{3}$"
-        if (placaNormalizada.matches(Regex(formatoAuto))) return true
-        val formatoMoto = "^[0-9]{4}[A-Z]{2}$"
-        if (placaNormalizada.matches(Regex(formatoMoto))) return true
-        return false
+        val n = placa.replace(Regex("[\\s-]"), "").uppercase()
+        return n.length == 6 && (n.matches(Regex("^[A-Z]{3}[0-9]{3}$")) || n.matches(Regex("^[0-9]{4}[A-Z]{2}$")))
     }
 
     private fun mostrarDialogoAdmin() {
-        val inputPassword = EditText(this).apply {
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            hint = "Código (1007)"
-            gravity = android.view.Gravity.CENTER
-            setTextColor(android.graphics.Color.BLACK)
-        }
-
-        val container = android.widget.FrameLayout(this).apply {
-            val params = android.widget.FrameLayout.LayoutParams(
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = 50; rightMargin = 50 }
-            addView(inputPassword, params)
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("ACCESO SUPERVISOR 🔒")
-            .setMessage("Ingrese código de seguridad:")
-            .setView(container)
+        val input = EditText(this).apply { inputType = 18; hint = "1007"; gravity = 17 }
+        AlertDialog.Builder(this).setTitle("ACCESO ADMIN").setView(input)
             .setPositiveButton("ENTRAR") { _, _ ->
-                if (inputPassword.text.toString() == "1007") {
-                    Toast.makeText(this, "Acceso Autorizado ✅", Toast.LENGTH_SHORT).show()
-                    
-                    // --- ✅ CAMBIO: AHORA ENVÍA A LOGINACTIVITY ---
-                    val intent = Intent(this, LoginActivity::class.java)
-                    startActivity(intent)
-                } else {
-                    Toast.makeText(this, "⛔ Código Incorrecto", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton("CANCELAR", null)
-            .show()
+                if (input.text.toString() == "1007") startActivity(Intent(this, LoginActivity::class.java))
+            }.show()
     }
 }

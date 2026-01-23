@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A2E3D">
+
+    <!-- ========== VISTA DE CÁMARA ========== -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/preview_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- ========== OVERLAY OSCURO SUPERIOR ========== -->
+    <View
+        android:id="@+id/overlay_top"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="#CC000000"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/face_frame" />
+
+    <!-- ========== TÍTULO Y SUBTÍTULO ========== -->
+    <LinearLayout
+        android:id="@+id/header_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:layout_marginTop="40dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tomate una foto"
+            android:textColor="#FFFFFF"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:id="@+id/txt_instruccion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Asegúrate de que tu rostro aparezca en el encuadre y sea claramente visible."
+            android:textColor="#B0BEC5"
+            android:textSize="14sp"
+            android:lineSpacingExtra="2dp" />
+    </LinearLayout>
+
+    <!-- ========== MARCO FACIAL (ÓVALO) ========== -->
+    <View
+        android:id="@+id/face_frame"
+        android:layout_width="280dp"
+        android:layout_height="360dp"
+        android:background="@drawable/face_oval_frame"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.45" />
+
+    <!-- ========== PUNTOS DE REFERENCIA FACIAL (OPCIONAL) ========== -->
+    <View
+        android:id="@+id/face_dot_top"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:background="@drawable/face_dot"
+        app:layout_constraintTop_toTopOf="@id/face_frame"
+        app:layout_constraintStart_toStartOf="@id/face_frame"
+        app:layout_constraintEnd_toEndOf="@id/face_frame"
+        android:layout_marginTop="60dp" />
+
+    <View
+        android:id="@+id/face_dot_left"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:background="@drawable/face_dot"
+        app:layout_constraintTop_toTopOf="@id/face_frame"
+        app:layout_constraintBottom_toBottomOf="@id/face_frame"
+        app:layout_constraintStart_toStartOf="@id/face_frame"
+        android:layout_marginStart="40dp" />
+
+    <View
+        android:id="@+id/face_dot_right"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:background="@drawable/face_dot"
+        app:layout_constraintTop_toTopOf="@id/face_frame"
+        app:layout_constraintBottom_toBottomOf="@id/face_frame"
+        app:layout_constraintEnd_toEndOf="@id/face_frame"
+        android:layout_marginEnd="40dp" />
+
+    <!-- ========== OVERLAY OSCURO INFERIOR ========== -->
+    <View
+        android:id="@+id/overlay_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="#CC000000"
+        app:layout_constraintTop_toBottomOf="@id/face_frame"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- ========== BOTÓN DE CAPTURA (ESTILO iOS) ========== -->
+    <View
+        android:id="@+id/btn_capturar"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:background="@drawable/capture_button_circle"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="50dp"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- ========== PANEL DE VERIFICACIÓN (ESTILO VERIFF) ========== -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_verificacion"
+        android:layout_width="280dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="24dp"
+        android:visibility="gone"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="120dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:background="#FFFFFF">
+
+            <!-- Item 1: Photos processed -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:id="@+id/icon_check_1"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_check_circle"
+                    app:tint="#00D9A5" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:text="Fotos procesadas"
+                    android:textColor="#263238"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Item 2: Image quality checked -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:id="@+id/icon_check_2"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_check_circle"
+                    app:tint="#00D9A5" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:text="Calidad de imagen verificada"
+                    android:textColor="#263238"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Item 3: Biometrics verified -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:id="@+id/icon_check_3"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_check_circle"
+                    app:tint="#00D9A5" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:text="Biometría verificada"
+                    android:textColor="#263238"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Item 4: Decision finalized -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ProgressBar
+                    android:id="@+id/progress_check_4"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:visibility="gone"
+                    style="?android:attr/progressBarStyleSmall" />
+
+                <ImageView
+                    android:id="@+id/icon_check_4"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_circle_outline"
+                    app:tint="#B0BEC5" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:text="Decisión finalizada"
+                    android:textColor="#90A4AE"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- ========== PREVIEW DE FOTO CAPTURADA ========== -->
+    <ImageView
+        android:id="@+id/img_preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- ========== CARD DE CONFIRMACIÓN (ESTILO VERIFF) ========== -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_confirmacion"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="24dp"
+        android:visibility="gone"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="40dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:background="#FFFFFF">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="¿La foto es clara y visible?"
+                android:textColor="#263238"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <Button
+                    android:id="@+id/btn_reintentar"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="Reintentar"
+                    android:textColor="#263238"
+                    android:background="@drawable/button_outline_bg"
+                    android:textAllCaps="false"
+                    android:textSize="14sp" />
+
+                <Button
+                    android:id="@+id/btn_confirmar"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Confirmar"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/button_primary_bg"
+                    android:textAllCaps="false"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

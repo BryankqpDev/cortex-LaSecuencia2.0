@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "10692984066",
+    "firebase_url": "https://cortex-lasecuencia-default-rtdb.firebaseio.com",
     "project_id": "cortex-lasecuencia",
     "storage_bucket": "cortex-lasecuencia.firebasestorage.app"
   },

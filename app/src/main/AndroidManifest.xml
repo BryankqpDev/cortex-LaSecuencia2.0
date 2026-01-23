@@ -2,14 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- ========== PERMISOS ========== -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
     <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:name="android.hardware.camera.front" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -22,6 +26,7 @@
         android:theme="@style/Theme.Cortex_LaSecuencia"
         tools:targetApi="31">
 
+        <!-- ========== SPLASH SCREEN (LAUNCHER) ========== -->
         <activity
             android:name=".SplashActivity"
             android:exported="true"
@@ -31,91 +36,106 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
+
+        <!-- ========== PANTALLA PRINCIPAL (CONDUCTORES) ========== -->
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        <!-- ✅ NUEVA ACTIVIDAD REGISTRADA -->
+        <!-- ========== 🔥 NUEVA: CAPTURA BIOMÉTRICA ========== -->
+        <activity
+            android:name=".BiometriaActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            tools:ignore="LockedOrientationActivity" />
+
+        <!-- ========== LOGIN ADMINISTRADOR ========== -->
         <activity
             android:name=".LoginActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- ========== PANTALLA DE BIENVENIDA ========== -->
         <activity
             android:name=".actividades.WelcomeActivity"
             android:exported="false" />
-            
+
+        <!-- ========== INTRODUCCIÓN A TESTS ========== -->
         <activity
             android:name=".actividades.IntroTestActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden" />
-            
+
+        <!-- ========== TESTS COGNITIVOS ========== -->
         <activity
             android:name=".actividades.ReflejosTestActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
-            
+
         <activity
             android:name=".actividades.SecuenciaTestActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
-            
+
         <activity
             android:name=".actividades.AnticipacionTestActivity"
             android:exported="false"
             android:screenOrientation="landscape"
             tools:ignore="LockedOrientationActivity" />
-            
+
         <activity
             android:name=".actividades.CoordinacionTestActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
-            
+
         <activity
             android:name=".actividades.AtencionTestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
-            
+
         <activity
             android:name=".actividades.EscaneoTestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
-            
+
         <activity
             android:name=".actividades.ImpulsoTestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
-            
+
         <activity
             android:name=".actividades.RastreoTestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
-            
+
         <activity
             android:name=".actividades.EspacialTestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
-            
+
         <activity
             android:name=".actividades.DecisionTestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
-            
+
+        <!-- ========== REPORTE FINAL ========== -->
         <activity
             android:name=".actividades.ReporteFinalActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
-            
+
+        <!-- ========== PANEL ADMINISTRADOR ========== -->
         <activity
-            android:name=".AdminActivity" 
+            android:name=".AdminActivity"
             android:exported="false" />
-            
+
+        <!-- ========== PANTALLA DE BLOQUEO ========== -->
         <activity
             android:name=".LockedActivity"
             android:exported="false"
