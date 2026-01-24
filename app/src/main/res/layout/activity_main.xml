@@ -11,6 +11,36 @@
         android:orientation="vertical"
         android:padding="24dp">
 
+        <!-- HEADER CON INFO DE USUARIO Y CERRAR SESIÓN -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:id="@+id/tv_usuario_actual"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="👤 Sesión activa"
+                android:textColor="#94A3B8"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/btn_cerrar_sesion"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:text="🚪 Salir"
+                android:textSize="11sp"
+                android:backgroundTint="#64748B"
+                android:textColor="#FFFFFF"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp" />
+        </LinearLayout>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -18,8 +48,7 @@
             android:textColor="#FFFFFF"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:layout_marginTop="30dp"
-            />
+            android:layout_marginTop="10dp" />
 
         <TextView
             android:layout_width="wrap_content"

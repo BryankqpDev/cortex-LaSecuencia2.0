@@ -1,101 +1,406 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0B1121"
-    android:fillViewport="true">
+    android:background="#0B1121">
 
-    <LinearLayout
+    <!-- CONTENIDO PRINCIPAL -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- HEADER -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp">
+
+                <ImageButton
+                    android:id="@+id/btn_menu"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_alignParentStart="true"
+                    android:background="@drawable/bg_icon_button"
+                    android:src="@drawable/ic_menu"
+                    app:tint="#00F0FF"
+                    android:contentDescription="Menú" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="BASE DE DATOS"
+                        android:textColor="#00F0FF"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:shadowColor="#00F0FF"
+                        android:shadowRadius="15" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="REGISTRO HISTÓRICO"
+                        android:textColor="#94A3B8"
+                        android:textSize="12sp"
+                        android:letterSpacing="0.1" />
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- TABLA DE REGISTROS -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="#151E32"
+                android:padding="10dp"
+                android:layout_marginBottom="20dp">
+
+                <TableLayout
+                    android:id="@+id/table_registros"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:stretchColumns="*">
+
+                    <TableRow
+                        android:background="#1E293B"
+                        android:padding="10dp">
+                        <TextView android:text="FECHA" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                        <TextView android:text="HORA" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                        <TextView android:text="SUPERVISOR" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                        <TextView android:text="NOMBRE" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                        <TextView android:text="DNI" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                        <TextView android:text="EQUIPO" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                        <TextView android:text="NOTA" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                        <TextView android:text="ESTADO" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                        <TextView android:text="ACCIÓN" android:textColor="#00F0FF" android:textStyle="bold"/>
+                    </TableRow>
+
+                </TableLayout>
+            </HorizontalScrollView>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- MENÚ LATERAL (DRAWER) -->
+    <LinearLayout
+        android:id="@+id/menu_drawer"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="#1E293B"
         android:orientation="vertical"
-        android:padding="20dp"
-        android:gravity="center_horizontal">
+        android:elevation="16dp"
+        android:visibility="gone">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="BASE DE DATOS"
-            android:textColor="#00F0FF"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:shadowColor="#00F0FF"
-            android:shadowDx="0"
-            android:shadowDy="0"
-            android:shadowRadius="20"
-            android:layout_marginTop="20dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="REGISTRO HISTÓRICO"
-            android:textColor="#94A3B8"
-            android:textSize="14sp"
-            android:letterSpacing="0.1"
-            android:layout_marginBottom="30dp"/>
-
-        <HorizontalScrollView
+        <!-- HEADER DEL MENÚ -->
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="300dp"
-            android:background="#151E32"
-            android:padding="10dp"
-            android:layout_marginBottom="30dp">
+            android:layout_height="wrap_content"
+            android:background="#0F172A"
+            android:padding="20dp">
 
-            <TableLayout
-                android:id="@+id/table_registros"
+            <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:stretchColumns="*">
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:text="OPCIONES"
+                android:textColor="#00F0FF"
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
-                <TableRow android:background="#1E293B" android:padding="10dp">
-                    <TextView android:text="FECHA" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
-                    <TextView android:text="HORA" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
-                    <TextView android:text="SUPERVISOR" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
-                    <TextView android:text="NOMBRE" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
-                    <TextView android:text="DNI" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
-                    <TextView android:text="EQUIPO" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
-                    <TextView android:text="NOTA" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
-                    <TextView android:text="ESTADO" android:textColor="#00F0FF" android:textStyle="bold"/>
-                </TableRow>
+            <ImageButton
+                android:id="@+id/btn_cerrar_menu"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_close"
+                app:tint="#FFFFFF"
+                android:contentDescription="Cerrar" />
+        </RelativeLayout>
 
-            </TableLayout>
-        </HorizontalScrollView>
-
-        <Button
-            android:id="@+id/btn_descargar_excel"
+        <View
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:text="📄 DESCARGAR EXCEL COMPLETO"
-            android:backgroundTint="#10B981"
-            android:textColor="@color/white"
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:layout_marginBottom="15dp"
-            android:background="@drawable/bg_boton_redondeado"
-            />
+            android:layout_height="1dp"
+            android:background="#334155" />
 
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btn_volver_inicio"
+        <!-- SWITCH ENVÍO AUTOMÁTICO -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:text="VOLVER AL INICIO"
-            android:background="@drawable/bg_btn_outline"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:layout_marginBottom="15dp"/>
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:background="#0F172A">
 
-        <Button
-            android:id="@+id/btn_borrar_todo"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Envío Automático"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switch_envio_auto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Activar envío automático por email"
+                android:textColor="#94A3B8"
+                android:textSize="12sp"
+                app:thumbTint="@color/white"
+                app:trackTint="#475569" />
+        </LinearLayout>
+
+        <View
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:text="BORRAR TODO (RESETEAR)"
-            android:backgroundTint="#EF4444"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:background="@drawable/bg_boton_redondeado"
-            />
+            android:layout_height="1dp"
+            android:background="#334155" />
+
+        <!-- OPCIONES DEL MENÚ -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp">
+
+                <!-- DESCARGAR EXCEL -->
+                <LinearLayout
+                    android:id="@+id/menu_descargar_excel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="20dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:text="📄"
+                        android:textSize="24sp"
+                        android:gravity="center" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="15dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Descargar Excel"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Guardar reporte completo"
+                            android:textColor="#94A3B8"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- ENVIAR REPORTE -->
+                <LinearLayout
+                    android:id="@+id/menu_enviar_reporte"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="20dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:text="📧"
+                        android:textSize="24sp"
+                        android:gravity="center" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="15dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Enviar Reporte"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Enviar por email con Excel"
+                            android:textColor="#94A3B8"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- CONFIGURAR EMAIL -->
+                <LinearLayout
+                    android:id="@+id/menu_config_email"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="20dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:text="⚙️"
+                        android:textSize="24sp"
+                        android:gravity="center" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="15dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Configurar Emails"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Hasta 10 emails de destino"
+                            android:textColor="#94A3B8"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#334155"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="10dp" />
+
+                <!-- PAPELERA -->
+                <LinearLayout
+                    android:id="@+id/menu_papelera"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="20dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:text="🗑️"
+                        android:textSize="24sp"
+                        android:gravity="center" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="15dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Papelera"
+                            android:textColor="#F59E0B"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Gestionar registros eliminados"
+                            android:textColor="#94A3B8"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- VOLVER -->
+                <LinearLayout
+                    android:id="@+id/menu_volver"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="20dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:text="◀️"
+                        android:textSize="24sp"
+                        android:gravity="center" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="15dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Volver al Inicio"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Regresar a pantalla principal"
+                            android:textColor="#94A3B8"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
 
     </LinearLayout>
-</ScrollView>
+
+</FrameLayout>

@@ -18,14 +18,15 @@ data class TestMetricLog(
 )
 
 data class RegistroData(
-    val fecha: String,
-    val hora: String,
-    val supervisor: String,
-    val nombre: String,
-    val dni: String,
-    val equipo: String,
-    val nota: Int,
-    val estado: String
+    val fecha: String = "",
+    val hora: String = "",
+    val supervisor: String = "",
+    val nombre: String = "",
+    val dni: String = "",
+    val equipo: String = "",
+    val nota: Int = 0,
+    val estado: String = "",
+    var enPapelera: Boolean = false  // ✅ NUEVO CAMPO
 )
 
 object CortexManager {
@@ -34,8 +35,8 @@ object CortexManager {
     private const val KEY_LOCK_UNTIL = "cortex_lock_until"
 
     var operadorActual: Operador? = null
-    var usuarioAdmin: FirebaseUser? = null      
-    var usuarioConductor: FirebaseUser? = null  
+    var usuarioAdmin: FirebaseUser? = null
+    var usuarioConductor: FirebaseUser? = null
 
     private var fotoFacialUrl: String? = null
     private var fotoFacialVerificada: Boolean = false
@@ -45,6 +46,19 @@ object CortexManager {
     private val puntajesTemporales = mutableMapOf<String, MutableList<Int>>()
     val performanceLog = mutableListOf<TestMetricLog>()
     val historialGlobal = mutableListOf<RegistroData>()
+
+    private val emailsAdminAutorizados = listOf(
+        "limmpu@gmail.com",
+        "fabiogomez2482@gmail.com",
+        "jefe@empresa.com"
+        // Agrega más emails aquí
+    )
+    fun esEmailAutorizado(email: String): Boolean {
+        return emailsAdminAutorizados.any {
+            it.equals(email.trim(), ignoreCase = true)
+        }
+    }
+
 
     private val listaDeTests = listOf("t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10")
 
@@ -151,6 +165,7 @@ object CortexManager {
             context.startActivity(intent)
         }
     }
+    fun verificarCodigoSupervisor(codigo: String): Boolean = codigo == "1007"
 
     fun obtenerIntentTest(context: Context, testId: String): Intent? {
         return when (testId) {
@@ -181,7 +196,6 @@ object CortexManager {
         appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)?.edit()?.putLong(KEY_LOCK_UNTIL, unlockTime)?.apply()
     }
     fun desbloquearSistema(context: Context) { appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)?.edit()?.remove(KEY_LOCK_UNTIL)?.apply() }
-    fun verificarCodigoSupervisor(codigo: String): Boolean = codigo == "1007"
     // ✅ NUEVA FUNCIÓN: Guardar hash facial en Realtime Database
     fun guardarHashFacial(
         hashFacial: String,
@@ -233,4 +247,5 @@ object CortexManager {
                 onError(error.localizedMessage ?: "Error al guardar en base de datos")
             }
     }
+
 }

@@ -4,7 +4,9 @@ import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TableLayout
 import android.widget.TableRow
 import android.widget.TextView
@@ -27,23 +29,29 @@ class AdminActivity : AppCompatActivity() {
         setContentView(R.layout.activity_admin)
 
         val tabla = findViewById<TableLayout>(R.id.table_registros)
-        val btnVolver = findViewById<Button>(R.id.btn_volver_inicio)
-        val btnBorrar = findViewById<Button>(R.id.btn_borrar_todo)
-        val btnExcel = findViewById<Button>(R.id.btn_descargar_excel)
+        val btnMenu = findViewById<View>(R.id.btn_menu)
+        val menuDrawer = findViewById<LinearLayout>(R.id.menu_drawer)
+        val btnCerrarMenu = findViewById<View>(R.id.btn_cerrar_menu)
+        val menuVolver = findViewById<LinearLayout>(R.id.menu_volver)
+        val menuExcel = findViewById<LinearLayout>(R.id.menu_descargar_excel)
+
+        // 🎯 GESTIÓN DEL MENÚ LATERAL
+        btnMenu.setOnClickListener { menuDrawer.visibility = View.VISIBLE }
+        btnCerrarMenu.setOnClickListener { menuDrawer.visibility = View.GONE }
 
         // 🔥 CARGAR DESDE FIREBASE
         cargarDesdeFirebase(tabla)
 
-        btnVolver.setOnClickListener { finish() }
-
-        btnBorrar.setOnClickListener {
-            if (CortexManager.historialGlobal.isEmpty()) return@setOnClickListener
-            CortexManager.historialGlobal.clear()
-            tabla.removeViews(1, tabla.childCount - 1)
-            Toast.makeText(this, "Base de datos borrada", Toast.LENGTH_SHORT).show()
+        // --- ✅ CORRECCIÓN: VOLVER AL INICIO ---
+        menuVolver.setOnClickListener {
+            // Regresar de forma segura a MainActivity
+            val intent = Intent(this, MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            startActivity(intent)
+            finish()
         }
 
-        btnExcel.setOnClickListener {
+        menuExcel.setOnClickListener {
             if (CortexManager.historialGlobal.isEmpty()) {
                 Toast.makeText(this, "No hay datos para exportar", Toast.LENGTH_SHORT).show()
             } else {
@@ -53,14 +61,12 @@ class AdminActivity : AppCompatActivity() {
         }
     }
 
-    // 🔥 NUEVA FUNCIÓN: Cargar desde Firebase
     private fun cargarDesdeFirebase(tabla: TableLayout) {
         val ref = FirebaseDatabase.getInstance("https://cortex-lasecuencia-default-rtdb.firebaseio.com/")
             .getReference("registros")
 
         ref.get().addOnSuccessListener { snapshot ->
             CortexManager.historialGlobal.clear()
-
             for (child in snapshot.children) {
                 val fecha = child.child("fecha").getValue(String::class.java) ?: ""
                 val hora = child.child("hora").getValue(String::class.java) ?: ""
@@ -71,15 +77,9 @@ class AdminActivity : AppCompatActivity() {
                 val nota = child.child("nota").getValue(Int::class.java) ?: 0
                 val estado = child.child("estado").getValue(String::class.java) ?: ""
 
-                CortexManager.historialGlobal.add(
-                    RegistroData(fecha, hora, supervisor, nombre, dni, equipo, nota, estado)
-                )
+                CortexManager.historialGlobal.add(RegistroData(fecha, hora, supervisor, nombre, dni, equipo, nota, estado))
             }
-
             llenarTabla(tabla)
-            Toast.makeText(this, "✅ ${CortexManager.historialGlobal.size} registros cargados", Toast.LENGTH_SHORT).show()
-        }.addOnFailureListener { e ->
-            Toast.makeText(this, "❌ Error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -88,20 +88,11 @@ class AdminActivity : AppCompatActivity() {
             contentResolver.openOutputStream(uri)?.use { outputStream ->
                 val workbook = XSSFWorkbook()
                 val sheet = workbook.createSheet("Historial Operadores")
-
                 val headerRow = sheet.createRow(0)
-                val headerStyle = workbook.createCellStyle()
-                val font = workbook.createFont()
-                font.bold = true
-                headerStyle.setFont(font)
-
                 val columnas = listOf("FECHA", "HORA", "SUPERVISOR", "NOMBRE", "DNI", "EQUIPO", "NOTA", "ESTADO")
                 for ((index, titulo) in columnas.withIndex()) {
-                    val cell = headerRow.createCell(index)
-                    cell.setCellValue(titulo)
-                    cell.cellStyle = headerStyle
+                    headerRow.createCell(index).setCellValue(titulo)
                 }
-
                 val lista = CortexManager.historialGlobal
                 for ((index, dato) in lista.withIndex()) {
                     val row = sheet.createRow(index + 1)
@@ -114,16 +105,11 @@ class AdminActivity : AppCompatActivity() {
                     row.createCell(6).setCellValue("${dato.nota}%")
                     row.createCell(7).setCellValue(dato.estado)
                 }
-
                 workbook.write(outputStream)
                 workbook.close()
-
-                Toast.makeText(this, "✅ Excel guardado con éxito", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "✅ Excel guardado", Toast.LENGTH_SHORT).show()
             }
-        } catch (e: IOException) {
-            e.printStackTrace()
-            Toast.makeText(this, "❌ Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
-        }
+        } catch (e: Exception) { }
     }
 
     private fun llenarTabla(tabla: TableLayout) {
@@ -148,13 +134,8 @@ class AdminActivity : AppCompatActivity() {
             agregarCelda(dato.nombre)
             agregarCelda(dato.dni)
             agregarCelda(dato.equipo)
-
-            val colorNota = if (dato.nota >= 75) Color.GREEN else Color.RED
-            agregarCelda("${dato.nota}%", colorNota)
-
-            val colorEstado = if (dato.estado == "APTO") Color.GREEN else Color.RED
-            agregarCelda(dato.estado, colorEstado)
-
+            agregarCelda("${dato.nota}%", if (dato.nota >= 75) Color.GREEN else Color.RED)
+            agregarCelda(dato.estado, if (dato.estado == "APTO") Color.GREEN else Color.RED)
             tabla.addView(row)
         }
     }

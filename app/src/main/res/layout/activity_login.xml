@@ -64,7 +64,19 @@
             android:paddingStart="16dp"
             android:background="@drawable/bg_input_field"
             android:inputType="textPassword"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="16dp" />
+
+        <!-- ✅ CHECKBOX MANTENER SESIÓN -->
+        <CheckBox
+            android:id="@+id/cb_mantener_sesion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mantener sesión iniciada"
+            android:textColor="@color/cortex_text_muted"
+            android:textSize="14sp"
+            android:checked="true"
+            android:layout_marginBottom="24dp"
+            android:buttonTint="@color/cortex_tech" />
 
         <Button
             android:id="@+id/btn_login"

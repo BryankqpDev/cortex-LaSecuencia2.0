@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -15,9 +16,13 @@ import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var sessionManager: SessionManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        sessionManager = SessionManager(this)
 
         val etEmpresa = findViewById<EditText>(R.id.et_empresa)
         val etSupervisor = findViewById<EditText>(R.id.et_supervisor)
@@ -28,6 +33,31 @@ class MainActivity : AppCompatActivity() {
 
         val btnSiguiente = findViewById<Button>(R.id.btn_siguiente)
         val btnAdmin = findViewById<Button>(R.id.btn_admin)
+        
+        // --- ✅ RESTAURADO: BOTÓN CERRAR SESIÓN / SALIR ---
+        val btnCerrarSesion = findViewById<Button>(R.id.btn_cerrar_sesion)
+        val tvUsuarioActual = findViewById<TextView>(R.id.tv_usuario_actual)
+
+        if (sessionManager.tieneSesionActiva()) {
+            tvUsuarioActual.visibility = TextView.VISIBLE
+            btnCerrarSesion.visibility = Button.VISIBLE
+            tvUsuarioActual.text = "👤 ${sessionManager.getEmailUsuario()}"
+        } else {
+            tvUsuarioActual.visibility = TextView.GONE
+            btnCerrarSesion.visibility = Button.GONE
+        }
+
+        btnCerrarSesion.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("Cerrar Sesión")
+                .setMessage("¿Estás seguro de que deseas salir?")
+                .setPositiveButton("SÍ") { _, _ ->
+                    sessionManager.cerrarSesion()
+                    finishAffinity() // Cierra la app completamente
+                }
+                .setNegativeButton("NO", null)
+                .show()
+        }
 
         btnSiguiente.setOnClickListener {
             val empresa = etEmpresa.text.toString().trim().uppercase()
@@ -52,7 +82,6 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // --- ✅ SOLUCIÓN: INICIAR SESIÓN ANÓNIMA PARA PERMISOS DE STORAGE ---
             btnSiguiente.isEnabled = false
             btnSiguiente.text = "AUTENTICANDO..."
 
@@ -65,21 +94,21 @@ class MainActivity : AppCompatActivity() {
                         hora = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
                     )
                     CortexManager.operadorActual = nuevoOperador
-                    
-                    // Ir a biometría con sesión activa
                     startActivity(Intent(this, BiometriaActivity::class.java))
                     btnSiguiente.isEnabled = true
                     btnSiguiente.text = "SIGUIENTE ➔"
                 },
                 onError = { error ->
-                    Toast.makeText(this, "Error de conexión: $error", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
                     btnSiguiente.isEnabled = true
                     btnSiguiente.text = "SIGUIENTE ➔"
                 }
             )
         }
 
-        btnAdmin.setOnClickListener { mostrarDialogoAdmin() }
+        btnAdmin.setOnClickListener {
+            startActivity(Intent(this, LoginActivity::class.java))
+        }
     }
 
     private fun esPlacaValida(placa: String): Boolean {
@@ -87,11 +116,12 @@ class MainActivity : AppCompatActivity() {
         return n.length == 6 && (n.matches(Regex("^[A-Z]{3}[0-9]{3}$")) || n.matches(Regex("^[0-9]{4}[A-Z]{2}$")))
     }
 
-    private fun mostrarDialogoAdmin() {
-        val input = EditText(this).apply { inputType = 18; hint = "1007"; gravity = 17 }
-        AlertDialog.Builder(this).setTitle("ACCESO ADMIN").setView(input)
-            .setPositiveButton("ENTRAR") { _, _ ->
-                if (input.text.toString() == "1007") startActivity(Intent(this, LoginActivity::class.java))
-            }.show()
+    override fun onBackPressed() {
+        AlertDialog.Builder(this)
+            .setTitle("⚠️ Salir")
+            .setMessage("¿Deseas salir de la aplicación?")
+            .setPositiveButton("SÍ") { _, _ -> finishAffinity() }
+            .setNegativeButton("NO", null)
+            .show()
     }
 }
