@@ -1,4 +1,4 @@
-package com.example.Cortex_LaSecuencia
+package com.example.Cortex_LaSecuencia.actividades
 
 import android.content.Intent
 import android.graphics.Color
@@ -17,6 +17,9 @@ import androidx.appcompat.app.AppCompatActivity
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.IOException
 import com.google.firebase.database.FirebaseDatabase
+import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.CortexManager
+import com.example.Cortex_LaSecuencia.RegistroData
 
 class AdminActivity : AppCompatActivity() {
 

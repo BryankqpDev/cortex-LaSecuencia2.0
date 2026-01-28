@@ -35,7 +35,7 @@
             android:id="@+id/icon_chip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🔷"
+            android:text="@string/splash_chip_icon"
             android:textSize="40sp"
             android:background="@drawable/bg_chip"
             android:padding="4dp"
@@ -63,7 +63,7 @@
         android:id="@+id/txt_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="CORTEX"
+        android:text="@string/app_title"
         android:textColor="@color/cortex_tech"
         android:textSize="56sp"
         android:textStyle="bold"
@@ -79,7 +79,7 @@
         android:id="@+id/txt_slogan"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="INTELIGENCIA ARTIFICIAL PARA LA SEGURIDAD HUMANA"
+        android:text="@string/app_subtitle"
         android:textColor="@color/cortex_accent"
         android:textSize="14sp"
         android:textStyle="bold"
@@ -108,7 +108,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="CREADOR"
+            android:text="@string/app_creator_label"
             android:textColor="@color/cortex_text_muted"
             android:textSize="10sp" />
 
@@ -116,7 +116,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:text="ING. BRAYAM OMAR VILLENA CUBA"
+            android:text="@string/app_creator_name"
             android:textColor="@color/cortex_text_muted"
             android:textSize="10sp"
             android:textStyle="bold" />
@@ -125,7 +125,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:text="SOPORTE: 933665602"
+            android:text="@string/app_support"
             android:textColor="@color/cortex_text_muted"
             android:textSize="10sp" />
 

@@ -1,42 +1,245 @@
 <resources>
 
-    <string name="t8_memorize_blue">Memorice los 2 azules...</string>
-    <string name="t8_tracking">Rastreando...</string>
-    <string name="t8_touch_targets">Toque los 2 objetivos:</string>
-
+    <!-- ========================================== -->
+    <!-- APP GENERAL -->
+    <!-- ========================================== -->
     <string name="app_name">Cortex_LaSecuencia</string>
-    <string name="btn_entendido_ok">¡ENTENDIDO! 👍</string>
+    <string name="app_subtitle">INTELIGENCIA ARTIFICIAL PARA LA SEGURIDAD HUMANA</string>
+    <string name="app_title">CORTEX</string>
+    <string name="app_creator_label">CREADOR</string>
+    <string name="app_creator_name">ING. BRAYAM OMAR VILLENA CUBA</string>
+    <string name="app_support">SOPORTE: 933665602</string>
+
+    <!-- ========================================== -->
+    <!-- TESTS - TÍTULOS Y DESCRIPCIONES -->
+    <!-- ========================================== -->
+    
+    <!-- Test 1: Reflejos -->
     <string name="t1_title">1. REFLEJOS</string>
     <string name="t1_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Medición de fatiga y vía retino-cortical.</string>
     <string name="t1_mission">🏁 <b>TU MISIÓN:</b> El botón está GRIS. Espera... Cuando se ponga VERDE 🟩 ¡Presiona al instante! Si tardas, el sistema detecta \'microsueño\'.</string>
+    
+    <!-- Test 2: Memoria -->
     <string name="t2_title">2. MEMORIA</string>
     <string name="t2_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Memoria de trabajo y retención visual.</string>
     <string name="t2_mission">🏁 <b>TU MISIÓN:</b> Memoriza el patrón de luces que se encienden ✨. Luego toca los mismos cuadros en el mismo orden.</string>
+    <string name="t2_instruction_observe">OBSERVA LA SECUENCIA</string>
+    <string name="t2_instruction_memorize">MEMORICE LA SECUENCIA (6 PASOS)</string>
+    <string name="t2_instruction_replicate">REPLICA LOS 6 PASOS</string>
+    <string name="t2_instruction_pause">PAUSA POR AUSENCIA</string>
+    <string name="t2_instruction_continue">REPLICA LA SECUENCIA</string>
+    
+    <!-- Test 3: Anticipación -->
     <string name="t3_title">3. ANTICIPACIÓN</string>
     <string name="t3_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Lóbulo Parietal (Cálculo Espacio-Tiempo).</string>
     <string name="t3_mission">🏁 <b>TU MISIÓN:</b> El camión 🚛 acelerará por la pista. Calcula bien su movimiento y frena 🛑 exactamente cuando esté dentro de la ZONA VERDE.</string>
+    
+    <!-- Test 4: Coordinación -->
     <string name="t4_title">4. COORDINACIÓN</string>
     <string name="t4_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Precisión motora fina y cerebelo.</string>
     <string name="t4_mission">🏁 <b>TU MISIÓN:</b> Aparecerán bolitas amarillas 🟡. Sé rápido y atrapa exactamente 5 con tu dedo.</string>
+    
+    <!-- Test 5: Atención -->
     <string name="t5_title">5. ATENCIÓN</string>
     <string name="t5_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Inhibición de distractores (Stroop).</string>
     <string name="t5_mission">🏁 <b>TU MISIÓN:</b> ¡Cuidado con la trampa! Mira el COLOR DE LA TINTA 🎨, no leas la palabra. Si dice \'ROJO\' pero es verde, presiona VERDE.</string>
+    
+    <!-- Test 6: Escaneo -->
     <string name="t6_title">6. ESCANEO</string>
     <string name="t6_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Búsqueda visual en entornos complejos.</string>
     <string name="t6_mission">🏁 <b>TU MISIÓN:</b> Te diré un número arriba (ej: 45). Búscalo rápido 🔎 entre todos los números de abajo y tócalo.</string>
+    
+    <!-- Test 7: Impulso -->
     <string name="t7_title">7. IMPULSO</string>
     <string name="t7_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Control de impulsos (Corteza Prefrontal).</string>
     <string name="t7_mission">🏁 <b>TU MISIÓN:</b><br/>💎 AZUL = ¡TOCA!<br/>❌ NARANJA = ¡NO TOQUES! (Contrólate).</string>
+    
+    <!-- Test 8: Rastreo -->
     <string name="t8_title">8. RASTREO</string>
     <string name="t8_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Conciencia Situacional (MOT).</string>
     <string name="t8_mission">🏁 <b>TU MISIÓN:</b> Mira las 2 bolitas AZULES 🔵🔵. Se volverán blancas y se mezclarán. Síguelas con la vista 👀. Al final, dime cuáles eran.</string>
+    <string name="t8_subtitle">CONCIENCIA SITUACIONAL (MOT)</string>
+    <string name="t8_memorize_blue">Memorice las 2 bolitas AZULES</string>
+    <string name="t8_memorize_instruction">Memorice las 2 AZULES...</string>
+    <string name="t8_tracking">Rastreando...</string>
+    <string name="t8_touch_targets">Toque los 2 objetivos:</string>
+    <string name="t8_pause">⏸ PAUSA POR AUSENCIA</string>
+    
+    <!-- Test 9: Espacial -->
     <string name="t9_title">9. ESPACIAL</string>
     <string name="t9_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Orientación y conflicto direccional.</string>
     <string name="t9_mission">🏁 <b>TU MISIÓN:</b><br/>🟦 Flecha AZUL: Marca su dirección real.<br/>🟥 Flecha ROJA: ¡Marca la dirección CONTRARIA!</string>
+    
+    <!-- Test 10: Decisión -->
     <string name="t10_title">10. DECISIÓN</string>
     <string name="t10_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Flexibilidad Cognitiva.</string>
     <string name="t10_mission">🏁 <b>TU MISIÓN:</b> La regla cambia:<br/>🟦 Si es AZUL = Toca el número MAYOR.<br/>🟧 Si es NARANJA = Toca el número MENOR.</string>
 
+    <!-- ========================================== -->
+    <!-- UI - BOTONES COMUNES -->
+    <!-- ========================================== -->
+    <string name="btn_understood">¡ENTENDIDO! 👍</string>
+    <string name="btn_entendido_ok">¡ENTENDIDO! 👍</string>
+    <string name="btn_continue">CONTINUAR</string>
+    <string name="btn_confirm">CONFIRMAR</string>
+    <string name="btn_confirm_count">CONFIRMAR (%d)</string>
+    <string name="btn_confirm_tracking">CONFIRMAR (%d/2)</string>
+    <string name="btn_next">SIGUIENTE ➔</string>
+    <string name="btn_exit">🚪 Salir</string>
+    <string name="btn_admin">ADMIN / DATA</string>
+    <string name="btn_new_evaluation">🔄 NUEVA EVALUACIÓN</string>
+    <string name="btn_download_pdf">DESCARGAR PDF</string>
+    <string name="btn_finish_exit">FINALIZAR / SALIR</string>
+    <string name="btn_supervisor_unlock">DESBLOQUEO DE SUPERVISOR 🔒</string>
+    <string name="btn_login">INICIAR SESIÓN</string>
+    <string name="btn_register">CREAR CUENTA ADMIN</string>
+    <string name="btn_start_evaluation">INICIAR EVALUACIÓN</string>
+    <string name="btn_authenticating">AUTENTICANDO...</string>
+
+    <!-- ========================================== -->
+    <!-- UI - LABELS Y TÍTULOS -->
+    <!-- ========================================== -->
+    <string name="label_registration">REGISTRO</string>
+    <string name="label_company">EMPRESA</string>
+    <string name="label_supervisor">SUPERVISOR</string>
+    <string name="label_driver">CONDUCTOR</string>
+    <string name="label_dni">DNI / ID</string>
+    <string name="label_equipment_type">TIPO EQUIPO</string>
+    <string name="label_unit">UNIDAD</string>
+    <string name="label_attempt">INTENTO %d/2</string>
+    <string name="label_session_active">👤 Sesión activa</string>
+    <string name="label_sentinel_mode">SENTINEL: MODO ESTRICTO</string>
+    <string name="label_analysis">ANÁLISIS</string>
+    <string name="label_hello">¡HOLA!</string>
+    <string name="label_operator">OPERADOR</string>
+
+    <!-- ========================================== -->
+    <!-- UI - HINTS (PLACEHOLDERS) -->
+    <!-- ========================================== -->
+    <string name="hint_company_name">NOMBRE EMPRESA</string>
+    <string name="hint_supervisor_name">SUPERVISOR A CARGO</string>
+    <string name="hint_driver_name">APELLIDOS Y NOMBRES</string>
+    <string name="hint_document">DOCUMENTO</string>
+    <string name="hint_unit_plate">PLACA O CÓDIGO INT.</string>
+    <string name="hint_email">Correo Electrónico</string>
+    <string name="hint_password">Contraseña</string>
+
+    <!-- ========================================== -->
+    <!-- MENSAJES - ÉXITO -->
+    <!-- ========================================== -->
+    <string name="msg_success_pdf">✅ PDF Guardado en Descargas</string>
+    <string name="msg_success_unlocked">✅ DESBLOQUEADO</string>
+    <string name="msg_success_admin_access">✅ Acceso Admin concedido</string>
+    <string name="msg_success_admin_registered">✅ Admin registrado</string>
+    <string name="msg_success_verification">✓ Verificación completada</string>
+
+    <!-- ========================================== -->
+    <!-- MENSAJES - ERROR -->
+    <!-- ========================================== -->
+    <string name="msg_error_missing_data">⚠️ Faltan datos obligatorios</string>
+    <string name="msg_error_invalid_email">⚠️ Email inválido</string>
+    <string name="msg_error_enter_email">⚠️ Ingresa tu email</string>
+    <string name="msg_error_enter_password">⚠️ Ingresa tu contraseña</string>
+    <string name="msg_error_min_password">⚠️ Mínimo 6 caracteres</string>
+    <string name="msg_error_incorrect_code">❌ CÓDIGO INCORRECTO</string>
+    <string name="msg_error_invalid_plate">Placa inválida</string>
+    <string name="msg_error_dni_length">El DNI debe tener 8 dígitos.</string>
+    <string name="msg_error_finish_test">Termina la prueba antes de salir</string>
+    <string name="msg_error_distraction">⚠️ Distracción prolongada: -10 pts</string>
+    <string name="msg_error_test_cancelled">Prueba anulada: %s</string>
+    <string name="msg_error_camera_permission">Permiso de cámara requerido</string>
+    <string name="msg_error_sentinel_init">Error al iniciar Sentinel: %s</string>
+    <string name="msg_error_camera_config">Error al configurar cámara: %s</string>
+    <string name="msg_error_pdf">Error PDF: %s</string>
+    <string name="msg_error_login">❌ Error: %s</string>
+    <string name="msg_error_register">❌ Error al registrar</string>
+
+    <!-- ========================================== -->
+    <!-- MENSAJES - ESTADOS -->
+    <!-- ========================================== -->
+    <string name="status_wait">ESPERE</string>
+    <string name="status_ready">YA!</string>
+    <string name="status_pause">PAUSA</string>
+    <string name="status_processing">Procesando...</string>
+    <string name="status_calculating">CALCULANDO...</string>
+    <string name="status_operator_absent">⚠️ ¡OPERADOR AUSENTE!</string>
+    <string name="status_operator_absent_count">⚠️ ¡OPERADOR AUSENTE!\\nSEGUNDOS: %d/4</string>
+    <string name="status_face_verified">✅ Rostro verificado</string>
+
+    <!-- ========================================== -->
+    <!-- ADMIN - PANEL -->
+    <!-- ========================================== -->
+    <string name="admin_title">ACCESO ADMIN</string>
+    <string name="admin_subtitle">Gestión de Seguridad Sentinel</string>
+    <string name="admin_keep_session">Mantener sesión iniciada</string>
+    <string name="admin_forgot_password">¿Olvidaste tu contraseña?</string>
+
+    <!-- ========================================== -->
+    <!-- BIOMETRÍA -->
+    <!-- ========================================== -->
+    <string name="biometry_instruction">Asegúrate de que tu rostro sea visible</string>
+    <string name="biometry_capturing">Capturando...</string>
+    <string name="biometry_preparing">Preparando cámara...</string>
+    <string name="biometry_waiting_auth">Esperando autenticación...</string>
+    <string name="biometry_processing">Procesando biometría...</string>
+    <string name="biometry_error_no_face">No se detectó rostro correctamente</string>
+    <string name="biometry_error_auth">Error de autenticación: %s</string>
+    <string name="biometry_error_save">Error: %s</string>
+    <string name="biometry_error_operator">Error: Operador no identificado</string>
+    <string name="biometry_error_camera">Error al iniciar cámara</string>
+    <string name="biometry_error_capture">Error al capturar foto</string>
+    <string name="biometry_error_permission">Permisos de cámara denegados</string>
+
+    <!-- ========================================== -->
+    <!-- WELCOME - BIENVENIDA -->
+    <!-- ========================================== -->
+    <string name="welcome_message">Hoy validaremos que tus sentidos estén al 100% para una operación segura.</string>
+    <string name="welcome_reflexes">REFLEJOS</string>
+    <string name="welcome_precision">PRECISIÓN</string>
+    <string name="welcome_focus">ENFOQUE</string>
+    <string name="welcome_family_message">Tu familia te espera. ¡Demuestra que estás apto!</string>
+    <string name="welcome_reflexes_icon">⚡</string>
+    <string name="welcome_precision_icon">🎯</string>
+    <string name="welcome_focus_icon">🧠</string>
+
+    <!-- ========================================== -->
+    <!-- REPORTE FINAL -->
+    <!-- ========================================== -->
+    <string name="report_title">REPORTE FINAL</string>
+    <string name="report_icon">⏳</string>
+    <string name="report_status_apt">APTO</string>
+    <string name="report_status_not_apt">NO APTO</string>
+    <string name="report_icon_success">😎✅</string>
+    <string name="report_icon_failure">😴🚫</string>
+    <string name="report_msg_success">¡Bien hecho, %s! ❤️\\nTU FAMILIA TE ESPERA EN CASA.</string>
+    <string name="report_msg_failure">Hola %s. Parece que no descansaste bien.\\nSISTEMA BLOQUEADO (24H).</string>
+    <string name="report_pdf_auto">*PDF Generado Automáticamente</string>
+    <string name="report_score_placeholder">--%</string>
+    <string name="report_status_placeholder">...</string>
+
+    <!-- ========================================== -->
+    <!-- DIALOGS -->
+    <!-- ========================================== -->
+    <string name="dialog_exit_title">⚠️ Salir</string>
+    <string name="dialog_exit_message">¿Deseas salir de la aplicación?</string>
+    <string name="dialog_close_session_title">Cerrar Sesión</string>
+    <string name="dialog_close_session_message">¿Estás seguro de que deseas salir?</string>
+    <string name="dialog_yes">SÍ</string>
+    <string name="dialog_no">NO</string>
+    <string name="dialog_score_icon">📊</string>
+    <string name="dialog_email_title">Emails de Destino</string>
+    <string name="dialog_email_hint">Ingresa hasta 10 emails separados por comas</string>
+    <string name="dialog_email_count">📧 %d email(s) configurado(s)</string>
+    <string name="dialog_email_info">💡 El reporte se enviará a todos los emails en una sola operación</string>
+
+    <!-- ========================================== -->
+    <!-- SPLASH -->
+    <!-- ========================================== -->
+    <string name="splash_chip_icon">🔷</string>
+
+    <!-- ========================================== -->
+    <!-- LISTAS (ARRAYS) -->
+    <!-- ========================================== -->
     <string-array name="lista_equipos">
         <item>-- SELECCIONE EQUIPO --</item>
         <item>--- MOVIMIENTO DE TIERRAS ---</item>
@@ -68,4 +271,5 @@
         <item>--- OTROS ---</item>
         <item>EQUIPO AUXILIAR / LIVIANO</item>
     </string-array>
+
 </resources>

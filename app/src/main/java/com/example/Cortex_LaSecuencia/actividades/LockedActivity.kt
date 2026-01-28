@@ -1,4 +1,4 @@
-package com.example.Cortex_LaSecuencia
+package com.example.Cortex_LaSecuencia.actividades
 
 import android.content.Intent
 import android.os.Bundle
@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.CortexManager
 import java.text.SimpleDateFormat
 import java.util.*
 

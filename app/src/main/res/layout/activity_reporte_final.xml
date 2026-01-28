@@ -18,13 +18,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="⏳"
+            android:text="@string/report_icon"
             android:textSize="70sp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="REPORTE FINAL"
+            android:text="@string/report_title"
             android:textColor="#00F0FF"
             android:textSize="20sp"
             android:textStyle="bold"
@@ -35,7 +35,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
-            android:text="--%"
+            android:text="@string/report_score_placeholder"
             android:textColor="#FFFFFF"
             android:textSize="90sp"
             android:textStyle="bold"
@@ -48,7 +48,7 @@
             android:id="@+id/txt_estado_texto"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="CALCULANDO..."
+            android:text="@string/status_calculating"
             android:textSize="32sp"
             android:textStyle="bold" />
 
@@ -58,7 +58,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="15dp"
             android:gravity="center"
-            android:text="..."
+            android:text="@string/report_status_placeholder"
             android:textColor="#CBD5E1"
             android:textSize="16sp" />
 
@@ -78,7 +78,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="*PDF Generado Automáticamente"
+            android:text="@string/report_pdf_auto"
             android:textColor="#64748B"
             android:textSize="12sp" />
 
@@ -89,7 +89,7 @@
             android:layout_marginTop="30dp"
             android:layout_marginBottom="20dp"
             android:backgroundTint="#2563EB"
-            android:text="🔄 NUEVA EVALUACIÓN"
+            android:text="@string/btn_new_evaluation"
             android:textColor="@color/white"
             android:background="@drawable/bg_boton_redondeado"
             android:textSize="16sp"
@@ -98,7 +98,7 @@
             android:id="@+id/btn_descargar_pdf"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:text="DESCARGAR PDF"
+            android:text="@string/btn_download_pdf"
             android:textColor="#FFFFFF"
             android:textSize="18sp"
             android:textStyle="bold"

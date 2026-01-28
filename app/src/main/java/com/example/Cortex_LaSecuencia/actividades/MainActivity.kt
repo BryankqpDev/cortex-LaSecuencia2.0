@@ -1,4 +1,4 @@
-package com.example.Cortex_LaSecuencia
+package com.example.Cortex_LaSecuencia.actividades
 
 import android.content.Intent
 import android.os.Bundle
@@ -9,6 +9,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.CortexManager
+import com.example.Cortex_LaSecuencia.SessionManager
+import com.example.Cortex_LaSecuencia.Operador
 import com.example.Cortex_LaSecuencia.actividades.WelcomeActivity
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -68,22 +72,22 @@ class MainActivity : AppCompatActivity() {
             val equipoSeleccionado = spinnerEquipo.selectedItem.toString()
 
             if (empresa.isEmpty() || supervisor.isEmpty() || nombre.isEmpty() || dni.isEmpty() || unidad.isEmpty()) {
-                Toast.makeText(this, "⚠️ Faltan datos obligatorios", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.msg_error_missing_data), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             if (dni.length != 8) {
-                etDni.error = "El DNI debe tener 8 dígitos."
+                etDni.error = getString(R.string.msg_error_dni_length)
                 return@setOnClickListener
             }
 
             if (!esPlacaValida(unidad)) {
-                etUnidad.error = "Placa inválida"
+                etUnidad.error = getString(R.string.msg_error_invalid_plate)
                 return@setOnClickListener
             }
 
             btnSiguiente.isEnabled = false
-            btnSiguiente.text = "AUTENTICANDO..."
+            btnSiguiente.text = getString(R.string.btn_authenticating)
 
             CortexManager.autenticarConductorAnonimo(
                 onSuccess = {
@@ -96,12 +100,12 @@ class MainActivity : AppCompatActivity() {
                     CortexManager.operadorActual = nuevoOperador
                     startActivity(Intent(this, BiometriaActivity::class.java))
                     btnSiguiente.isEnabled = true
-                    btnSiguiente.text = "SIGUIENTE ➔"
+                    btnSiguiente.text = getString(R.string.btn_next)
                 },
                 onError = { error ->
                     Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
                     btnSiguiente.isEnabled = true
-                    btnSiguiente.text = "SIGUIENTE ➔"
+                    btnSiguiente.text = getString(R.string.btn_next)
                 }
             )
         }
