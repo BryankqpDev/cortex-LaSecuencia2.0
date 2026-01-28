@@ -12,7 +12,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.example.Cortex_LaSecuencia.CortexManager
-import com.example.Cortex_LaSecuencia.MainActivity
 import com.example.Cortex_LaSecuencia.R
 import com.example.Cortex_LaSecuencia.utils.AudioManager
 import com.example.Cortex_LaSecuencia.utils.PDFGenerator
@@ -69,33 +68,33 @@ class ReporteFinalActivity : AppCompatActivity() {
 
         if (esApto) {
             // --- ESCENARIO APTO (VERDE) ---
-            txtIcono.text = "😎✅"
-            txtEstado.text = "APTO"
+            txtIcono.text = getString(R.string.report_icon_success)
+            txtEstado.text = getString(R.string.report_status_apt)
             txtEstado.setTextColor(Color.parseColor("#10B981")) // Verde Esmeralda
             txtPuntaje.setTextColor(Color.parseColor("#10B981"))
 
-            txtMensaje.text = "¡Bien hecho, $nombreUsuario! ❤️\nTU FAMILIA TE ESPERA EN CASA."
+            txtMensaje.text = getString(R.string.report_msg_success, nombreUsuario)
 
             // Configurar botones
-            btnReiniciar.text = "FINALIZAR / SALIR"
+            btnReiniciar.text = getString(R.string.btn_finish_exit)
             btnReiniciar.isEnabled = true
             btnReiniciar.background.setTint(Color.parseColor("#2563EB")) // Azul
 
             AudioManager.hablar("Felicidades. Maneje con cuidado. Su familia lo espera.")
         } else {
             // --- ESCENARIO NO APTO (ROJO) ---
-            txtIcono.text = "😴🚫"
-            txtEstado.text = "NO APTO"
+            txtIcono.text = getString(R.string.report_icon_failure)
+            txtEstado.text = getString(R.string.report_status_not_apt)
             txtEstado.setTextColor(Color.parseColor("#EF4444")) // Rojo Peligro
             txtPuntaje.setTextColor(Color.parseColor("#EF4444"))
 
-            txtMensaje.text = "Hola $nombreUsuario. Parece que no descansaste bien.\nSISTEMA BLOQUEADO (24H)."
+            txtMensaje.text = getString(R.string.report_msg_failure, nombreUsuario)
 
             // Bloqueo lógico en la app
             CortexManager.bloquearSistema(this)
 
             // Configurar botones
-            btnReiniciar.text = "DESBLOQUEO DE SUPERVISOR 🔒"
+            btnReiniciar.text = getString(R.string.btn_supervisor_unlock)
             btnReiniciar.background.setTint(Color.parseColor("#334155")) // Gris Oscuro
 
             AudioManager.hablar("Lo siento. No cumple con el estándar de seguridad. Sistema bloqueado.")
@@ -129,11 +128,11 @@ class ReporteFinalActivity : AppCompatActivity() {
                     fotoBitmap = null // Si tuvieras la foto del inicio, pásala aquí
                 )
                 if (!silent && pdfFile != null) {
-                    Toast.makeText(this, "✅ PDF Guardado en Descargas", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, getString(R.string.msg_success_pdf), Toast.LENGTH_LONG).show()
                 }
             }
         } catch (e: Exception) {
-            if (!silent) Toast.makeText(this, "Error PDF: ${e.message}", Toast.LENGTH_SHORT).show()
+            if (!silent) Toast.makeText(this, getString(R.string.msg_error_pdf, e.message ?: ""), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -158,10 +157,10 @@ class ReporteFinalActivity : AppCompatActivity() {
                 val codigo = inputCodigo.text.toString()
                 if (CortexManager.verificarCodigoSupervisor(codigo)) {
                     CortexManager.desbloquearSistema(this)
-                    Toast.makeText(this, "✅ DESBLOQUEADO", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.msg_success_unlocked), Toast.LENGTH_SHORT).show()
                     reiniciarApp()
                 } else {
-                    Toast.makeText(this, "❌ CÓDIGO INCORRECTO", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.msg_error_incorrect_code), Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("CANCELAR", null)

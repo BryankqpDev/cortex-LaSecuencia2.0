@@ -52,7 +52,7 @@ class ReflejosTestActivity : TestBaseActivity() {
         testEnProgreso = true
 
         btnReflejo.setCardBackgroundColor(Color.parseColor("#334155"))
-        txtEstado.text = "ESPERE"
+        txtEstado.text = getString(R.string.status_wait)
         txtEstado.setTextColor(Color.WHITE)
         txtFeedback.visibility = TextView.GONE
 
@@ -65,7 +65,7 @@ class ReflejosTestActivity : TestBaseActivity() {
         botonActivo = true
         tiempoInicio = System.currentTimeMillis()
         btnReflejo.setCardBackgroundColor(Color.parseColor("#10B981"))
-        txtEstado.text = "YA!"
+        txtEstado.text = getString(R.string.status_ready)
         txtEstado.setTextColor(Color.BLACK)
     }
 
@@ -135,7 +135,7 @@ class ReflejosTestActivity : TestBaseActivity() {
         // Si el usuario se va, detenemos el cronómetro de espera
         esperaRunnable?.let { handler.removeCallbacks(it) }
         testEnProgreso = false
-        txtEstado.text = "PAUSA"
+        txtEstado.text = getString(R.string.status_pause)
     }
 
     override fun onTestResumed() {

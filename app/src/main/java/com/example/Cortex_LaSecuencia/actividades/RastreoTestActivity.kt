@@ -62,7 +62,7 @@ class RastreoTestActivity : TestBaseActivity() {
         testFinalizado = false
         animacionActiva = false
         faseSeleccionHabilitada = false
-        txtMensaje.text = "Memorice las 2 AZULES..."
+        txtMensaje.text = getString(R.string.t8_memorize_instruction)
         btnConfirmar.visibility = View.GONE
         indicesSeleccionados.clear()
         indicesObjetivo.clear()
@@ -147,7 +147,7 @@ class RastreoTestActivity : TestBaseActivity() {
     private fun iniciarAnimacion() {
         if (testFinalizado) return
         bolas.forEach { it.cambiarColor(Color.WHITE) }
-        txtMensaje.text = "Rastreando..."
+        txtMensaje.text = getString(R.string.t8_tracking)
         animacionActiva = true
         handler.post(animacionRunnable)
     }
@@ -157,7 +157,7 @@ class RastreoTestActivity : TestBaseActivity() {
         faseSeleccionHabilitada = true
         tiempoInicioSeleccion = System.currentTimeMillis()
         btnConfirmar.visibility = View.GONE
-        txtMensaje.text = "Toque los 2 objetivos:"
+        txtMensaje.text = getString(R.string.t8_touch_targets)
 
         bolas.forEachIndexed { indice, bola ->
             bola.setOnClickListener {
@@ -166,7 +166,7 @@ class RastreoTestActivity : TestBaseActivity() {
 
                 indicesSeleccionados.add(indice)
                 bola.cambiarColor(Color.parseColor("#F59E0B"))
-                btnConfirmar.text = "CONFIRMAR (${indicesSeleccionados.size}/2)"
+                btnConfirmar.text = getString(R.string.btn_confirm_tracking, indicesSeleccionados.size)
                 if (indicesSeleccionados.size == 2) btnConfirmar.visibility = View.VISIBLE
             }
         }
@@ -217,17 +217,17 @@ class RastreoTestActivity : TestBaseActivity() {
     }
 
     override fun onTestPaused() {
-        txtMensaje.text = "⏸ PAUSA POR AUSENCIA"
+        txtMensaje.text = getString(R.string.t8_pause)
         handler.removeCallbacksAndMessages(null)
     }
 
     override fun onTestResumed() {
         if (!testFinalizado) {
             if (animacionActiva) {
-                txtMensaje.text = "Rastreando..."
+                txtMensaje.text = getString(R.string.t8_tracking)
                 handler.post(animacionRunnable)
             } else if (faseSeleccionHabilitada) {
-                txtMensaje.text = "Toque los 2 objetivos:"
+                txtMensaje.text = getString(R.string.t8_touch_targets)
             } else if (pasosRealizados == 0) {
                 handler.postDelayed({ if (!testFinalizado && !estaEnPausaPorAusencia) iniciarAnimacion() }, 500)
             }

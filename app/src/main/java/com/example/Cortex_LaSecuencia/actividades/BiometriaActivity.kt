@@ -1,4 +1,4 @@
-package com.example.Cortex_LaSecuencia
+package com.example.Cortex_LaSecuencia.actividades
 import android.Manifest
 import android.animation.ObjectAnimator
 import android.content.Intent
@@ -25,6 +25,8 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import android.content.Context
 import com.example.Cortex_LaSecuencia.utils.FaceEmbeddingProcessor
+import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.CortexManager
 
 class BiometriaActivity : AppCompatActivity() {
 

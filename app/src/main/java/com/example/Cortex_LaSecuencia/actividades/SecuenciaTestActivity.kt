@@ -68,7 +68,7 @@ class SecuenciaTestActivity : TestBaseActivity() {
             secuenciaGenerada.add(Random.nextInt(0, 9))
         }
 
-        txtInstruccion.text = "MEMORICE LA SECUENCIA (6 PASOS)"
+        txtInstruccion.text = getString(R.string.t2_instruction_memorize)
         txtInstruccion.setTextColor(Color.CYAN)
 
         mostrarSecuenciaCompleta()
@@ -87,7 +87,7 @@ class SecuenciaTestActivity : TestBaseActivity() {
                     handler.postDelayed({
                         if (!testFinalizado && !isFinishing) {
                             esTurnoDelUsuario = true
-                            txtInstruccion.text = "REPLICA LOS 6 PASOS"
+                            txtInstruccion.text = getString(R.string.t2_instruction_replicate)
                             txtInstruccion.setTextColor(Color.WHITE)
                         }
                     }, tiempoPaso)
@@ -165,13 +165,13 @@ class SecuenciaTestActivity : TestBaseActivity() {
 
     override fun onTestPaused() {
         esTurnoDelUsuario = false
-        txtInstruccion.text = "PAUSA POR AUSENCIA"
+        txtInstruccion.text = getString(R.string.t2_instruction_pause)
     }
 
     override fun onTestResumed() {
         if (!testFinalizado) {
             esTurnoDelUsuario = true
-            txtInstruccion.text = "REPLICA LA SECUENCIA"
+            txtInstruccion.text = getString(R.string.t2_instruction_continue)
         }
     }
 }

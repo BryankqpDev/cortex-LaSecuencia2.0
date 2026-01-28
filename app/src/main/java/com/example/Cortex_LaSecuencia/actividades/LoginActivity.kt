@@ -1,4 +1,4 @@
-package com.example.Cortex_LaSecuencia
+package com.example.Cortex_LaSecuencia.actividades
 
 import android.content.Intent
 import android.os.Bundle
@@ -8,6 +8,8 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.SessionManager
 
 class LoginActivity : AppCompatActivity() {
 
@@ -56,19 +58,19 @@ class LoginActivity : AppCompatActivity() {
 
     private fun validarCampos(email: String, password: String): Boolean {
         if (email.isEmpty()) {
-            Toast.makeText(this, "⚠️ Ingresa tu email", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_error_enter_email), Toast.LENGTH_SHORT).show()
             return false
         }
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(this, "⚠️ Email inválido", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_error_invalid_email), Toast.LENGTH_SHORT).show()
             return false
         }
         if (password.isEmpty()) {
-            Toast.makeText(this, "⚠️ Ingresa tu contraseña", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_error_enter_password), Toast.LENGTH_SHORT).show()
             return false
         }
         if (password.length < 6) {
-            Toast.makeText(this, "⚠️ Mínimo 6 caracteres", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_error_min_password), Toast.LENGTH_SHORT).show()
             return false
         }
         return true
@@ -81,11 +83,11 @@ class LoginActivity : AppCompatActivity() {
                     val user = auth.currentUser
                     if (user != null) {
                         sessionManager.guardarSesion(user.email ?: email, user.uid, mantenerSesion)
-                        Toast.makeText(this, "✅ Acceso Admin concedido", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.msg_success_admin_access), Toast.LENGTH_SHORT).show()
                         irAAdminActivity() // ✅ CAMBIO: Ir a la zona Admin, no a Main
                     }
                 } else {
-                    Toast.makeText(this, "❌ Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, getString(R.string.msg_error_login, task.exception?.message ?: ""), Toast.LENGTH_LONG).show()
                 }
             }
     }
@@ -97,11 +99,11 @@ class LoginActivity : AppCompatActivity() {
                     val user = auth.currentUser
                     if (user != null) {
                         sessionManager.guardarSesion(user.email ?: email, user.uid, true)
-                        Toast.makeText(this, "✅ Admin registrado", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.msg_success_admin_registered), Toast.LENGTH_SHORT).show()
                         irAAdminActivity() // ✅ CAMBIO: Ir a la zona Admin
                     }
                 } else {
-                    Toast.makeText(this, "❌ Error al registrar", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, getString(R.string.msg_error_register), Toast.LENGTH_LONG).show()
                 }
             }
     }

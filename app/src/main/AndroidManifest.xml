@@ -28,7 +28,7 @@
 
         <!-- ========== SPLASH SCREEN (LAUNCHER) ========== -->
         <activity
-            android:name=".SplashActivity"
+            android:name=".actividades.SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.Cortex_LaSecuencia">
             <intent-filter>
@@ -39,13 +39,13 @@
 
         <!-- ========== PANTALLA PRINCIPAL (CONDUCTORES) ========== -->
         <activity
-            android:name=".MainActivity"
+            android:name=".actividades.MainActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
         <!-- ========== 🔥 NUEVA: CAPTURA BIOMÉTRICA ========== -->
         <activity
-            android:name=".BiometriaActivity"
+            android:name=".actividades.BiometriaActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.NoActionBar"
@@ -53,7 +53,7 @@
 
         <!-- ========== LOGIN ADMINISTRADOR ========== -->
         <activity
-            android:name=".LoginActivity"
+            android:name=".actividades.LoginActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
@@ -132,12 +132,12 @@
 
         <!-- ========== PANEL ADMINISTRADOR ========== -->
         <activity
-            android:name=".AdminActivity"
+            android:name=".actividades.AdminActivity"
             android:exported="false" />
 
         <!-- ========== PANTALLA DE BLOQUEO ========== -->
         <activity
-            android:name=".LockedActivity"
+            android:name=".actividades.LockedActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
         <provider

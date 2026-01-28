@@ -42,7 +42,7 @@
                     android:id="@+id/wel_greeting"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="¡HOLA!"
+                    android:text="@string/label_hello"
                     android:textColor="@color/cortex_primary"
                     android:textSize="24sp"
                     android:textStyle="bold"
@@ -53,7 +53,7 @@
                     android:id="@+id/wel_name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="OPERADOR"
+                    android:text="@string/label_operator"
                     android:textColor="@color/cortex_text_primary"
                     android:textSize="24sp"
                     android:textStyle="bold"
@@ -64,7 +64,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Hoy validaremos que tus sentidos estén al 100% para una operación segura."
+                    android:text="@string/welcome_message"
                     android:textColor="@color/cortex_text_primary"
                     android:textSize="14sp"
                     android:gravity="center"
@@ -96,7 +96,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="⚡"
+                            android:text="@string/welcome_reflexes_icon"
                             android:textColor="@color/cortex_primary"
                             android:textSize="24sp"
                             android:layout_marginBottom="5dp" />
@@ -105,7 +105,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="REFLEJOS"
+                            android:text="@string/welcome_reflexes"
                             android:textColor="@color/cortex_text_secondary"
                             android:textSize="10sp"
                             android:textStyle="bold"
@@ -127,7 +127,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="🎯"
+                            android:text="@string/welcome_precision_icon"
                             android:textColor="@color/cortex_primary"
                             android:textSize="24sp"
                             android:layout_marginBottom="5dp" />
@@ -135,7 +135,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="PRECISIÓN"
+                            android:text="@string/welcome_precision"
                             android:textColor="@color/cortex_text_secondary"
                             android:textSize="10sp"
                             android:textStyle="bold"
@@ -156,7 +156,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="🧠"
+                            android:text="@string/welcome_focus_icon"
                             android:textColor="@color/cortex_primary"
                             android:textSize="24sp"
                             android:layout_marginBottom="5dp" />
@@ -164,7 +164,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="ENFOQUE"
+                            android:text="@string/welcome_focus"
                             android:textColor="@color/cortex_text_secondary"
                             android:textSize="10sp"
                             android:textStyle="bold"
@@ -177,7 +177,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Tu familia te espera. ¡Demuestra que estás apto!"
+                    android:text="@string/welcome_family_message"
                     android:textColor="@color/cortex_tech"
                     android:textSize="14sp"
                     android:textStyle="bold"
@@ -192,7 +192,7 @@
                     android:id="@+id/btn_start_eval"
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
-                    android:text="INICIAR EVALUACIÓN"
+                    android:text="@string/btn_start_evaluation"
                     android:textColor="@color/cortex_text_primary"
                     android:backgroundTint="@color/cortex_primary"
                     android:textStyle="bold"

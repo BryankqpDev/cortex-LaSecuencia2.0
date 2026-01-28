@@ -1,4 +1,4 @@
-package com.example.Cortex_LaSecuencia
+package com.example.Cortex_LaSecuencia.actividades
 
 import android.content.Intent
 import android.os.Bundle
@@ -11,6 +11,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.example.Cortex_LaSecuencia.utils.AudioManager
+import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.CortexManager
 
 class SplashActivity : AppCompatActivity() {
 
