@@ -7,23 +7,14 @@ import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.example.Cortex_LaSecuencia.actividades.LockedActivity
+import com.example.Cortex_LaSecuencia.actividades.LoginActivity
+import com.example.Cortex_LaSecuencia.actividades.AdminActivity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-// ✅ IMPORTS CORRECTOS DE TUS ACTIVIDADES (Carpeta actividades)
-import com.example.Cortex_LaSecuencia.actividades.AdminActivity
-import com.example.Cortex_LaSecuencia.actividades.LoginActivity
-// ✅ IMPORT DE UTILS
-import com.example.Cortex_LaSecuencia.SessionManager
-import com.example.Cortex_LaSecuencia.CortexManager
-import com.example.Cortex_LaSecuencia.Operador
-
-
-// ❌ NOTA: No necesitamos importar BiometriaActivity, Operador ni CortexManager
-// porque están en el mismo paquete (com.example.Cortex_LaSecuencia)
 
 class MainActivity : AppCompatActivity() {
 
@@ -33,10 +24,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Inicializar SessionManager
         sessionManager = SessionManager(this)
 
-        // Referencias a la UI
         val etEmpresa = findViewById<EditText>(R.id.et_empresa)
         val etSupervisor = findViewById<EditText>(R.id.et_supervisor)
         val etNombre = findViewById<EditText>(R.id.et_nombre)
@@ -49,21 +38,7 @@ class MainActivity : AppCompatActivity() {
         val btnCerrarSesion = findViewById<Button>(R.id.btn_cerrar_sesion)
         val tvUsuarioActual = findViewById<TextView>(R.id.tv_usuario_actual)
 
-        // 1. MANEJO DEL BOTÓN ATRÁS (Evita salir por error)
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                AlertDialog.Builder(this@MainActivity)
-                    .setTitle("⚠️ Salir")
-                    .setMessage("¿Deseas salir de la aplicación?")
-                    .setPositiveButton("SÍ") { _, _ ->
-                        finishAffinity()
-                    }
-                    .setNegativeButton("NO", null)
-                    .show()
-            }
-        })
-
-        // 2. VERIFICACIÓN DE SESIÓN (Para mostrar usuario logueado)
+        // --- SESIÓN DE ADMIN ---
         if (sessionManager.tieneSesionActiva()) {
             tvUsuarioActual.visibility = TextView.VISIBLE
             btnCerrarSesion.visibility = Button.VISIBLE
@@ -73,22 +48,31 @@ class MainActivity : AppCompatActivity() {
             btnCerrarSesion.visibility = Button.GONE
         }
 
-        // Lógica Cerrar Sesión
         btnCerrarSesion.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Cerrar Sesión")
                 .setMessage("¿Estás seguro de que deseas salir?")
                 .setPositiveButton("SÍ") { _, _ ->
                     sessionManager.cerrarSesion()
-                    recreate() // Recarga la actividad para actualizar la UI
+                    recreate()
                 }
                 .setNegativeButton("NO", null)
                 .show()
         }
 
-        // 3. BOTÓN SIGUIENTE -> VALIDACIÓN Y BIOMETRÍA
+        // ✅ CORREGIDO: Verificar sesión antes de ir a Login o Admin
+        btnAdmin.setOnClickListener {
+            if (sessionManager.tieneSesionActiva()) {
+                // Ya tiene sesión activa, ir directo a AdminActivity
+                startActivity(Intent(this@MainActivity, AdminActivity::class.java))
+            } else {
+                // No tiene sesión, pedir login
+                startActivity(Intent(this@MainActivity, LoginActivity::class.java))
+            }
+        }
+
+        // --- FLUJO NORMAL DE REGISTRO ---
         btnSiguiente.setOnClickListener {
-            // Obtener datos y limpiar espacios
             val empresa = etEmpresa.text.toString().trim().uppercase()
             val supervisor = etSupervisor.text.toString().trim().uppercase()
             val nombre = etNombre.text.toString().trim().uppercase()
@@ -96,70 +80,105 @@ class MainActivity : AppCompatActivity() {
             val unidad = etUnidad.text.toString().trim().uppercase()
             val equipoSeleccionado = spinnerEquipo.selectedItem.toString()
 
-            // Validaciones básicas
+            // 1. Validar campos vacíos
             if (empresa.isEmpty() || supervisor.isEmpty() || nombre.isEmpty() || dni.isEmpty() || unidad.isEmpty()) {
                 Toast.makeText(this, "⚠️ Faltan datos obligatorios", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
+            // 2. ✅ VERIFICACIÓN DE BLOQUEO (DESPUÉS DE LLENAR DATOS)
+            if (CortexManager.estaBloqueado()) {
+                mostrarDialogoSistemaBloqueado(nombre, dni)
+                return@setOnClickListener
+            }
+
+            // 3. Validaciones de formato
             if (dni.length != 8) {
                 etDni.error = "El DNI debe tener 8 dígitos."
                 return@setOnClickListener
             }
 
             if (!esPlacaValida(unidad)) {
-                etUnidad.error = "Placa inválida (Ej: ABC-123 o 1234-AB)"
+                etUnidad.error = "Placa inválida"
                 return@setOnClickListener
             }
 
-            // Bloquear botón para evitar doble click
+            // ✅ 4. GENERAR FECHA Y HORA ACTUALES
+            val fechaActual = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+            val horaActual = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+
+            // 5. Proceder con autenticación y biometría
             btnSiguiente.isEnabled = false
             btnSiguiente.text = "AUTENTICANDO..."
 
-            // Autenticación Anónima con Firebase antes de pasar a la cámara
             CortexManager.autenticarConductorAnonimo(
                 onSuccess = {
-                    // Guardar datos en el Singleton temporalmente
+                    // ✅ CREAR OPERADOR CON FECHA Y HORA
                     CortexManager.operadorActual = Operador(
-                        nombre, dni, empresa, supervisor, equipoSeleccionado, unidad,
-                        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
-                        SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                        nombre = nombre,
+                        dni = dni,
+                        empresa = empresa,
+                        supervisor = supervisor,
+                        equipo = equipoSeleccionado,
+                        unidad = unidad,
+                        fecha = fechaActual,
+                        hora = horaActual
                     )
-
-                    // ✅ Navegar a BiometriaActivity (está en el mismo paquete raíz)
-                    val intent = Intent(this@MainActivity, BiometriaActivity::class.java)
-                    startActivity(intent)
-
-                    // Restaurar botón (por si vuelven atrás)
+                    startActivity(Intent(this@MainActivity, BiometriaActivity::class.java))
                     btnSiguiente.isEnabled = true
                     btnSiguiente.text = "SIGUIENTE ➔"
                 },
                 onError = { error ->
-                    Toast.makeText(this@MainActivity, "Error de conexión: $error", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@MainActivity, "Error: $error", Toast.LENGTH_LONG).show()
                     btnSiguiente.isEnabled = true
                     btnSiguiente.text = "SIGUIENTE ➔"
                 }
             )
         }
-
-        // 4. BOTÓN ADMIN (Acceso restringido)
-        btnAdmin.setOnClickListener {
-            if (sessionManager.tieneSesionActiva()) {
-                // Si ya es admin, pasa directo
-                val intent = Intent(this, AdminActivity::class.java)
-                startActivity(intent)
-            } else {
-                // Si no, pide login
-                val intent = Intent(this, LoginActivity::class.java)
-                startActivity(intent)
-            }
-        }
     }
 
-    // Función auxiliar para validar placas peruanas
+    private fun mostrarDialogoSistemaBloqueado(nombre: String, dni: String) {
+        // ✅ GENERAR FECHA Y HORA PARA SOLICITUD
+        val fechaActual = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+        val horaActual = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+
+        AlertDialog.Builder(this)
+            .setTitle("SISTEMA BLOQUEADO 🔒")
+            .setMessage("Hola $nombre, el sistema detecta que no se encuentra apto para realizar la prueba en este momento.\n\n¿Desea enviar una solicitud de desbloqueo al administrador?")
+            .setCancelable(false)
+            .setPositiveButton("ENVIAR SOLICITUD") { _, _ ->
+                // Guardar operador temporal para que la solicitud lleve sus datos
+                CortexManager.operadorActual = Operador(
+                    nombre = nombre,
+                    dni = dni,
+                    empresa = "",
+                    supervisor = "",
+                    equipo = "",
+                    unidad = "",
+                    fecha = fechaActual,
+                    hora = horaActual
+                )
+                CortexManager.enviarSolicitudDesbloqueo("Solicitud manual desde registro")
+
+                Toast.makeText(this, "🚀 Solicitud enviada correctamente", Toast.LENGTH_LONG).show()
+                startActivity(Intent(this, LockedActivity::class.java))
+            }
+            .setNegativeButton("CANCELAR", null)
+            .show()
+    }
+
     private fun esPlacaValida(placa: String): Boolean {
         val n = placa.replace(Regex("[\\s-]"), "").uppercase()
-        // Acepta formato antiguo (ABC123) y nuevo/moto (1234AB)
         return n.length == 6 && (n.matches(Regex("^[A-Z]{3}[0-9]{3}$")) || n.matches(Regex("^[0-9]{4}[A-Z]{2}$")))
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        AlertDialog.Builder(this)
+            .setTitle("⚠️ Salir")
+            .setMessage("¿Deseas salir de la aplicación?")
+            .setPositiveButton("SÍ") { _, _ -> finishAffinity() }
+            .setNegativeButton("NO", null)
+            .show()
     }
 }

@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     android:background="#0B1121">
 
-    <!-- CONTENIDO PRINCIPAL -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -17,7 +16,6 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <!-- HEADER -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -53,14 +51,62 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="REGISTRO HISTÓRICO"
+                        android:text="PANEL DE ADMINISTRACIÓN"
                         android:textColor="#94A3B8"
                         android:textSize="12sp"
                         android:letterSpacing="0.1" />
                 </LinearLayout>
             </RelativeLayout>
 
-            <!-- TABLA DE REGISTROS -->
+            <TextView
+                android:id="@+id/lbl_solicitudes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🚨 SOLICITUDES PENDIENTES"
+                android:textColor="#F59E0B"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp"
+                android:visibility="gone"/> <HorizontalScrollView
+            android:id="@+id/scroll_solicitudes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#2A1810"
+            android:padding="5dp"
+            android:layout_marginBottom="25dp"
+            android:visibility="gone"> <TableLayout
+            android:id="@+id/table_solicitudes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:stretchColumns="*">
+
+            <TableRow
+                android:background="#451A03"
+                android:padding="10dp">
+                <TextView android:text="DNI" android:textColor="#F59E0B" android:textStyle="bold" android:paddingEnd="15dp"/>
+                <TextView android:text="NOMBRE" android:textColor="#F59E0B" android:textStyle="bold" android:paddingEnd="15dp"/>
+                <TextView android:text="MOTIVO" android:textColor="#F59E0B" android:textStyle="bold" android:paddingEnd="15dp"/>
+                <TextView android:text="FECHA" android:textColor="#F59E0B" android:textStyle="bold" android:paddingEnd="15dp"/>
+                <TextView android:text="ACCIÓN" android:textColor="#F59E0B" android:textStyle="bold"/>
+            </TableRow>
+        </TableLayout>
+        </HorizontalScrollView>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#334155"
+                android:layout_marginBottom="20dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📜 HISTORIAL DE REGISTROS"
+                android:textColor="#00F0FF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp"/>
+
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
@@ -95,7 +141,6 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- MENÚ LATERAL (DRAWER) -->
     <LinearLayout
         android:id="@+id/menu_drawer"
         android:layout_width="280dp"
@@ -106,7 +151,6 @@
         android:elevation="16dp"
         android:visibility="gone">
 
-        <!-- HEADER DEL MENÚ -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -140,7 +184,6 @@
             android:layout_height="1dp"
             android:background="#334155" />
 
-        <!-- SWITCH ENVÍO AUTOMÁTICO -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -173,7 +216,6 @@
             android:layout_height="1dp"
             android:background="#334155" />
 
-        <!-- OPCIONES DEL MENÚ -->
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -186,7 +228,6 @@
                 android:paddingTop="10dp"
                 android:paddingBottom="10dp">
 
-                <!-- DESCARGAR EXCEL -->
                 <LinearLayout
                     android:id="@+id/menu_descargar_excel"
                     android:layout_width="match_parent"
@@ -227,7 +268,6 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- ENVIAR REPORTE -->
                 <LinearLayout
                     android:id="@+id/menu_enviar_reporte"
                     android:layout_width="match_parent"
@@ -268,7 +308,6 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- CONFIGURAR EMAIL -->
                 <LinearLayout
                     android:id="@+id/menu_config_email"
                     android:layout_width="match_parent"
@@ -316,7 +355,6 @@
                     android:layout_marginTop="10dp"
                     android:layout_marginBottom="10dp" />
 
-                <!-- PAPELERA -->
                 <LinearLayout
                     android:id="@+id/menu_papelera"
                     android:layout_width="match_parent"
@@ -357,7 +395,6 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- VOLVER -->
                 <LinearLayout
                     android:id="@+id/menu_volver"
                     android:layout_width="match_parent"

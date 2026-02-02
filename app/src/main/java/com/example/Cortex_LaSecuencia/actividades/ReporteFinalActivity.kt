@@ -20,14 +20,12 @@ import com.example.Cortex_LaSecuencia.utils.PDFGenerator
 import com.example.Cortex_LaSecuencia.MainActivity
 import java.io.File
 
-
 class ReporteFinalActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_reporte_final)
 
-        // === INICIALIZAR VISTAS ===
         val txtIcono = findViewById<TextView>(R.id.txt_icono_estado)
         val txtPuntaje = findViewById<TextView>(R.id.txt_puntaje_global)
         val txtEstado = findViewById<TextView>(R.id.txt_estado_texto)
@@ -36,7 +34,6 @@ class ReporteFinalActivity : AppCompatActivity() {
         val btnReiniciar = findViewById<Button>(R.id.btn_reiniciar)
         val btnDescargarPDF = findViewById<Button>(R.id.btn_descargar_pdf)
 
-        // === 1. OBTENER DATOS ===
         val resultados = CortexManager.obtenerResultados()
         val nombresPruebas = mapOf(
             "t1" to "Reflejos", "t2" to "Memoria", "t3" to "Anticipación",
@@ -63,32 +60,33 @@ class ReporteFinalActivity : AppCompatActivity() {
         CortexManager.registrarNube(promedio, esApto)
 
         if (esApto) {
-            txtIcono.text = getString(R.string.report_icon_success)
-            txtEstado.text = getString(R.string.report_status_apt)
+            txtIcono.text = "😎"
+            txtEstado.text = "APTO"
             txtEstado.setTextColor(Color.parseColor("#10B981"))
             txtPuntaje.setTextColor(Color.parseColor("#10B981"))
-            txtMensaje.text = getString(R.string.report_msg_success, nombreUsuario)
-            btnReiniciar.text = getString(R.string.btn_finish_exit)
+            txtMensaje.text = "¡Buen trabajo, $nombreUsuario!\nConduce con precaución."
             btnReiniciar.background.setTint(Color.parseColor("#2563EB"))
             AudioManager.hablar("Felicidades. Maneje con cuidado. Su familia lo espera.")
         } else {
-            txtIcono.text = getString(R.string.report_icon_failure)
-            txtEstado.text = getString(R.string.report_status_not_apt)
+            txtIcono.text = "🚫"
+            txtEstado.text = "NO APTO"
             txtEstado.setTextColor(Color.parseColor("#EF4444"))
             txtPuntaje.setTextColor(Color.parseColor("#EF4444"))
-            txtMensaje.text = getString(R.string.report_msg_failure, nombreUsuario)
+            txtMensaje.text = "$nombreUsuario, no cumples con el estándar.\nSISTEMA BLOQUEADO."
+            
+            // --- ✅ NUEVO: DISPARAR ALERTA AL ADMIN ---
+            val motivo = "Nota final: $promedio% (Umbral: 75%)"
+            CortexManager.enviarSolicitudDesbloqueo(motivo)
+            
             CortexManager.bloquearSistema(this)
-            btnReiniciar.text = getString(R.string.btn_supervisor_unlock)
+            btnReiniciar.text = "DESBLOQUEO REMOTO / SUPERVISOR"
             btnReiniciar.background.setTint(Color.parseColor("#334155"))
             AudioManager.hablar("Lo siento. No cumple con el estándar de seguridad. Sistema bloqueado.")
         }
 
-        // === 4. GENERACIÓN DE PDF AUTOMÁTICA ===
         generarPDFSafe(resultados, silent = true)
 
-        btnDescargarPDF.setOnClickListener {
-            generarPDFSafe(resultados, silent = false)
-        }
+        btnDescargarPDF.setOnClickListener { generarPDFSafe(resultados, silent = false) }
 
         btnReiniciar.setOnClickListener {
             if (!esApto) mostrarDialogoDesbloqueo()
@@ -96,68 +94,49 @@ class ReporteFinalActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * ✅ RECUPERA LA FOTO GUARDADA EN EL CELULAR
-     */
-    private fun cargarFotoLocal(dni: String): Bitmap? {
-        return try {
-            // La ruta es: /data/user/0/com.example.Cortex_LaSecuencia/files/selfie_DNI.jpg
-            val file = File(filesDir, "selfie_$dni.jpg")
-            if (file.exists()) {
-                BitmapFactory.decodeFile(file.absolutePath)
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
     private fun generarPDFSafe(resultados: Map<String, Int>, silent: Boolean) {
         try {
             val operador = CortexManager.operadorActual
             if (operador != null) {
-                // --- ✅ BUSCAR FOTO ANTES DE GENERAR ---
                 val bitmapFoto = cargarFotoLocal(operador.dni)
-
-                val pdfFile = PDFGenerator.generarPDF(
-                    context = this,
-                    operador = operador,
-                    resultados = resultados,
-                    fotoBitmap = bitmapFoto // ← AQUÍ PASAMOS LA FOTO AL PDF
-                )
-                
-                if (!silent && pdfFile != null) {
-                    Toast.makeText(this, getString(R.string.msg_success_pdf), Toast.LENGTH_LONG).show()
-                }
+                val pdfFile = PDFGenerator.generarPDF(this, operador, resultados, bitmapFoto)
+                if (!silent && pdfFile != null) Toast.makeText(this, "PDF generado", Toast.LENGTH_LONG).show()
             }
-        } catch (e: Exception) {
-            if (!silent) Toast.makeText(this, getString(R.string.msg_error_pdf, e.message ?: ""), Toast.LENGTH_SHORT).show()
-        }
+        } catch (e: Exception) { }
+    }
+
+    private fun cargarFotoLocal(dni: String): Bitmap? {
+        return try {
+            val file = File(filesDir, "selfie_$dni.jpg")
+            if (file.exists()) BitmapFactory.decodeFile(file.absolutePath) else null
+        } catch (e: Exception) { null }
     }
 
     private fun mostrarDialogoDesbloqueo() {
         val inputCodigo = android.widget.EditText(this).apply {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            hint = "Código Supervisor"
+            hint = "Código (1007)"
             gravity = Gravity.CENTER; setTextColor(Color.BLACK)
         }
         val container = android.widget.FrameLayout(this).apply { setPadding(50, 20, 50, 0); addView(inputCodigo) }
-        AlertDialog.Builder(this).setTitle("🔓 DESBLOQUEO").setMessage("Ingrese el código (1007):").setView(container)
+        
+        AlertDialog.Builder(this)
+            .setTitle("🔓 DESBLOQUEO")
+            .setMessage("Esperando autorización del administrador o ingrese código manual:")
+            .setView(container)
             .setPositiveButton("VALIDAR") { _, _ ->
                 if (CortexManager.verificarCodigoSupervisor(inputCodigo.text.toString())) {
                     CortexManager.desbloquearSistema(this)
-                    Toast.makeText(this, getString(R.string.msg_success_unlocked), Toast.LENGTH_SHORT).show()
                     reiniciarApp()
-                } else Toast.makeText(this, getString(R.string.msg_error_incorrect_code), Toast.LENGTH_SHORT).show()
-            }.setNegativeButton("CANCELAR", null).show()
+                } else Toast.makeText(this, "Código incorrecto", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("CANCELAR", null)
+            .show()
     }
 
     private fun reiniciarApp() {
         CortexManager.resetearEvaluacion()
-        val intent = Intent(this, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
+        startActivity(Intent(this, MainActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK })
         finish()
     }
 
@@ -166,7 +145,5 @@ class ReporteFinalActivity : AppCompatActivity() {
         val txtNombre = TextView(this).apply { text = nombre; setTextColor(Color.WHITE); textSize = 14f; layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
         val txtNota = TextView(this).apply { text = "$nota%"; textSize = 14f; typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.END; setTextColor(if (nota >= 75) Color.parseColor("#10B981") else Color.parseColor("#EF4444")) }
         row.addView(txtNombre); row.addView(txtNota); container.addView(row)
-        val divider = android.view.View(this).apply { layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1); setBackgroundColor(Color.parseColor("#334155")) }
-        container.addView(divider)
     }
 }
