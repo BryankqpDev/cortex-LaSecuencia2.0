@@ -15,6 +15,8 @@ import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
 import com.example.Cortex_LaSecuencia.utils.AudioManager
 import com.example.Cortex_LaSecuencia.utils.PDFGenerator
+import com.example.Cortex_LaSecuencia.MainActivity
+
 
 class ReporteFinalActivity : AppCompatActivity() {
 

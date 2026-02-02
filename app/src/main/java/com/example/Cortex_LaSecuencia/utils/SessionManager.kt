@@ -11,6 +11,8 @@ class SessionManager(context: Context) {
         Context.MODE_PRIVATE
     )
 
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+
     companion object {
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
         private const val KEY_USER_EMAIL = "user_email"
@@ -25,21 +27,37 @@ class SessionManager(context: Context) {
             putString(KEY_USER_EMAIL, email)
             putString(KEY_USER_ID, userId)
             putBoolean(KEY_KEEP_SESSION, mantenerSesion)
-            apply()
+            apply() // Guarda de forma asíncrona
         }
+
+        // 🔥 DEBUG: Verificar que se guardó
+        android.util.Log.d("SessionManager", "Sesión guardada: $email, mantener=$mantenerSesion")
     }
 
-    // ✅ Verificar si hay sesión activa
+    // ✅ Verificar si hay sesión activa (Persistencia real)
     fun tieneSesionActiva(): Boolean {
-        val sessionGuardada = prefs.getBoolean(KEY_IS_LOGGED_IN, false)
-        val mantenerSesion = prefs.getBoolean(KEY_KEEP_SESSION, false)
-        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        val firebaseUser = auth.currentUser
+        val sessionLocal = prefs.getBoolean(KEY_IS_LOGGED_IN, false)
+        val mantenerSesion = prefs.getBoolean(KEY_KEEP_SESSION, true) // ✅ Por defecto TRUE
 
-        return sessionGuardada && mantenerSesion && firebaseUser != null
+        val tieneSeion = firebaseUser != null && sessionLocal && mantenerSesion
+
+        // 🔥 DEBUG
+        android.util.Log.d("SessionManager", "Verificando sesión:")
+        android.util.Log.d("SessionManager", "  Firebase user: ${firebaseUser?.email}")
+        android.util.Log.d("SessionManager", "  Local logged in: $sessionLocal")
+        android.util.Log.d("SessionManager", "  Mantener sesión: $mantenerSesion")
+        android.util.Log.d("SessionManager", "  Resultado: $tieneSeion")
+
+        return tieneSeion
     }
 
     // ✅ Obtener email del usuario
     fun getEmailUsuario(): String {
+        val firebaseEmail = auth.currentUser?.email
+        if (firebaseEmail != null) {
+            return firebaseEmail
+        }
         return prefs.getString(KEY_USER_EMAIL, "") ?: ""
     }
 
@@ -48,18 +66,10 @@ class SessionManager(context: Context) {
         return prefs.getString(KEY_USER_ID, "") ?: ""
     }
 
-    // ✅ Cerrar sesión (solo cuando el usuario lo pida explícitamente)
+    // ✅ Cerrar sesión completamente
     fun cerrarSesion() {
-        prefs.edit().apply {
-            putBoolean(KEY_IS_LOGGED_IN, false)
-            putBoolean(KEY_KEEP_SESSION, false)
-            apply()
-        }
-        FirebaseAuth.getInstance().signOut()
-    }
-
-    // ✅ Verificar si debe mantener la sesión
-    fun debeMantenerSesion(): Boolean {
-        return prefs.getBoolean(KEY_KEEP_SESSION, false)
+        android.util.Log.d("SessionManager", "Cerrando sesión...")
+        auth.signOut()
+        prefs.edit().clear().apply()
     }
 }

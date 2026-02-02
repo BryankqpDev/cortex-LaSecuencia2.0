@@ -6,10 +6,12 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.example.Cortex_LaSecuencia.R
 import com.example.Cortex_LaSecuencia.SessionManager
+import com.example.Cortex_LaSecuencia.MainActivity
 
 class LoginActivity : AppCompatActivity() {
 
@@ -22,10 +24,6 @@ class LoginActivity : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
         sessionManager = SessionManager(this)
 
-        // --- ❌ ELIMINADO: REDIRECCIÓN AUTOMÁTICA A MAINACTIVITY ---
-        // Los usuarios normales entran por MainActivity desde el Splash.
-        // Si alguien llega aquí, es porque pulsó ADMIN y quiere loguearse.
-
         setContentView(R.layout.activity_login)
 
         val etEmail = findViewById<EditText>(R.id.input_email)
@@ -34,7 +32,16 @@ class LoginActivity : AppCompatActivity() {
         val btnLogin = findViewById<Button>(R.id.btn_login)
         val btnRegistrar = findViewById<Button>(R.id.btn_register)
 
-        cbMantenerSesion.isChecked = true 
+        // ✅ IMPORTANTE: Por defecto en TRUE
+        cbMantenerSesion.isChecked = true
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                startActivity(intent)
+                finish()
+            }
+        })
 
         btnLogin.setOnClickListener {
             val email = etEmail.text.toString().trim()
@@ -82,12 +89,21 @@ class LoginActivity : AppCompatActivity() {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null) {
+                        // 🔥 CRÍTICO: Guardar sesión ANTES de cambiar de pantalla
                         sessionManager.guardarSesion(user.email ?: email, user.uid, mantenerSesion)
-                        Toast.makeText(this, getString(R.string.msg_success_admin_access), Toast.LENGTH_SHORT).show()
-                        irAAdminActivity() // ✅ CAMBIO: Ir a la zona Admin, no a Main
+
+                        // 🔥 DEBUG
+                        android.util.Log.d("LoginActivity", "Login exitoso, sesión guardada")
+
+                        Toast.makeText(this, "✅ Bienvenido, Admin", Toast.LENGTH_SHORT).show()
+                        irAAdminActivity()
                     }
                 } else {
-                    Toast.makeText(this, getString(R.string.msg_error_login, task.exception?.message ?: ""), Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this,
+                        "❌ Error: ${task.exception?.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
     }
@@ -98,12 +114,14 @@ class LoginActivity : AppCompatActivity() {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null) {
+                        // 🔥 CRÍTICO: Guardar sesión al registrarse
                         sessionManager.guardarSesion(user.email ?: email, user.uid, true)
-                        Toast.makeText(this, getString(R.string.msg_success_admin_registered), Toast.LENGTH_SHORT).show()
-                        irAAdminActivity() // ✅ CAMBIO: Ir a la zona Admin
+
+                        Toast.makeText(this, "✅ Registro exitoso", Toast.LENGTH_SHORT).show()
+                        irAAdminActivity()
                     }
                 } else {
-                    Toast.makeText(this, getString(R.string.msg_error_register), Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "❌ Error al registrar", Toast.LENGTH_LONG).show()
                 }
             }
     }
@@ -111,13 +129,6 @@ class LoginActivity : AppCompatActivity() {
     private fun irAAdminActivity() {
         val intent = Intent(this, AdminActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-        finish()
-    }
-
-    override fun onBackPressed() {
-        // Al presionar atrás, volver al registro de conductores (MainActivity)
-        val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
         finish()
     }

@@ -13,8 +13,12 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.example.Cortex_LaSecuencia.utils.AudioManager
 import com.example.Cortex_LaSecuencia.R
 import com.example.Cortex_LaSecuencia.CortexManager
+import com.example.Cortex_LaSecuencia.SessionManager  // ✅ AGREGAR
+import com.example.Cortex_LaSecuencia.MainActivity
 
 class SplashActivity : AppCompatActivity() {
+
+    private lateinit var sessionManager: SessionManager  // ✅ AGREGAR
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,6 +27,7 @@ class SplashActivity : AppCompatActivity() {
         // 1. Inicializaciones básicas
         CortexManager.inicializarContexto(this)
         AudioManager.inicializar(this)
+        sessionManager = SessionManager(this)  // ✅ AGREGAR
 
         // 2. Verificar si el sistema está bloqueado por 24h
         if (CortexManager.estaBloqueado()) {
@@ -60,14 +65,27 @@ class SplashActivity : AppCompatActivity() {
         titleFade.startOffset = 500
         txtTitle.startAnimation(titleFade)
 
-        // 4. 🔴 SOLUCIÓN: SIEMPRE IR A MAINACTIVITY (CONDUCTORES) 🔴
-        // Ignoramos cualquier sesión activa de Administrador al inicio.
+        // 4. ✅ VERIFICAR SESIÓN Y REDIRIGIR INTELIGENTEMENTE
         Handler(Looper.getMainLooper()).postDelayed({
-            val intent = Intent(this, MainActivity::class.java)
-            // Aseguramos que sea una tarea limpia
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            finish()
+            verificarYRedirigir()
         }, 3000)
+    }
+
+    private fun verificarYRedirigir() {
+        // 🔥 Verificar si hay sesión de admin activa
+        val intent = if (sessionManager.tieneSesionActiva()) {
+            // ✅ HAY SESIÓN → Ir directo al panel de administrador
+            android.util.Log.d("SplashActivity", "✅ Sesión activa detectada → AdminActivity")
+            Intent(this, AdminActivity::class.java)
+        } else {
+            // ❌ SIN SESIÓN → Ir al registro de conductores
+            android.util.Log.d("SplashActivity", "❌ Sin sesión → MainActivity (Conductores)")
+            Intent(this, MainActivity::class.java)
+        }
+
+        // Limpiar el stack de actividades
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 }

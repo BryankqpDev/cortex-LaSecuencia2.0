@@ -10,6 +10,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.example.Cortex_LaSecuencia.R
 import com.example.Cortex_LaSecuencia.CortexManager
+import com.example.Cortex_LaSecuencia.MainActivity  // ✅ AGREGAR ESTE IMPORT
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -36,6 +37,8 @@ class LockedActivity : AppCompatActivity() {
             if (CortexManager.verificarCodigoSupervisor(codigo)) {
                 CortexManager.desbloquearSistema(this)
                 Toast.makeText(this, "BLOQUEO LEVANTADO", Toast.LENGTH_SHORT).show()
+
+                // ✅ Ahora MainActivity está importado correctamente
                 val intent = Intent(this, MainActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 startActivity(intent)

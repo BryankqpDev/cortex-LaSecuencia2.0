@@ -38,12 +38,13 @@
         </activity>
 
         <!-- ========== PANTALLA PRINCIPAL (CONDUCTORES) ========== -->
+        <!-- ✅ CORRECCIÓN: MainActivity está en el paquete raíz -->
         <activity
-            android:name=".actividades.MainActivity"
+            android:name=".MainActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        <!-- ========== 🔥 NUEVA: CAPTURA BIOMÉTRICA ========== -->
+        <!-- ========== 🔥 CAPTURA BIOMÉTRICA ========== -->
         <activity
             android:name=".actividades.BiometriaActivity"
             android:exported="false"
@@ -140,6 +141,8 @@
             android:name=".actividades.LockedActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+
+        <!-- ========== FILE PROVIDER ========== -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

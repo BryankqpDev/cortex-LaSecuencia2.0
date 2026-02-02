@@ -1,4 +1,4 @@
-package com.example.Cortex_LaSecuencia.actividades
+package com.example.Cortex_LaSecuencia
 
 import android.content.Intent
 import android.os.Bundle
@@ -7,12 +7,12 @@ import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.example.Cortex_LaSecuencia.R
-import com.example.Cortex_LaSecuencia.CortexManager
-import com.example.Cortex_LaSecuencia.SessionManager
-import com.example.Cortex_LaSecuencia.Operador
+import com.example.Cortex_LaSecuencia.actividades.AdminActivity  // ✅ AGREGAR IMPORT
+import com.example.Cortex_LaSecuencia.actividades.BiometriaActivity
+import com.example.Cortex_LaSecuencia.actividades.LoginActivity
 import com.example.Cortex_LaSecuencia.actividades.WelcomeActivity
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -34,19 +34,34 @@ class MainActivity : AppCompatActivity() {
         val etDni = findViewById<EditText>(R.id.et_dni)
         val etUnidad = findViewById<EditText>(R.id.et_unidad)
         val spinnerEquipo = findViewById<Spinner>(R.id.spinner_equipo)
-
         val btnSiguiente = findViewById<Button>(R.id.btn_siguiente)
         val btnAdmin = findViewById<Button>(R.id.btn_admin)
-        
-        // --- ✅ RESTAURADO: BOTÓN CERRAR SESIÓN / SALIR ---
+
         val btnCerrarSesion = findViewById<Button>(R.id.btn_cerrar_sesion)
         val tvUsuarioActual = findViewById<TextView>(R.id.tv_usuario_actual)
 
+        // ✅ MANEJO MODERNO DEL BOTÓN ATRÁS
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("⚠️ Salir")
+                    .setMessage("¿Deseas salir de la aplicación?")
+                    .setPositiveButton("SÍ") { _, _ ->
+                        finishAffinity()
+                    }
+                    .setNegativeButton("NO", null)
+                    .show()
+            }
+        })
+
+        // ✅ VERIFICACIÓN DE SESIÓN AL INICIAR
         if (sessionManager.tieneSesionActiva()) {
+            android.util.Log.d("MainActivity", "Sesión activa en MainActivity")
             tvUsuarioActual.visibility = TextView.VISIBLE
             btnCerrarSesion.visibility = Button.VISIBLE
             tvUsuarioActual.text = "👤 ${sessionManager.getEmailUsuario()}"
         } else {
+            android.util.Log.d("MainActivity", "Sin sesión en MainActivity")
             tvUsuarioActual.visibility = TextView.GONE
             btnCerrarSesion.visibility = Button.GONE
         }
@@ -57,7 +72,7 @@ class MainActivity : AppCompatActivity() {
                 .setMessage("¿Estás seguro de que deseas salir?")
                 .setPositiveButton("SÍ") { _, _ ->
                     sessionManager.cerrarSesion()
-                    finishAffinity() // Cierra la app completamente
+                    recreate()
                 }
                 .setNegativeButton("NO", null)
                 .show()
@@ -72,60 +87,66 @@ class MainActivity : AppCompatActivity() {
             val equipoSeleccionado = spinnerEquipo.selectedItem.toString()
 
             if (empresa.isEmpty() || supervisor.isEmpty() || nombre.isEmpty() || dni.isEmpty() || unidad.isEmpty()) {
-                Toast.makeText(this, getString(R.string.msg_error_missing_data), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "⚠️ Faltan datos obligatorios", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             if (dni.length != 8) {
-                etDni.error = getString(R.string.msg_error_dni_length)
+                etDni.error = "El DNI debe tener 8 dígitos."
                 return@setOnClickListener
             }
 
             if (!esPlacaValida(unidad)) {
-                etUnidad.error = getString(R.string.msg_error_invalid_plate)
+                etUnidad.error = "Placa inválida"
                 return@setOnClickListener
             }
 
             btnSiguiente.isEnabled = false
-            btnSiguiente.text = getString(R.string.btn_authenticating)
+            btnSiguiente.text = "AUTENTICANDO..."
 
             CortexManager.autenticarConductorAnonimo(
                 onSuccess = {
-                    val nuevoOperador = Operador(
-                        nombre = nombre, dni = dni, empresa = empresa,
-                        supervisor = supervisor, equipo = equipoSeleccionado, unidad = unidad,
-                        fecha = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
-                        hora = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                    CortexManager.operadorActual = Operador(
+                        nombre, dni, empresa, supervisor, equipoSeleccionado, unidad,
+                        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
+                        SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
                     )
-                    CortexManager.operadorActual = nuevoOperador
-                    startActivity(Intent(this, BiometriaActivity::class.java))
+
+                    val intent = Intent(this@MainActivity, BiometriaActivity::class.java)
+                    startActivity(intent)
+
                     btnSiguiente.isEnabled = true
-                    btnSiguiente.text = getString(R.string.btn_next)
+                    btnSiguiente.text = "SIGUIENTE ➔"
                 },
                 onError = { error ->
-                    Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@MainActivity, "Error: $error", Toast.LENGTH_LONG).show()
                     btnSiguiente.isEnabled = true
-                    btnSiguiente.text = getString(R.string.btn_next)
+                    btnSiguiente.text = "SIGUIENTE ➔"
                 }
             )
         }
 
+        // 🔥 BOTÓN ADMIN INTELIGENTE - CORREGIDO
         btnAdmin.setOnClickListener {
-            startActivity(Intent(this, LoginActivity::class.java))
+            if (sessionManager.tieneSesionActiva()) {
+                // ✅ Ya está logueado → Ir directo al panel de administrador
+                android.util.Log.d("MainActivity", "Sesión activa, yendo a AdminActivity")
+                Toast.makeText(this, "Accediendo al panel...", Toast.LENGTH_SHORT).show()
+
+                val intent = Intent(this, AdminActivity::class.java)
+                startActivity(intent)
+            } else {
+                // ❌ No hay sesión → Ir al login
+                android.util.Log.d("MainActivity", "Sin sesión, yendo a LoginActivity")
+
+                val intent = Intent(this, LoginActivity::class.java)
+                startActivity(intent)
+            }
         }
     }
 
     private fun esPlacaValida(placa: String): Boolean {
         val n = placa.replace(Regex("[\\s-]"), "").uppercase()
         return n.length == 6 && (n.matches(Regex("^[A-Z]{3}[0-9]{3}$")) || n.matches(Regex("^[0-9]{4}[A-Z]{2}$")))
-    }
-
-    override fun onBackPressed() {
-        AlertDialog.Builder(this)
-            .setTitle("⚠️ Salir")
-            .setMessage("¿Deseas salir de la aplicación?")
-            .setPositiveButton("SÍ") { _, _ -> finishAffinity() }
-            .setNegativeButton("NO", null)
-            .show()
     }
 }
