@@ -9,8 +9,23 @@ import androidx.appcompat.app.AlertDialog
 import androidx.cardview.widget.CardView
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.logic.AdaptiveScoring
+import com.example.Cortex_LaSecuencia.logic.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * TEST DE REFLEJOS (t1) - VERSIÓN RANDOMIZADA
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * Cambios implementados:
+ *  Delay aleatorio por ejecución (evita memorización)
+ *  Umbrales de puntaje adaptativos (equidad según dificultad)
+ *  Registro de parámetros para auditoría
+ *  UX sin cambios (usuario no nota la diferencia)
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ */
 class ReflejosTestActivity : TestBaseActivity() {
 
     private lateinit var btnReflejo: CardView
@@ -23,6 +38,11 @@ class ReflejosTestActivity : TestBaseActivity() {
     private var esperaRunnable: Runnable? = null
     private var botonActivo = false
     private var testEnProgreso = true
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ PARÁMETROS ALEATORIOS DE ESTA SESIÓN
+    // ═══════════════════════════════════════════════════════════════════════
+    private lateinit var sessionParams: TestSessionParams.ReflejosParams
 
     override fun obtenerTestId(): String = "t1"
 
@@ -38,11 +58,17 @@ class ReflejosTestActivity : TestBaseActivity() {
         val intentoActual = CortexManager.obtenerIntentoActual("t1")
         txtIntento.text = "INTENTO $intentoActual/2"
 
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ GENERAR PARÁMETROS ÚNICOS PARA ESTA EJECUCIÓN
+        // ═══════════════════════════════════════════════════════════════════
+        sessionParams = TestSessionParams.generarReflejosParams()
+        TestSessionParams.registrarParametros("t1", sessionParams)
+
         btnReflejo.setOnClickListener { if (testEnProgreso && !testFinalizado) procesarClic() }
 
         handler.postDelayed({ if (!isFinishing && !testFinalizado) iniciarTest() }, 1000)
 
-        // --- ✅ CONECTAR CON SENTINEL DE LA BASE ---
+        // Conectar con SENTINEL de la base
         val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
         configurarSentinel(viewFinder, txtFeedback)
     }
@@ -56,7 +82,16 @@ class ReflejosTestActivity : TestBaseActivity() {
         txtEstado.setTextColor(Color.WHITE)
         txtFeedback.visibility = TextView.GONE
 
-        val tiempoEspera = (2000 + (Math.random() * 3000)).toLong()
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ USAR DELAY ALEATORIO GENERADO
+        // ═══════════════════════════════════════════════════════════════════
+        // Antes: (2000 + (Math.random() * 3000)).toLong() → Predecible
+        // Ahora: Rango único por sesión usando SecureRandom
+        val tiempoEspera = TestSessionParams.randomInRange(
+            sessionParams.delayMinMs,
+            sessionParams.delayMaxMs
+        )
+
         esperaRunnable = Runnable { if (!isFinishing && testEnProgreso && !testFinalizado) activarBoton() }
         handler.postDelayed(esperaRunnable!!, tiempoEspera)
     }
@@ -82,7 +117,11 @@ class ReflejosTestActivity : TestBaseActivity() {
 
         if (botonActivo) {
             tiempoReaccion = System.currentTimeMillis() - tiempoInicio
-            puntaje = calcularPuntaje(tiempoReaccion)
+
+            // ═══════════════════════════════════════════════════════════════
+            // ✅ USAR SCORING ADAPTATIVO
+            // ═══════════════════════════════════════════════════════════════
+            puntaje = AdaptiveScoring.calcularPuntajeReflejos(tiempoReaccion, sessionParams)
             errorAnticipacion = false
         } else {
             tiempoReaccion = -1
@@ -90,7 +129,13 @@ class ReflejosTestActivity : TestBaseActivity() {
             errorAnticipacion = true
         }
 
-        val details = mapOf("tiempo_reaccion_ms" to tiempoReaccion, "error_anticipacion" to errorAnticipacion)
+        val details = mapOf(
+            "tiempo_reaccion_ms" to tiempoReaccion,
+            "error_anticipacion" to errorAnticipacion,
+            "delay_usado_ms" to sessionParams.delayMinMs,
+            "umbral_elite_usado" to sessionParams.umbralEliteMs,
+            "umbral_penalizacion_usado" to sessionParams.umbralPenalizacionMs
+        )
         CortexManager.logPerformanceMetric("t1", puntaje, details)
         CortexManager.guardarPuntaje("t1", puntaje)
 
@@ -103,18 +148,10 @@ class ReflejosTestActivity : TestBaseActivity() {
         }
     }
 
-    private fun calcularPuntaje(tiempoMs: Long): Int {
-        return if (tiempoMs > 500) {
-            maxOf(0, 100 - ((tiempoMs - 500) / 5).toInt())
-        } else {
-            100 - maxOf(0, ((tiempoMs - 200) / 5).toInt())
-        }.coerceIn(0, 100)
-    }
-
     private fun mostrarResultado(puntaje: Int, tiempoMs: Long, errorAnticipacion: Boolean) {
         val mensaje = when {
             errorAnticipacion -> "PRESIONASTE ANTES DE TIEMPO!\n\nDebes esperar a que el círculo se ponga VERDE.\n\nNota: 0%"
-            tiempoMs < 200 -> "¡INCREÍBLE!\n\nTiempo: ${tiempoMs}ms\nReflejos de élite.\n\nNota: $puntaje%"
+            tiempoMs < sessionParams.umbralEliteMs -> "¡INCREÍBLE!\n\nTiempo: ${tiempoMs}ms\nReflejos de élite.\n\nNota: $puntaje%"
             tiempoMs < 400 -> "MUY BIEN\n\nTiempo: ${tiempoMs}ms\nBuen reflejo.\n\nNota: $puntaje%"
             else -> "LENTO\n\nTiempo: ${tiempoMs}ms\nPosible fatiga detectada.\n\nNota: $puntaje%"
         }
@@ -130,16 +167,14 @@ class ReflejosTestActivity : TestBaseActivity() {
             .show()
     }
 
-    // --- ✅ LÓGICA DE PAUSA/REANUDACIÓN POR SENTINEL ---
+    // Lógica de pausa/reanudación por SENTINEL
     override fun onTestPaused() {
-        // Si el usuario se va, detenemos el cronómetro de espera
         esperaRunnable?.let { handler.removeCallbacks(it) }
         testEnProgreso = false
         txtEstado.text = getString(R.string.status_pause)
     }
 
     override fun onTestResumed() {
-        // Al volver, reiniciamos el ciclo de espera
         if (!testFinalizado) {
             iniciarTest()
         }
@@ -150,3 +185,17 @@ class ReflejosTestActivity : TestBaseActivity() {
         esperaRunnable?.let { handler.removeCallbacks(it) }
     }
 }
+
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * EXTENSIÓN NECESARIA EN TestSessionParams
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * Agregar esta función a TestSessionParams.kt:
+ */
+/*
+fun randomInRange(min: Long, max: Long): Long {
+    val range = max - min
+    return min + (secureRandom.nextDouble() * range).roundToLong()
+}
+*/

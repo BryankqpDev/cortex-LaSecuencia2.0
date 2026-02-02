@@ -9,9 +9,22 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.logic.AdaptiveScoring
+import com.example.Cortex_LaSecuencia.logic.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import kotlin.random.Random
 
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * TEST DE ESCANEO VISUAL (t6) - VERSIÓN RANDOMIZADA
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * Cambios implementados:
+ * ✅ Scoring adaptativo con tiempo base variable
+ * ✅ Factor de penalización ajustable
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ */
 class EscaneoTestActivity : TestBaseActivity() {
 
     private lateinit var txtObjetivo: TextView
@@ -23,6 +36,11 @@ class EscaneoTestActivity : TestBaseActivity() {
     private var juegoActivo = true
     private var clicsErroneos = 0
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ PARÁMETROS ALEATORIOS DE ESTA SESIÓN
+    // ═══════════════════════════════════════════════════════════════════════
+    private lateinit var sessionParams: TestSessionParams.EscaneoParams
+
     override fun obtenerTestId(): String = "t6"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,9 +49,14 @@ class EscaneoTestActivity : TestBaseActivity() {
 
         txtObjetivo = findViewById(R.id.txt_objetivo)
         gridNumeros = findViewById(R.id.grid_numeros)
-        txtFeedback = findViewById(R.id.txt_instruccion) // Reutilizamos para feedback de cámara
+        txtFeedback = findViewById(R.id.txt_instruccion)
 
-        // --- ✅ ACTIVAR SENTINEL (CÁMARA) ---
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ GENERAR PARÁMETROS ÚNICOS PARA ESTA EJECUCIÓN
+        // ═══════════════════════════════════════════════════════════════════
+        sessionParams = TestSessionParams.generarEscaneoParams()
+        TestSessionParams.registrarParametros("t6", sessionParams)
+
         val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
         configurarSentinel(viewFinder, null)
 
@@ -93,16 +116,19 @@ class EscaneoTestActivity : TestBaseActivity() {
     private fun calcularPuntajeYFinalizar() {
         testFinalizado = true
         val duracion = System.currentTimeMillis() - tiempoInicio
-        val penalizacionTiempo = if (duracion > 1500) ((duracion - 1500) / 50).toInt() else 0
-        
-        // Aplicar penalizaciones
-        val puntajeBase = (100 - penalizacionTiempo).coerceIn(0, 100)
-        val puntajeFinal = (puntajeBase - penalizacionPorAusencia).coerceIn(0, 100)
+
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ USAR SCORING ADAPTATIVO
+        // ═══════════════════════════════════════════════════════════════════
+        val puntajeBase = AdaptiveScoring.calcularPuntajeEscaneo(duracion, sessionParams)
+        val puntajeFinal = AdaptiveScoring.aplicarPenalizacionAusencia(puntajeBase, penalizacionPorAusencia)
 
         val details = mapOf(
             "tiempo_total_ms" to duracion,
             "clics_erroneos" to clicsErroneos,
-            "penaliz_ausencia" to penalizacionPorAusencia
+            "penaliz_ausencia" to penalizacionPorAusencia,
+            "tiempo_base_config" to sessionParams.tiempoBaseMs,
+            "factor_penalizacion" to sessionParams.factorPenalizacion
         )
         CortexManager.logPerformanceMetric("t6", puntajeFinal, details)
         CortexManager.guardarPuntaje("t6", puntajeFinal)

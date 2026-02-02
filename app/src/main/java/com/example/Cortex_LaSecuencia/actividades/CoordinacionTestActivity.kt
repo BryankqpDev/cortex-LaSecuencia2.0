@@ -8,9 +8,22 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.logic.AdaptiveScoring
+import com.example.Cortex_LaSecuencia.logic.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import java.util.Random
 
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * TEST DE COORDINACIÓN (t4) - VERSIÓN RANDOMIZADA
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * Cambios implementados:
+ * ✅ Scoring adaptativo con tiempo base variable
+ * ✅ Factor de dificultad que afecta la evaluación
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ */
 class CoordinacionTestActivity : TestBaseActivity() {
 
     private lateinit var containerJuego: FrameLayout
@@ -25,6 +38,11 @@ class CoordinacionTestActivity : TestBaseActivity() {
     private val random = Random()
     private var timerInicio: CountDownTimer? = null
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ PARÁMETROS ALEATORIOS DE ESTA SESIÓN
+    // ═══════════════════════════════════════════════════════════════════════
+    private lateinit var sessionParams: TestSessionParams.CoordinacionParams
+
     override fun obtenerTestId(): String = "t4"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,10 +51,15 @@ class CoordinacionTestActivity : TestBaseActivity() {
 
         containerJuego = findViewById(R.id.container_juego)
         txtContador = findViewById(R.id.txt_contador)
-        
+
         intentoActual = CortexManager.obtenerIntentoActual("t4")
 
-        // --- ✅ ACTIVAR SENTINEL (CÁMARA) ---
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ GENERAR PARÁMETROS ÚNICOS PARA ESTA EJECUCIÓN
+        // ═══════════════════════════════════════════════════════════════════
+        sessionParams = TestSessionParams.generarCoordinacionParams()
+        TestSessionParams.registrarParametros("t4", sessionParams)
+
         val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
         configurarSentinel(viewFinder, null)
 
@@ -92,7 +115,7 @@ class CoordinacionTestActivity : TestBaseActivity() {
 
     private fun onDotClicked(dot: View) {
         if (!gameStarted || testFinalizado) return
-        
+
         hitsCount++
         updateProgressText()
         containerJuego.removeView(dot)
@@ -108,12 +131,19 @@ class CoordinacionTestActivity : TestBaseActivity() {
         gameStarted = false
         testFinalizado = true
         val totalTime = System.currentTimeMillis() - startTime
-        
-        // Aplicar penalización por ausencia si hubo distracciones
-        val score = calculateScore(totalTime) - penalizacionPorAusencia
-        val scoreFinal = score.coerceIn(0, 100)
 
-        val details = mapOf("tiempo_total_ms" to totalTime, "penaliz_ausencia" to penalizacionPorAusencia)
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ USAR SCORING ADAPTATIVO
+        // ═══════════════════════════════════════════════════════════════════
+        val scoreBase = AdaptiveScoring.calcularPuntajeCoordinacion(totalTime, sessionParams)
+        val scoreFinal = AdaptiveScoring.aplicarPenalizacionAusencia(scoreBase, penalizacionPorAusencia)
+
+        val details = mapOf(
+            "tiempo_total_ms" to totalTime,
+            "penaliz_ausencia" to penalizacionPorAusencia,
+            "tiempo_base_config" to sessionParams.tiempoBaseMs,
+            "factor_dificultad" to sessionParams.factorDificultad
+        )
         CortexManager.logPerformanceMetric("t4", scoreFinal, details)
         CortexManager.guardarPuntaje("t4", scoreFinal)
 
@@ -122,13 +152,6 @@ class CoordinacionTestActivity : TestBaseActivity() {
         } else {
             showFinalDialog(scoreFinal, totalTime)
         }
-    }
-
-    private fun calculateScore(timeMs: Long): Int {
-        val baseTime = 3000L
-        if (timeMs <= baseTime) return 100
-        val penalty = ((timeMs - baseTime) / 50).toInt()
-        return (100 - penalty).coerceIn(0, 100)
     }
 
     private fun updateProgressText() {

@@ -10,9 +10,21 @@ import androidx.appcompat.app.AlertDialog
 import androidx.cardview.widget.CardView
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.logic.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import java.util.Random
 
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * TEST DE CONTROL DE IMPULSO (t7) - VERSIÓN RANDOMIZADA
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * Cambios implementados:
+ * ✅ Duración del estímulo variable (evita memorización)
+ * ✅ Delay entre rondas aleatorio
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ */
 class ImpulsoTestActivity : TestBaseActivity() {
 
     private lateinit var cardEstimulo: CardView
@@ -25,16 +37,21 @@ class ImpulsoTestActivity : TestBaseActivity() {
 
     private var rondaActual = 0
     private val TOTAL_RONDAS = 12
-    private var erroresImpulso = 0 
-    private var erroresOmision = 0 
+    private var erroresImpulso = 0
+    private var erroresOmision = 0
     private val tiemposDeReaccionGo = mutableListOf<Long>()
 
     private var esAzul = false
     private var esperandoRespuesta = false
     private var respondioEnEstaRonda = false
     private var tiempoInicioEstimulo: Long = 0
-    
+
     private var runnableRonda: Runnable? = null
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ PARÁMETROS ALEATORIOS DE ESTA SESIÓN
+    // ═══════════════════════════════════════════════════════════════════════
+    private lateinit var sessionParams: TestSessionParams.ImpulsoParams
 
     override fun obtenerTestId(): String = "t7"
 
@@ -46,6 +63,12 @@ class ImpulsoTestActivity : TestBaseActivity() {
         txtIcono = findViewById(R.id.txt_icono_central)
         txtFeedback = findViewById(R.id.txt_feedback)
         layoutRoot = findViewById(R.id.layout_root)
+
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ GENERAR PARÁMETROS ÚNICOS PARA ESTA EJECUCIÓN
+        // ═══════════════════════════════════════════════════════════════════
+        sessionParams = TestSessionParams.generarImpulsoParams()
+        TestSessionParams.registrarParametros("t7", sessionParams)
 
         val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
         configurarSentinel(viewFinder, null)
@@ -73,7 +96,7 @@ class ImpulsoTestActivity : TestBaseActivity() {
         esperandoRespuesta = true
         respondioEnEstaRonda = false
         esAzul = random.nextFloat() > 0.3
-        
+
         if (esAzul) {
             cardEstimulo.setCardBackgroundColor(Color.parseColor("#3B82F6"))
             txtIcono.text = "🔵"
@@ -81,12 +104,17 @@ class ImpulsoTestActivity : TestBaseActivity() {
             cardEstimulo.setCardBackgroundColor(Color.parseColor("#F59E0B"))
             txtIcono.text = "✖️"
         }
-        
+
         tiempoInicioEstimulo = System.currentTimeMillis()
         txtFeedback.text = "..."
 
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ USAR DURACIÓN DE ESTÍMULO ALEATORIA
+        // ═══════════════════════════════════════════════════════════════════
+        // Antes: 900ms fijo (memorizable)
+        // Ahora: Variable por sesión
         runnableRonda = Runnable { if (!testFinalizado && !estaEnPausaPorAusencia) evaluarFinDeRonda() }
-        handler.postDelayed(runnableRonda!!, 900)
+        handler.postDelayed(runnableRonda!!, sessionParams.duracionEstimuloMs)
     }
 
     private fun procesarToque() {
@@ -116,7 +144,10 @@ class ImpulsoTestActivity : TestBaseActivity() {
         txtIcono.text = ""
         esperandoRespuesta = false
 
-        programarSiguiente(200)
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ USAR DELAY ENTRE RONDAS ALEATORIO
+        // ═══════════════════════════════════════════════════════════════════
+        programarSiguiente(sessionParams.delayEntreRondasMs)
     }
 
     private fun finalizarPrueba() {
@@ -133,7 +164,9 @@ class ImpulsoTestActivity : TestBaseActivity() {
             "tiempos_reaccion_ms" to tiemposDeReaccionGo,
             "errores_impulso" to erroresImpulso,
             "errores_omision" to erroresOmision,
-            "penaliz_ausencia" to penalizacionPorAusencia
+            "penaliz_ausencia" to penalizacionPorAusencia,
+            "duracion_estimulo_config" to sessionParams.duracionEstimuloMs,
+            "delay_entre_rondas_config" to sessionParams.delayEntreRondasMs
         )
         CortexManager.logPerformanceMetric("t7", notaFinal, details)
 

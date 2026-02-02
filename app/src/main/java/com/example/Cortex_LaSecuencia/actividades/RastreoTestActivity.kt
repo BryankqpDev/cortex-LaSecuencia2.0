@@ -11,9 +11,22 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.logic.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import kotlin.random.Random
 
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * TEST DE RASTREO VISUAL (t8) - VERSIÓN RANDOMIZADA
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * Cambios implementados:
+ * ✅ Velocidad de bolas variable (evita memorización de trayectorias)
+ * ✅ Duración de animación variable (número de pasos aleatorio)
+ * ✅ Cada ejecución es única
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ */
 class RastreoTestActivity : TestBaseActivity() {
 
     private lateinit var areaRastreo: FrameLayout
@@ -29,8 +42,13 @@ class RastreoTestActivity : TestBaseActivity() {
     private var animacionActiva = false
     private var faseSeleccionHabilitada = false
     private var pasosRealizados = 0
-    private val MAX_PASOS = 300
+    private var maxPasos = 300 // Ahora será variable
     private var tiempoInicioSeleccion: Long = 0
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ PARÁMETROS ALEATORIOS DE ESTA SESIÓN
+    // ═══════════════════════════════════════════════════════════════════════
+    private lateinit var sessionParams: TestSessionParams.RastreoParams
 
     override fun obtenerTestId(): String = "t8"
 
@@ -45,6 +63,13 @@ class RastreoTestActivity : TestBaseActivity() {
 
         val intentoActual = CortexManager.obtenerIntentoActual("t8")
         txtIntento.text = "INTENTO $intentoActual/2"
+
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ GENERAR PARÁMETROS ÚNICOS PARA ESTA EJECUCIÓN
+        // ═══════════════════════════════════════════════════════════════════
+        sessionParams = TestSessionParams.generarRastreoParams()
+        maxPasos = sessionParams.duracionAnimacionPasos
+        TestSessionParams.registrarParametros("t8", sessionParams)
 
         val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
         configurarSentinel(viewFinder, null)
@@ -85,7 +110,18 @@ class RastreoTestActivity : TestBaseActivity() {
                 val bola = BallView(this, i)
                 bola.posX = 0.15f + Random.nextFloat() * 0.7f
                 bola.posY = 0.15f + Random.nextFloat() * 0.7f
-                val velocidad = 0.015f + Random.nextFloat() * 0.015f
+
+                // ═══════════════════════════════════════════════════════════
+                // ✅ USAR VELOCIDAD ALEATORIA POR BOLA
+                // ═══════════════════════════════════════════════════════════
+                // Antes: velocidad = 0.015f + Random.nextFloat() * 0.015f
+                //        → Rango limitado: 0.015-0.030
+                // Ahora: Rango amplio y único por sesión
+                val velocidad = TestSessionParams.randomFloatInRange(
+                    sessionParams.velocidadMinBolas,
+                    sessionParams.velocidadMaxBolas
+                )
+
                 val angulo = Random.nextFloat() * 2f * Math.PI.toFloat()
                 bola.vx = kotlin.math.cos(angulo) * velocidad
                 bola.vy = kotlin.math.sin(angulo) * velocidad
@@ -135,7 +171,11 @@ class RastreoTestActivity : TestBaseActivity() {
             }
 
             pasosRealizados++
-            if (pasosRealizados >= MAX_PASOS) {
+
+            // ═══════════════════════════════════════════════════════════════
+            // ✅ USAR DURACIÓN VARIABLE (maxPasos ahora es aleatorio)
+            // ═══════════════════════════════════════════════════════════════
+            if (pasosRealizados >= maxPasos) {
                 animacionActiva = false
                 handler.post { habilitarSeleccion() }
             } else {
@@ -190,7 +230,14 @@ class RastreoTestActivity : TestBaseActivity() {
         val puntajeBase = when (aciertos) { 2 -> 100; 1 -> 50; else -> 0 }
         val puntajeFinal = (puntajeBase - penalizacionPorAusencia).coerceIn(0, 100)
 
-        CortexManager.logPerformanceMetric("t8", puntajeFinal, mapOf("aciertos" to aciertos, "tiempo_ms" to tiempoDecision))
+        val details = mapOf(
+            "aciertos" to aciertos,
+            "tiempo_ms" to tiempoDecision,
+            "velocidad_min_config" to sessionParams.velocidadMinBolas,
+            "velocidad_max_config" to sessionParams.velocidadMaxBolas,
+            "duracion_pasos" to maxPasos
+        )
+        CortexManager.logPerformanceMetric("t8", puntajeFinal, details)
         CortexManager.guardarPuntaje("t8", puntajeFinal)
 
         handler.postDelayed({ if (!isFinishing) mostrarResultado(puntajeFinal, aciertos) }, 1500)

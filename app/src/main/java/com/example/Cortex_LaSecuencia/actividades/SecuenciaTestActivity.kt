@@ -9,9 +9,22 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.logic.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import kotlin.random.Random
 
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * TEST DE SECUENCIA (t2) - VERSIÓN RANDOMIZADA
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * Cambios implementados:
+ * ✅ Tiempo entre pasos variable (evita memorización del ritmo)
+ * ✅ Delay antes de habilitar respuesta aleatorio
+ * ✅ Cada ejecución tiene timing único
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ */
 class SecuenciaTestActivity : TestBaseActivity() {
 
     private lateinit var botones: List<View>
@@ -19,8 +32,13 @@ class SecuenciaTestActivity : TestBaseActivity() {
 
     private val secuenciaGenerada = mutableListOf<Int>()
     private val secuenciaUsuario = mutableListOf<Int>()
-    private val LONGITUD_SECUENCIA = 6 
+    private val LONGITUD_SECUENCIA = 6
     private var esTurnoDelUsuario = false
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ PARÁMETROS ALEATORIOS DE ESTA SESIÓN
+    // ═══════════════════════════════════════════════════════════════════════
+    private lateinit var sessionParams: TestSessionParams.SecuenciaParams
 
     override fun obtenerTestId(): String = "t2"
 
@@ -35,12 +53,17 @@ class SecuenciaTestActivity : TestBaseActivity() {
             findViewById(R.id.btn_7), findViewById(R.id.btn_8), findViewById(R.id.btn_9)
         )
 
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ GENERAR PARÁMETROS ÚNICOS PARA ESTA EJECUCIÓN
+        // ═══════════════════════════════════════════════════════════════════
+        sessionParams = TestSessionParams.generarSecuenciaParams()
+        TestSessionParams.registrarParametros("t2", sessionParams)
+
         configurarClicks()
 
         val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinderSeq)
         configurarSentinel(viewFinder, null)
 
-        // Iniciar el test único tras una pausa
         Handler(Looper.getMainLooper()).postDelayed({ if (!testFinalizado) prepararSecuenciaUnica() }, 1000)
     }
 
@@ -76,7 +99,13 @@ class SecuenciaTestActivity : TestBaseActivity() {
 
     private fun mostrarSecuenciaCompleta() {
         val handler = Handler(Looper.getMainLooper())
-        val tiempoPaso = 800L 
+
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ USAR TIEMPO ENTRE PASOS ALEATORIO
+        // ═══════════════════════════════════════════════════════════════════
+        // Antes: val tiempoPaso = 800L (fijo, memorizable)
+        // Ahora: Timing único por sesión
+        val tiempoPaso = sessionParams.tiempoPorPasoMs
 
         secuenciaGenerada.forEachIndexed { i, botonIndex ->
             handler.postDelayed({
@@ -84,13 +113,16 @@ class SecuenciaTestActivity : TestBaseActivity() {
 
                 // Al llegar al último paso, dar el turno al usuario
                 if (i == secuenciaGenerada.size - 1) {
+                    // ═══════════════════════════════════════════════════════
+                    // ✅ DELAY ADICIONAL ANTES DE HABILITAR RESPUESTA
+                    // ═══════════════════════════════════════════════════════
                     handler.postDelayed({
                         if (!testFinalizado && !isFinishing) {
                             esTurnoDelUsuario = true
                             txtInstruccion.text = getString(R.string.t2_instruction_replicate)
                             txtInstruccion.setTextColor(Color.WHITE)
                         }
-                    }, tiempoPaso)
+                    }, sessionParams.tiempoPreRespuestaMs)
                 }
             }, (i + 1) * tiempoPaso)
         }
@@ -124,14 +156,14 @@ class SecuenciaTestActivity : TestBaseActivity() {
     private fun gestionarFallo() {
         testFinalizado = true
         esTurnoDelUsuario = false
-        
+
         // El puntaje es proporcional a cuántos pasos acertó antes de fallar
         val aciertos = (secuenciaUsuario.size - 1).coerceAtLeast(0)
         val puntajeBase = (aciertos.toFloat() / LONGITUD_SECUENCIA * 100).toInt()
         val puntajeFinal = (puntajeBase - penalizacionPorAusencia).coerceAtLeast(0)
-        
+
         CortexManager.guardarPuntaje("t2", puntajeFinal)
-        
+
         val intentoActual = CortexManager.obtenerIntentoActual("t2")
         if (intentoActual == 1 && puntajeFinal < 95) {
             recreate() // REINTENTO AUTOMÁTICO
@@ -143,7 +175,7 @@ class SecuenciaTestActivity : TestBaseActivity() {
     private fun finalizarConExito() {
         testFinalizado = true
         esTurnoDelUsuario = false
-        
+
         val puntajeFinal = (100 - penalizacionPorAusencia).coerceAtLeast(0)
         CortexManager.guardarPuntaje("t2", puntajeFinal)
 

@@ -1,12 +1,15 @@
 package com.example.Cortex_LaSecuencia.actividades
 
 import android.animation.ObjectAnimator
+import android.animation.TimeInterpolator
 import android.graphics.Color
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.widget.Button
 import android.widget.ImageView
@@ -15,10 +18,27 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.animation.doOnEnd
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
+import com.example.Cortex_LaSecuencia.logic.AdaptiveScoring
+import com.example.Cortex_LaSecuencia.logic.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import kotlin.math.abs
-import kotlin.random.Random
 
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * TEST DE ANTICIPACIÓN (t3) - VERSIÓN MEJORADA CON ACELERACIÓN VARIABLE
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * Mejoras implementadas:
+ * ✅ Velocidad base MÁS RÁPIDA (600-1400ms vs 900-2200ms)
+ * ✅ Aceleración variable:
+ *    - Tipo 0: Velocidad constante (lineal)
+ *    - Tipo 1: Empieza LENTO → termina RÁPIDO
+ *    - Tipo 2: Empieza RÁPIDO → termina LENTO
+ * ✅ Multiplicador de velocidad 1.2x-1.8x
+ * ✅ MUCHO más desafiante para trabajadores
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ */
 class AnticipacionTestActivity : TestBaseActivity() {
 
     private lateinit var vehiculo: ImageView
@@ -34,6 +54,11 @@ class AnticipacionTestActivity : TestBaseActivity() {
     private var intentosRealizados = 0
     private val MAX_INTENTOS = 2
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ PARÁMETROS ALEATORIOS DE ESTA SESIÓN (MEJORADOS)
+    // ═══════════════════════════════════════════════════════════════════════
+    private lateinit var sessionParams: TestSessionParams.AnticipacionParams
+
     override fun obtenerTestId(): String = "t3"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,10 +71,14 @@ class AnticipacionTestActivity : TestBaseActivity() {
         pista = findViewById(R.id.pista_container)
         countdownText = findViewById(R.id.txt_countdown)
 
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ GENERAR PARÁMETROS ÚNICOS PARA ESTA EJECUCIÓN
+        // ═══════════════════════════════════════════════════════════════════
+        sessionParams = TestSessionParams.generarAnticipacionParams()
+        TestSessionParams.registrarParametros("t3", sessionParams)
+
         btnFrenar.setOnClickListener { if (juegoActivo && !testFinalizado) frenarVehiculo() }
 
-        // --- ✅ ACTIVAR SENTINEL (CÁMARA) ---
-        // Debemos asegurarnos de que el XML tenga un PreviewView con este ID
         val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
         configurarSentinel(viewFinder, null)
 
@@ -85,11 +114,30 @@ class AnticipacionTestActivity : TestBaseActivity() {
         val anchoVehiculo = vehiculo.width.toFloat()
         vehiculo.translationX = 0f
 
-        duracionAnimacionActual = (1200 + Random.nextFloat() * 800).toLong()
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ CALCULAR DURACIÓN CON VELOCIDAD BASE AUMENTADA
+        // ═══════════════════════════════════════════════════════════════════
+        val duracionBase = TestSessionParams.randomInRange(
+            sessionParams.duracionAnimacionMinMs,
+            sessionParams.duracionAnimacionMaxMs
+        )
+
+        // Aplicar factor de velocidad (más bajo = más rápido)
+        // Ejemplo: duración 1000ms / factor 1.5 = 667ms (50% más rápido)
+        duracionAnimacionActual = (duracionBase / sessionParams.factorVelocidadBase).toLong()
+
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ SELECCIONAR INTERPOLADOR SEGÚN TIPO DE ACELERACIÓN
+        // ═══════════════════════════════════════════════════════════════════
+        val interpolator: TimeInterpolator = when (sessionParams.tipoAceleracion) {
+            1 -> AccelerateInterpolator(1.5f)  // Empieza lento → termina RÁPIDO
+            2 -> DecelerateInterpolator(1.5f)  // Empieza RÁPIDO → termina lento
+            else -> LinearInterpolator()        // Velocidad constante
+        }
 
         animador = ObjectAnimator.ofFloat(vehiculo, "translationX", 0f, anchoPista - anchoVehiculo).apply {
             duration = duracionAnimacionActual
-            interpolator = LinearInterpolator()
+            setInterpolator(interpolator)
             doOnEnd { if (juegoActivo) evaluarFrenado(falloTotal = true) }
             start()
         }
@@ -118,28 +166,65 @@ class AnticipacionTestActivity : TestBaseActivity() {
             val centroMeta = zonaMeta.x + zonaMeta.width / 2
             diferenciaAbsoluta = abs(centroVehiculo - centroMeta)
 
-            val diferenciaPorcentual = (diferenciaAbsoluta / pista.width) * 100
-            val penalizacion = (diferenciaPorcentual * 6).toInt()
-            puntaje = (100 - penalizacion - penalizacionPorAusencia).coerceIn(0, 100) // ✅ APLICA PENALIZACIÓN
+            // ═══════════════════════════════════════════════════════════════
+            // ✅ USAR SCORING ADAPTATIVO
+            // ═══════════════════════════════════════════════════════════════
+            puntaje = AdaptiveScoring.calcularPuntajeAnticipacion(
+                diferenciaAbsoluta,
+                pista.width,
+                sessionParams
+            )
 
+            // Aplicar penalización por ausencia
+            puntaje = (puntaje - penalizacionPorAusencia).coerceIn(0, 100)
+
+            // ═══════════════════════════════════════════════════════════════
+            // ✅ MENSAJES AJUSTADOS PARA MAYOR DIFICULTAD
+            // ═══════════════════════════════════════════════════════════════
             mensaje = when {
-                puntaje >= 90 -> "¡PRECISIÓN PERFECTA! 😎"
-                puntaje >= 70 -> "Buen cálculo."
-                else -> "FRENADO IMPRECISO ⚠️"
+                puntaje >= 85 -> "¡PRECISIÓN PERFECTA! 😎\n¡Reflejos de élite!"
+                puntaje >= 70 -> "BUEN CÁLCULO ✓\nReacción rápida."
+                puntaje >= 50 -> "ACEPTABLE ⚠️\nPuedes mejorar."
+                else -> "FRENADO IMPRECISO ❌\nRequiere más atención."
             }
         }
 
         val intentoActual = CortexManager.obtenerIntentoActual("t3")
-        val details = mapOf("distancia_px" to diferenciaAbsoluta, "velocidad_ms" to duracionAnimacionActual, "fallo_total" to falloTotal, "penaliz_ausencia" to penalizacionPorAusencia)
+
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ LOG EXTENDIDO CON INFORMACIÓN DE ACELERACIÓN
+        // ═══════════════════════════════════════════════════════════════════
+        val tipoAceleracionTexto = when (sessionParams.tipoAceleracion) {
+            1 -> "Aceleración (lento→rápido)"
+            2 -> "Desaceleración (rápido→lento)"
+            else -> "Velocidad constante"
+        }
+
+        val details = mapOf(
+            "distancia_px" to diferenciaAbsoluta,
+            "duracion_final_ms" to duracionAnimacionActual,
+            "fallo_total" to falloTotal,
+            "penaliz_ausencia" to penalizacionPorAusencia,
+            "duracion_min_config" to sessionParams.duracionAnimacionMinMs,
+            "duracion_max_config" to sessionParams.duracionAnimacionMaxMs,
+            "factor_tolerancia" to sessionParams.factorTolerancia,
+            "tipo_aceleracion" to tipoAceleracionTexto,
+            "factor_velocidad_base" to sessionParams.factorVelocidadBase
+        )
         CortexManager.logPerformanceMetric("t3", puntaje, details)
         CortexManager.guardarPuntaje("t3", puntaje)
 
         if (intentoActual == 1 && puntaje < 80) {
             testFinalizado = true
-            mostrarDialogoFin("INTENTO FALLIDO", "$mensaje\nNota: $puntaje%\n\nQueda 1 intento.", true)
+            mostrarDialogoFin(
+                "INTENTO FALLIDO",
+                "$mensaje\n\nNota: $puntaje%\n\nQueda 1 intento más.",
+                true
+            )
         } else {
             testFinalizado = true
-            mostrarDialogoFin(if(puntaje >= 80) "PRUEBA SUPERADA ✅" else "TEST FINALIZADO", "Resultado Final:\nNota: $puntaje%\n$mensaje", false)
+            val titulo = if(puntaje >= 80) "PRUEBA SUPERADA ✅" else "TEST FINALIZADO"
+            mostrarDialogoFin(titulo, "Resultado Final:\nNota: $puntaje%\n\n$mensaje", false)
         }
     }
 
@@ -159,7 +244,6 @@ class AnticipacionTestActivity : TestBaseActivity() {
             .show()
     }
 
-    // --- ✅ PAUSA POR AUSENCIA ---
     override fun onTestPaused() {
         animador?.pause()
         juegoActivo = false
