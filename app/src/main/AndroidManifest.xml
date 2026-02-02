@@ -46,7 +46,7 @@
 
         <!-- ========== 🔥 CAPTURA BIOMÉTRICA ========== -->
         <activity
-            android:name=".actividades.BiometriaActivity"
+            android:name=".BiometriaActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.NoActionBar"

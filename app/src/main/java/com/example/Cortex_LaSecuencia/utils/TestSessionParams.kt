@@ -1,4 +1,4 @@
-package com.example.Cortex_LaSecuencia.logic
+package com.example.Cortex_LaSecuencia.utils
 
 import java.security.SecureRandom
 import kotlin.math.roundToLong

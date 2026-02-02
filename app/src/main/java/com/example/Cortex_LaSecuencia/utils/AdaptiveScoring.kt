@@ -1,5 +1,7 @@
 package com.example.Cortex_LaSecuencia.logic
 
+import com.example.Cortex_LaSecuencia.utils.TestSessionParams
+
 /**
  * ════════════════════════════════════════════════════════════════════════════
  * SISTEMA DE SCORING ADAPTATIVO

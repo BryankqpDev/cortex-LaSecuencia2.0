@@ -11,7 +11,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
-import com.example.Cortex_LaSecuencia.logic.TestSessionParams
+import com.example.Cortex_LaSecuencia.utils.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import kotlin.random.Random
 

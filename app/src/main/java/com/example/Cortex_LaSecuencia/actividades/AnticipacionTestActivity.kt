@@ -2,7 +2,6 @@ package com.example.Cortex_LaSecuencia.actividades
 
 import android.animation.ObjectAnimator
 import android.animation.TimeInterpolator
-import android.graphics.Color
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
@@ -19,7 +18,7 @@ import androidx.core.animation.doOnEnd
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
 import com.example.Cortex_LaSecuencia.logic.AdaptiveScoring
-import com.example.Cortex_LaSecuencia.logic.TestSessionParams
+import com.example.Cortex_LaSecuencia.utils.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import kotlin.math.abs
 
