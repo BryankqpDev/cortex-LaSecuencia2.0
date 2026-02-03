@@ -2,6 +2,7 @@ package com.example.Cortex_LaSecuencia.actividades
 
 import android.animation.ObjectAnimator
 import android.animation.TimeInterpolator
+import android.content.Intent
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
@@ -213,7 +214,8 @@ class AnticipacionTestActivity : TestBaseActivity() {
         CortexManager.logPerformanceMetric("t3", puntaje, details)
         CortexManager.guardarPuntaje("t3", puntaje)
 
-        if (intentoActual == 1 && puntaje < 80) {
+        // ✅ Umbral 95% (igual que CortexManager)
+        if (intentoActual == 1 && puntaje < 95) {
             testFinalizado = true
             mostrarDialogoFin(
                 "INTENTO FALLIDO",
@@ -234,7 +236,10 @@ class AnticipacionTestActivity : TestBaseActivity() {
             .setMessage(mensaje)
             .setCancelable(false)
             .setPositiveButton(if (esReintento) "REINTENTAR" else "SIGUIENTE") { _, _ ->
-                if (esReintento) recreate()
+                if (esReintento) {
+                    startActivity(Intent(this, AnticipacionTestActivity::class.java))
+                    finish()
+                }
                 else {
                     CortexManager.navegarAlSiguiente(this)
                     finish()

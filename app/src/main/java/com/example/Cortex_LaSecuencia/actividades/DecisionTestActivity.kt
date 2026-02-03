@@ -1,5 +1,6 @@
 package com.example.Cortex_LaSecuencia.actividades
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
@@ -83,8 +84,10 @@ class DecisionTestActivity : TestBaseActivity() {
 
         CortexManager.guardarPuntaje("t10", notaFinal)
 
-        if (intentoActual == 1 && notaFinal < 80) recreate()
-        else {
+        // ✅ Umbral 95% (igual que CortexManager)
+        if (intentoActual == 1 && notaFinal < 95) {
+            mostrarDialogoReintento(notaFinal, aciertos)
+        } else {
             AlertDialog.Builder(this)
                 .setTitle("EVALUACIÓN FINALIZADA")
                 .setMessage("Aciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $notaFinal%\nPenalización ausencia: -$penalizacionPorAusencia pts")
@@ -95,6 +98,18 @@ class DecisionTestActivity : TestBaseActivity() {
                 }
                 .show()
         }
+    }
+
+    private fun mostrarDialogoReintento(nota: Int, aciertos: Int) {
+        AlertDialog.Builder(this)
+            .setTitle("DECISIÓN - INTENTO 1")
+            .setMessage("Aciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $nota%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\n⚠️ Tendrás un segundo intento.")
+            .setCancelable(false)
+            .setPositiveButton("INTENTO 2 →") { _, _ ->
+                startActivity(Intent(this, DecisionTestActivity::class.java))
+                finish()
+            }
+            .show()
     }
 
     override fun onTestPaused() {

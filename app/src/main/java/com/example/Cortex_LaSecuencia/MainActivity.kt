@@ -2,8 +2,14 @@ package com.example.Cortex_LaSecuencia
 
 import android.content.Intent
 import android.os.Bundle
+import android.graphics.Rect
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.View
+import android.view.ViewTreeObserver
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
@@ -26,6 +32,7 @@ class MainActivity : AppCompatActivity() {
 
         sessionManager = SessionManager(this)
 
+        val scrollView = findViewById<ScrollView>(R.id.scroll_view)
         val etEmpresa = findViewById<EditText>(R.id.et_empresa)
         val etSupervisor = findViewById<EditText>(R.id.et_supervisor)
         val etNombre = findViewById<EditText>(R.id.et_nombre)
@@ -34,6 +41,32 @@ class MainActivity : AppCompatActivity() {
         val spinnerEquipo = findViewById<Spinner>(R.id.spinner_equipo)
         val btnSiguiente = findViewById<Button>(R.id.btn_siguiente)
         val btnAdmin = findViewById<Button>(R.id.btn_admin)
+
+        // ✅ FORMATO DE TEXTO: Capitalize Words
+        setupCapitalizeWords(etEmpresa)
+        setupCapitalizeWords(etSupervisor)
+        setupCapitalizeWords(etNombre)
+
+        // ✅ AUTO-SCROLL AL SELECCIONAR TIPO DE EQUIPO
+        spinnerEquipo.setOnTouchListener { view, _ ->
+            scrollView.post {
+                scrollView.smoothScrollTo(0, view.bottom)
+            }
+            false
+        }
+
+        // ✅ AUTO-SCROLL AL SELECCIONAR PLACA
+        etUnidad.setOnFocusChangeListener { view, hasFocus ->
+            if (hasFocus) {
+                // Esperar a que el teclado termine de aparecer
+                scrollView.postDelayed({
+                    scrollToView(scrollView, view)
+                }, 400)
+            }
+        }
+
+        // ✅ DETECTAR CUANDO EL TECLADO APARECE Y AJUSTAR SCROLL
+        setupKeyboardListener(scrollView)
 
         val btnCerrarSesion = findViewById<Button>(R.id.btn_cerrar_sesion)
         val tvUsuarioActual = findViewById<TextView>(R.id.tv_usuario_actual)
@@ -73,9 +106,9 @@ class MainActivity : AppCompatActivity() {
 
         // --- FLUJO NORMAL DE REGISTRO ---
         btnSiguiente.setOnClickListener {
-            val empresa = etEmpresa.text.toString().trim().uppercase()
-            val supervisor = etSupervisor.text.toString().trim().uppercase()
-            val nombre = etNombre.text.toString().trim().uppercase()
+            val empresa = etEmpresa.text.toString().trim()
+            val supervisor = etSupervisor.text.toString().trim()
+            val nombre = etNombre.text.toString().trim()
             val dni = etDni.text.toString().trim()
             val unidad = etUnidad.text.toString().trim().uppercase()
             val equipoSeleccionado = spinnerEquipo.selectedItem.toString()
@@ -170,6 +203,87 @@ class MainActivity : AppCompatActivity() {
     private fun esPlacaValida(placa: String): Boolean {
         val n = placa.replace(Regex("[\\s-]"), "").uppercase()
         return n.length == 6 && (n.matches(Regex("^[A-Z]{3}[0-9]{3}$")) || n.matches(Regex("^[0-9]{4}[A-Z]{2}$")))
+    }
+
+    /**
+     * ✅ Formatea texto con Capitalize Words (Primera mayúscula, resto minúscula)
+     */
+    /**
+     * ✅ Detecta cuando el teclado aparece y ajusta el scroll automáticamente
+     */
+    private fun setupKeyboardListener(scrollView: ScrollView) {
+        val rootView = findViewById<View>(android.R.id.content)
+        rootView.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            private var wasKeyboardOpen = false
+
+            override fun onGlobalLayout() {
+                val rect = Rect()
+                rootView.getWindowVisibleDisplayFrame(rect)
+                val screenHeight = rootView.rootView.height
+                val keypadHeight = screenHeight - rect.bottom
+
+                val isKeyboardOpen = keypadHeight > screenHeight * 0.15
+
+                if (isKeyboardOpen && !wasKeyboardOpen) {
+                    // Teclado acaba de aparecer
+                    val focusedView = currentFocus
+                    if (focusedView != null) {
+                        scrollView.postDelayed({
+                            scrollToView(scrollView, focusedView)
+                        }, 100)
+                    }
+                }
+                wasKeyboardOpen = isKeyboardOpen
+            }
+        })
+    }
+
+    /**
+     * ✅ Scroll inteligente que asegura que la vista esté visible
+     */
+    private fun scrollToView(scrollView: ScrollView, view: View) {
+        val scrollBounds = Rect()
+        scrollView.getHitRect(scrollBounds)
+        
+        if (!view.getLocalVisibleRect(scrollBounds)) {
+            // La vista no está completamente visible
+            val location = IntArray(2)
+            view.getLocationInWindow(location)
+            val y = location[1]
+            
+            // Scroll para que la vista quede visible con margen extra
+            scrollView.smoothScrollTo(0, y - 100)
+        } else {
+            // Asegurar que esté en la parte superior visible
+            scrollView.smoothScrollTo(0, view.top - 100)
+        }
+    }
+
+    /**
+     * ✅ Formatea texto con Capitalize Words (Primera mayúscula, resto minúscula)
+     */
+    private fun setupCapitalizeWords(editText: EditText) {
+        editText.addTextChangedListener(object : TextWatcher {
+            private var isFormatting = false
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                if (isFormatting || s == null) return
+
+                isFormatting = true
+                val formatted = s.toString().split(" ").joinToString(" ") { word ->
+                    word.lowercase().replaceFirstChar { it.uppercase() }
+                }
+
+                if (s.toString() != formatted) {
+                    editText.setText(formatted)
+                    editText.setSelection(formatted.length)
+                }
+                isFormatting = false
+            }
+        })
     }
 
     @Deprecated("Deprecated in Java")

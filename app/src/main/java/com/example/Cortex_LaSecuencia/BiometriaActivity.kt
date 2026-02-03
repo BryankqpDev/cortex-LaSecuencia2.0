@@ -129,13 +129,18 @@ class BiometriaActivity : AppCompatActivity() {
         cardVerificacion.alpha = 0f
         cardVerificacion.animate().alpha(1f).setDuration(300).start()
         resetVerificationIcons()
+        // ✅ ACTIVAR PRIMER CHECK AL INICIAR PROCESAMIENTO
+        activarCheck(iconCheck1)
     }
 
     private fun procesarBiometriaReal(bitmap: Bitmap) {
         lifecycleScope.launch {
+            // ✅ PASO 2: Validar calidad de captura
+            activarCheck(iconCheck2)
             val qualityResult = biometricValidator.validateCaptureQuality(bitmap)
             if (qualityResult is CaptureQualityResult.Valid) {
-                activarCheck(iconCheck1); activarCheck(iconCheck2); activarCheck(iconCheck3)
+                // ✅ PASO 3: Biometría verificada
+                activarCheck(iconCheck3)
                 if (modo == "registro") registrarUsuario(bitmap) else autenticarUsuario(bitmap)
             } else { handleError("Rostro no detectado") }
         }
@@ -144,8 +149,9 @@ class BiometriaActivity : AppCompatActivity() {
     private suspend fun registrarUsuario(bitmap: Bitmap) {
         val resultado = biometricValidator.enrollUser(operadorDni, listOf(bitmap), !BYPASS_LIVENESS_DESARROLLO)
         if (resultado is EnrollmentResult.Success) {
+            // ✅ PASO 4: Decisión finalizada
             activarCheck(iconCheck4)
-            // ✅ GUARDAR CON NOMBRE FIJO PARA EL REPORTE
+            // ✅ GUARDAR CON NOMBRE FIJO PARA EL REPORTE (LANDSCAPE)
             guardarFotoLocalmente(bitmap, operadorDni)
             mostrarConfirmacion("Registro completado")
         } else { handleError("Fallo en registro") }
@@ -154,8 +160,9 @@ class BiometriaActivity : AppCompatActivity() {
     private suspend fun autenticarUsuario(bitmap: Bitmap) {
         val resultado = biometricValidator.authenticateUser(operadorDni, listOf(bitmap), !BYPASS_LIVENESS_DESARROLLO)
         if (resultado is AuthenticationResult.Success) {
+            // ✅ PASO 4: Decisión finalizada
             activarCheck(iconCheck4)
-            // ✅ TAMBIÉN ACTUALIZAMOS LA FOTO LOCAL PARA EL REPORTE ACTUAL
+            // ✅ TAMBIÉN ACTUALIZAMOS LA FOTO LOCAL PARA EL REPORTE ACTUAL (LANDSCAPE)
             guardarFotoLocalmente(bitmap, operadorDni)
             mostrarConfirmacion("Identidad verificada")
         } else { handleError("Identidad no coincide") }
@@ -223,7 +230,12 @@ class BiometriaActivity : AppCompatActivity() {
         val bytes = ByteArray(buffer.remaining())
         buffer.get(bytes)
         val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-        val matrix = Matrix().apply { postRotate(image.imageInfo.rotationDegrees.toFloat()); postScale(-1f, 1f) }
+        
+        // ✅ Usar rotación original de la cámara para detección facial
+        val matrix = Matrix().apply { 
+            postRotate(image.imageInfo.rotationDegrees.toFloat())
+            postScale(-1f, 1f)  // Espejo horizontal
+        }
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
@@ -255,6 +267,24 @@ class BiometriaActivity : AppCompatActivity() {
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
+    }
+
+
+    // ✅ MANEJAR RESULTADO DE PERMISOS - REINICIAR CÁMARA
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (allPermissionsGranted()) {
+                startCamera()
+            } else {
+                Toast.makeText(this, "Permisos de cámara requeridos", Toast.LENGTH_SHORT).show()
+                finish()
+            }
+        }
     }
 
     override fun onDestroy() {

@@ -1,5 +1,6 @@
 package com.example.Cortex_LaSecuencia.actividades
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
@@ -257,8 +258,23 @@ class RastreoTestActivity : TestBaseActivity() {
             .setMessage(mensajeCompleto)
             .setCancelable(false)
             .setPositiveButton("CONTINUAR") { _, _ ->
-                if (CortexManager.obtenerIntentoActual("t8") == 1 && puntaje < 80) recreate()
+                // ✅ Umbral 95% (igual que CortexManager)
+                if (CortexManager.obtenerIntentoActual("t8") == 1 && puntaje < 95) {
+                    mostrarDialogoReintento(puntaje)
+                }
                 else { CortexManager.navegarAlSiguiente(this); finish() }
+            }
+            .show()
+    }
+
+    private fun mostrarDialogoReintento(puntaje: Int) {
+        AlertDialog.Builder(this)
+            .setTitle("RASTREO - INTENTO 1")
+            .setMessage("Nota: $puntaje%\n\n⚠️ Tendrás un segundo intento.")
+            .setCancelable(false)
+            .setPositiveButton("INTENTO 2 →") { _, _ ->
+                startActivity(Intent(this, RastreoTestActivity::class.java))
+                finish()
             }
             .show()
     }

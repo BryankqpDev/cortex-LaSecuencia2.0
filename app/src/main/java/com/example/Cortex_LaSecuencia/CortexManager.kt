@@ -121,7 +121,8 @@ object CortexManager {
         val puntajeClamp = puntaje.coerceIn(0, 100)
         val intentoActual = intentosPorTest.getOrPut(testId) { 1 }
         if (intentoActual == 1) {
-            if (puntajeClamp >= 80) resultados[testId] = puntajeClamp
+            // ✅ CAMBIO: Umbral de 95% (igual que MVP JavaScript)
+            if (puntajeClamp >= 95) resultados[testId] = puntajeClamp
             else {
                 puntajesTemporales.getOrPut(testId) { mutableListOf() }.add(puntajeClamp)
                 intentosPorTest[testId] = 2

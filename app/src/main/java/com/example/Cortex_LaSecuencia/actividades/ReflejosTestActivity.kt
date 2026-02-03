@@ -1,5 +1,6 @@
 package com.example.Cortex_LaSecuencia.actividades
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
@@ -139,13 +140,32 @@ class ReflejosTestActivity : TestBaseActivity() {
         CortexManager.logPerformanceMetric("t1", puntaje, details)
         CortexManager.guardarPuntaje("t1", puntaje)
 
-        if (eraPrimerIntento && puntaje < 80) {
+        // ✅ Umbral 95% (igual que CortexManager)
+        if (eraPrimerIntento && puntaje < 95) {
             testFinalizado = true
-            recreate()
+            mostrarResultadoConReintento(puntaje, tiempoReaccion, errorAnticipacion)
         } else {
             testFinalizado = true
             mostrarResultado(puntaje, tiempoReaccion, errorAnticipacion)
         }
+    }
+
+    private fun mostrarResultadoConReintento(puntaje: Int, tiempoMs: Long, errorAnticipacion: Boolean) {
+        val mensaje = when {
+            errorAnticipacion -> "PRESIONASTE ANTES DE TIEMPO!\n\nDebes esperar a que el círculo se ponga VERDE.\n\nNota: 0%\n\n⚠️ Tendrás un segundo intento."
+            tiempoMs < sessionParams.umbralEliteMs -> "Tiempo: ${tiempoMs}ms\nNota: $puntaje%\n\n⚠️ Tendrás un segundo intento."
+            else -> "Tiempo: ${tiempoMs}ms\nNota: $puntaje%\n\n⚠️ Tendrás un segundo intento."
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("REFLEJOS - INTENTO 1")
+            .setMessage(mensaje)
+            .setCancelable(false)
+            .setPositiveButton("INTENTO 2 →") { _, _ ->
+                startActivity(Intent(this, ReflejosTestActivity::class.java))
+                finish()
+            }
+            .show()
     }
 
     private fun mostrarResultado(puntaje: Int, tiempoMs: Long, errorAnticipacion: Boolean) {

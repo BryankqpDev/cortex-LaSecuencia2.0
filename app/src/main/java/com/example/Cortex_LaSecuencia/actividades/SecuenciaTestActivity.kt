@@ -1,5 +1,6 @@
 package com.example.Cortex_LaSecuencia.actividades
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
@@ -166,7 +167,7 @@ class SecuenciaTestActivity : TestBaseActivity() {
 
         val intentoActual = CortexManager.obtenerIntentoActual("t2")
         if (intentoActual == 1 && puntajeFinal < 95) {
-            recreate() // REINTENTO AUTOMÁTICO
+            mostrarDialogoReintento(puntajeFinal)
         } else {
             mostrarDialogoFinal(puntajeFinal, "Secuencia incorrecta.")
         }
@@ -180,6 +181,18 @@ class SecuenciaTestActivity : TestBaseActivity() {
         CortexManager.guardarPuntaje("t2", puntajeFinal)
 
         mostrarDialogoFinal(puntajeFinal, "¡Excelente memoria!")
+    }
+
+    private fun mostrarDialogoReintento(puntaje: Int) {
+        AlertDialog.Builder(this)
+            .setTitle("SECUENCIA - INTENTO 1")
+            .setMessage("Has completado parcialmente la secuencia.\nNota: $puntaje%\n\n⚠️ Tendrás un segundo intento.")
+            .setCancelable(false)
+            .setPositiveButton("INTENTO 2 →") { _, _ ->
+                startActivity(Intent(this, SecuenciaTestActivity::class.java))
+                finish()
+            }
+            .show()
     }
 
     private fun mostrarDialogoFinal(puntaje: Int, mensaje: String) {
