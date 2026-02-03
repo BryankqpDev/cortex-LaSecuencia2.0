@@ -1,5 +1,6 @@
 package com.example.Cortex_LaSecuencia.actividades
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
@@ -137,9 +138,10 @@ class EspacialTestActivity : TestBaseActivity() {
 
         CortexManager.guardarPuntaje("t9", notaFinal)
 
-        val aprobado = notaFinal >= 80
+        // ✅ Umbral 95% (igual que CortexManager)
+        val aprobado = notaFinal >= 95
 
-        // Si es el primer intento y no alcanzó 80%, permitir reintento
+        // Si es el primer intento y no alcanzó 95%, permitir reintento
         if (intentoActual == 1 && !aprobado) {
             AlertDialog.Builder(this)
                 .setTitle("⚠️ INTENTO 1 - NO APROBADO")
@@ -153,11 +155,12 @@ class EspacialTestActivity : TestBaseActivity() {
                             "RECUERDA:\n" +
                             "🟦 AZUL → Presiona donde apunta\n" +
                             "🟥 ROJA → Presiona dirección opuesta\n\n" +
-                            "Necesitas 80% para aprobar."
+                            "Necesitas 95% para aprobar."
                 )
                 .setCancelable(false)
-                .setPositiveButton("🔄 REINTENTAR") { _, _ ->
-                    recreate()
+                .setPositiveButton("INTENTO 2 →") { _, _ ->
+                    startActivity(Intent(this, EspacialTestActivity::class.java))
+                    finish()
                 }
                 .show()
         } else {

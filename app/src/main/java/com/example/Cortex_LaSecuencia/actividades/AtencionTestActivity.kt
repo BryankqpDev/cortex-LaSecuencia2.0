@@ -1,5 +1,6 @@
 package com.example.Cortex_LaSecuencia.actividades
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
@@ -94,7 +95,8 @@ class AtencionTestActivity : TestBaseActivity() {
         CortexManager.logPerformanceMetric("t5", notaFinal, details)
         CortexManager.guardarPuntaje("t5", notaFinal)
 
-        if (intentoActual == 1 && notaFinal < 80) {
+        // ✅ Umbral 95% (igual que CortexManager)
+        if (intentoActual == 1 && notaFinal < 95) {
             mostrarDialogoFin(notaFinal, esReintento = true)
         } else {
             mostrarDialogoFin(notaFinal, esReintento = false)
@@ -108,7 +110,10 @@ class AtencionTestActivity : TestBaseActivity() {
             .setMessage("Nota Final: $nota%\nPenalización por ausencia: -$penalizacionPorAusencia pts")
             .setCancelable(false)
             .setPositiveButton(if (esReintento) "INTENTO 2" else "SIGUIENTE") { _, _ ->
-                if (esReintento) recreate()
+                if (esReintento) {
+                    startActivity(Intent(this, AtencionTestActivity::class.java))
+                    finish()
+                }
                 else {
                     CortexManager.navegarAlSiguiente(this)
                     finish()

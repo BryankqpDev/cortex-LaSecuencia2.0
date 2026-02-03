@@ -1,5 +1,6 @@
 package com.example.Cortex_LaSecuencia.actividades
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.View
@@ -147,11 +148,25 @@ class CoordinacionTestActivity : TestBaseActivity() {
         CortexManager.logPerformanceMetric("t4", scoreFinal, details)
         CortexManager.guardarPuntaje("t4", scoreFinal)
 
-        if (intentoActual == 1 && scoreFinal < 80) {
-            recreate()
+        // ✅ Umbral 95% (igual que CortexManager)
+        if (intentoActual == 1 && scoreFinal < 95) {
+            mostrarDialogoReintento(scoreFinal, totalTime)
         } else {
             showFinalDialog(scoreFinal, totalTime)
         }
+    }
+
+    private fun mostrarDialogoReintento(puntaje: Int, tiempoMs: Long) {
+        val mensaje = if (puntaje >= 80) "¡Buen ritmo!" else "Intenta moverte más rápido."
+        AlertDialog.Builder(this)
+            .setTitle("COORDINACIÓN - INTENTO 1")
+            .setMessage("Tiempo: ${tiempoMs}ms\nNota: $puntaje%\n$mensaje\n\n⚠️ Tendrás un segundo intento.")
+            .setCancelable(false)
+            .setPositiveButton("INTENTO 2 →") { _, _ ->
+                startActivity(Intent(this, CoordinacionTestActivity::class.java))
+                finish()
+            }
+            .show()
     }
 
     private fun updateProgressText() {

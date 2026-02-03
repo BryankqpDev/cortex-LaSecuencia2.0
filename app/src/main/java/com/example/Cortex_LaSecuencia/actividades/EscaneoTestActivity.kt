@@ -1,5 +1,6 @@
 package com.example.Cortex_LaSecuencia.actividades
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
@@ -133,7 +134,25 @@ class EscaneoTestActivity : TestBaseActivity() {
         CortexManager.logPerformanceMetric("t6", puntajeFinal, details)
         CortexManager.guardarPuntaje("t6", puntajeFinal)
 
-        finalizarActivity(puntajeFinal, duracion)
+        // ✅ Umbral 95% (igual que CortexManager)
+        if (CortexManager.obtenerIntentoActual("t6") == 1 && puntajeFinal < 95) {
+            mostrarDialogoReintento(puntajeFinal, duracion)
+        } else {
+            finalizarActivity(puntajeFinal, duracion)
+        }
+    }
+
+    private fun mostrarDialogoReintento(puntaje: Int, tiempoMs: Long) {
+        val mensaje = if (puntaje >= 75) "¡Velocidad Óptima!" else "Reacción lenta."
+        AlertDialog.Builder(this)
+            .setTitle("ESCANEO - INTENTO 1")
+            .setMessage("Tiempo: ${tiempoMs}ms\nNota: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n$mensaje\n\n⚠️ Tendrás un segundo intento.")
+            .setCancelable(false)
+            .setPositiveButton("INTENTO 2 →") { _, _ ->
+                startActivity(Intent(this, EscaneoTestActivity::class.java))
+                finish()
+            }
+            .show()
     }
 
     private fun finalizarActivity(puntaje: Int, tiempoMs: Long) {

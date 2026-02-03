@@ -1,5 +1,6 @@
 package com.example.Cortex_LaSecuencia.actividades
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
@@ -169,13 +170,31 @@ class ImpulsoTestActivity : TestBaseActivity() {
             "delay_entre_rondas_config" to sessionParams.delayEntreRondasMs
         )
         CortexManager.logPerformanceMetric("t7", notaFinal, details)
+        CortexManager.guardarPuntaje("t7", notaFinal)
 
+        // ✅ Umbral 95% (igual que CortexManager)
+        if (CortexManager.obtenerIntentoActual("t7") == 1 && notaFinal < 95) {
+            mostrarDialogoReintento(notaFinal)
+        } else {
+            AlertDialog.Builder(this)
+                .setTitle("CONTROL DE IMPULSO")
+                .setMessage("Nota Final: $notaFinal%\nPenalización ausencia: -$penalizacionPorAusencia pts")
+                .setCancelable(false)
+                .setPositiveButton("SIGUIENTE") { _, _ ->
+                    CortexManager.navegarAlSiguiente(this)
+                    finish()
+                }
+                .show()
+        }
+    }
+
+    private fun mostrarDialogoReintento(puntaje: Int) {
         AlertDialog.Builder(this)
-            .setTitle("CONTROL DE IMPULSO")
-            .setMessage("Nota Final: $notaFinal%\nPenalización ausencia: -$penalizacionPorAusencia pts")
+            .setTitle("IMPULSO - INTENTO 1")
+            .setMessage("Nota Final: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\n⚠️ Tendrás un segundo intento.")
             .setCancelable(false)
-            .setPositiveButton("SIGUIENTE") { _, _ ->
-                CortexManager.navegarAlSiguiente(this)
+            .setPositiveButton("INTENTO 2 →") { _, _ ->
+                startActivity(Intent(this, ImpulsoTestActivity::class.java))
                 finish()
             }
             .show()
