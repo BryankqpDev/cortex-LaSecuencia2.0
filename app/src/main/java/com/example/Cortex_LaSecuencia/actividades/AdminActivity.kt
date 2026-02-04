@@ -25,16 +25,31 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
 import java.io.FileOutputStream
 
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * ADMIN ACTIVITY - CON COLUMNA DE TIEMPO TOTAL
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * Cambios implementados:
+ * ✅ Columna "TIEMPO TOTAL" en tabla de registros
+ * ✅ Columna "TIEMPO TOTAL" en Excel descargable
+ * ✅ Columna "TIEMPO TOTAL" en Excel enviado por email
+ * ✅ Gestión de solicitudes de desbloqueo en tiempo real
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ */
 class AdminActivity : AppCompatActivity() {
 
-    // Launcher para guardar Excel (INTACTO)
-    private val guardarExcelLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) { uri ->
+    // Launcher para guardar Excel
+    private val guardarExcelLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    ) { uri ->
         uri?.let { escribirDatosEnExcel(it) }
     }
 
     private var modoPapelera = false
 
-    // Variables para la nueva sección de Solicitudes
+    // Variables para la sección de Solicitudes
     private lateinit var tableSolicitudes: TableLayout
     private lateinit var lblSolicitudes: TextView
     private lateinit var scrollSolicitudes: View
@@ -49,12 +64,12 @@ class AdminActivity : AppCompatActivity() {
         val menuDrawer = findViewById<LinearLayout>(R.id.menu_drawer)
         val btnCerrarMenu = findViewById<View>(R.id.btn_cerrar_menu)
 
-        // Referencias UI NUEVAS (Para la tabla de solicitudes)
+        // Referencias UI para solicitudes
         tableSolicitudes = findViewById(R.id.table_solicitudes)
         lblSolicitudes = findViewById(R.id.lbl_solicitudes)
         scrollSolicitudes = findViewById(R.id.scroll_solicitudes)
 
-        // Menús (INTACTO)
+        // Menús
         val menuVolver = findViewById<LinearLayout>(R.id.menu_volver)
         val menuExcel = findViewById<LinearLayout>(R.id.menu_descargar_excel)
         val menuEnviar = findViewById<LinearLayout>(R.id.menu_enviar_reporte)
@@ -66,16 +81,18 @@ class AdminActivity : AppCompatActivity() {
 
         // Cargar datos
         cargarDesdeFirebase(tablaRegistros)
-        escucharSolicitudesEnTiempoReal() // <--- ESTO ES LO NUEVO (Reemplaza a escucharAlertasDesbloqueo)
+        escucharSolicitudesEnTiempoReal()
 
-        // Lógica de Botones del Menú (INTACTO)
+        // Lógica de Botones del Menú
         menuVolver.setOnClickListener {
             if (modoPapelera) {
                 modoPapelera = false
                 cargarDesdeFirebase(tablaRegistros)
                 menuDrawer.visibility = View.GONE
             } else {
-                startActivity(Intent(this, MainActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_CLEAR_TOP })
+                startActivity(Intent(this, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+                })
                 finish()
             }
         }
@@ -87,17 +104,20 @@ class AdminActivity : AppCompatActivity() {
         }
 
         menuExcel.setOnClickListener {
-            if (CortexManager.historialGlobal.isEmpty()) Toast.makeText(this, "No hay datos", Toast.LENGTH_SHORT).show()
-            else guardarExcelLauncher.launch("Reporte_Cortex_${System.currentTimeMillis()}.xlsx")
+            if (CortexManager.historialGlobal.isEmpty()) {
+                Toast.makeText(this, "No hay datos", Toast.LENGTH_SHORT).show()
+            } else {
+                guardarExcelLauncher.launch("Reporte_Cortex_${System.currentTimeMillis()}.xlsx")
+            }
         }
 
         menuEnviar.setOnClickListener { prepararYEnviarEmail() }
         menuConfigEmail.setOnClickListener { mostrarDialogoConfigEmail() }
     }
 
-    // ===================================================================================
-    // 🚨 NUEVA LÓGICA: GESTIÓN DE SOLICITUDES EN TABLA (Reemplaza los Diálogos)
-    // ===================================================================================
+    // ═══════════════════════════════════════════════════════════════════════
+    // GESTIÓN DE SOLICITUDES DE DESBLOQUEO
+    // ═══════════════════════════════════════════════════════════════════════
 
     private fun escucharSolicitudesEnTiempoReal() {
         FirebaseDatabase.getInstance().getReference("solicitudes_desbloqueo")
@@ -106,7 +126,6 @@ class AdminActivity : AppCompatActivity() {
                     val listaPendientes = mutableListOf<SolicitudDesbloqueo>()
                     for (child in snapshot.children) {
                         val sol = child.getValue(SolicitudDesbloqueo::class.java)
-                        // Solo traemos las que están PENDIENTES
                         if (sol != null && sol.estado == "pendiente") {
                             listaPendientes.add(sol)
                         }
@@ -115,33 +134,36 @@ class AdminActivity : AppCompatActivity() {
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(applicationContext, "Error al leer solicitudes", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        applicationContext,
+                        "Error al leer solicitudes",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             })
     }
 
     private fun actualizarTablaSolicitudes(lista: List<SolicitudDesbloqueo>) {
-        // 1. Limpiar la tabla (dejando solo la cabecera, índice 0)
+        // Limpiar la tabla (dejando solo la cabecera)
         if (tableSolicitudes.childCount > 1) {
             tableSolicitudes.removeViews(1, tableSolicitudes.childCount - 1)
         }
 
-        // 2. Controlar visibilidad: Si no hay solicitudes, ocultamos la sección naranja
+        // Controlar visibilidad
         if (lista.isEmpty()) {
             lblSolicitudes.visibility = View.GONE
             scrollSolicitudes.visibility = View.GONE
             return
         }
 
-        // Si hay datos, mostramos la sección
         lblSolicitudes.visibility = View.VISIBLE
         scrollSolicitudes.visibility = View.VISIBLE
 
-        // 3. Rellenar filas
+        // Rellenar filas
         for (sol in lista) {
             val row = TableRow(this).apply {
                 setPadding(10, 20, 10, 20)
-                setBackgroundColor(Color.parseColor("#451A03")) // Fondo oscuro rojizo/marrón
+                setBackgroundColor(Color.parseColor("#451A03"))
             }
 
             fun addText(text: String) {
@@ -158,24 +180,22 @@ class AdminActivity : AppCompatActivity() {
             addText(sol.motivo)
             addText(sol.fecha)
 
-            // --- BOTONES DE ACCIÓN ---
+            // Botones de acción
             val layoutBotones = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
             }
 
-            // Botón APROBAR (✅)
             val btnAprobar = Button(this).apply {
                 text = "✅"
-                setBackgroundColor(Color.parseColor("#10B981")) // Verde
+                setBackgroundColor(Color.parseColor("#10B981"))
                 setTextColor(Color.WHITE)
                 layoutParams = LinearLayout.LayoutParams(140, 110).apply { marginEnd = 10 }
                 setOnClickListener { gestionarSolicitud(sol.dni, "autorizado") }
             }
 
-            // Botón RECHAZAR (❌)
             val btnRechazar = Button(this).apply {
                 text = "❌"
-                setBackgroundColor(Color.parseColor("#EF4444")) // Rojo
+                setBackgroundColor(Color.parseColor("#EF4444"))
                 setTextColor(Color.WHITE)
                 layoutParams = LinearLayout.LayoutParams(140, 110)
                 setOnClickListener { gestionarSolicitud(sol.dni, "rechazado") }
@@ -190,13 +210,16 @@ class AdminActivity : AppCompatActivity() {
     }
 
     private fun gestionarSolicitud(dni: String, nuevoEstado: String) {
-        // Actualizamos Firebase. El usuario en LockedActivity detectará el cambio automáticamente.
         FirebaseDatabase.getInstance().getReference("solicitudes_desbloqueo")
             .child(dni)
             .child("estado")
             .setValue(nuevoEstado)
             .addOnSuccessListener {
-                val mensaje = if (nuevoEstado == "autorizado") "Usuario desbloqueado" else "Solicitud rechazada"
+                val mensaje = if (nuevoEstado == "autorizado") {
+                    "Usuario desbloqueado"
+                } else {
+                    "Solicitud rechazada"
+                }
                 Toast.makeText(this, mensaje, Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener {
@@ -204,64 +227,117 @@ class AdminActivity : AppCompatActivity() {
             }
     }
 
-    // ===================================================================================
-    // 📜 LÓGICA DE HISTORIAL, EXCEL Y EMAIL (INTACTA - NO SE HA TOCADO)
-    // ===================================================================================
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ CARGA DE REGISTROS CON TIEMPO TOTAL
+    // ═══════════════════════════════════════════════════════════════════════
 
     private fun cargarDesdeFirebase(tabla: TableLayout, ruta: String = "registros") {
-        FirebaseDatabase.getInstance().getReference(ruta).get().addOnSuccessListener { snapshot ->
-            CortexManager.historialGlobal.clear()
-            for (child in snapshot.children) {
-                val fecha = child.child("fecha").getValue(String::class.java) ?: ""
-                val hora = child.child("hora").getValue(String::class.java) ?: ""
-                val supervisor = child.child("supervisor").getValue(String::class.java) ?: ""
-                val nombre = child.child("nombre").getValue(String::class.java) ?: ""
-                val dni = child.child("dni").getValue(String::class.java) ?: ""
-                val equipo = child.child("equipo").getValue(String::class.java) ?: ""
-                val nota = child.child("nota").getValue(Int::class.java) ?: 0
-                val estado = child.child("estado").getValue(String::class.java) ?: ""
+        FirebaseDatabase.getInstance().getReference(ruta).get()
+            .addOnSuccessListener { snapshot ->
+                CortexManager.historialGlobal.clear()
+                for (child in snapshot.children) {
+                    val fecha = child.child("fecha").getValue(String::class.java) ?: ""
+                    val hora = child.child("hora").getValue(String::class.java) ?: ""
+                    val supervisor = child.child("supervisor").getValue(String::class.java) ?: ""
+                    val nombre = child.child("nombre").getValue(String::class.java) ?: ""
+                    val dni = child.child("dni").getValue(String::class.java) ?: ""
+                    val equipo = child.child("equipo").getValue(String::class.java) ?: ""
+                    val nota = child.child("nota").getValue(Int::class.java) ?: 0
+                    val estado = child.child("estado").getValue(String::class.java) ?: ""
+                    val tiempoTotal = child.child("tiempoTotal").getValue(String::class.java) ?: "N/A"
 
-                CortexManager.historialGlobal.add(RegistroData(fecha, hora, supervisor, nombre, dni, equipo, nota, estado))
+                    CortexManager.historialGlobal.add(
+                        RegistroData(
+                            fecha, hora, supervisor, nombre, dni, equipo,
+                            nota, estado, tiempoTotal
+                        )
+                    )
+                }
+                llenarTabla(tabla)
             }
-            llenarTabla(tabla)
-        }.addOnFailureListener { Toast.makeText(this, "Error: ${it.message}", Toast.LENGTH_LONG).show() }
+            .addOnFailureListener {
+                Toast.makeText(this, "Error: ${it.message}", Toast.LENGTH_LONG).show()
+            }
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ TABLA CON COLUMNA DE TIEMPO TOTAL
+    // ═══════════════════════════════════════════════════════════════════════
 
     private fun llenarTabla(tabla: TableLayout) {
         val lista = CortexManager.historialGlobal.reversed()
-        // Limpiamos la tabla de registros (dejando la cabecera)
+
+        // Limpiamos la tabla (dejando la cabecera)
         if (tabla.childCount > 1) {
             tabla.removeViews(1, tabla.childCount - 1)
         }
 
         for (dato in lista) {
-            val row = TableRow(this).apply { setPadding(10, 20, 10, 20); setBackgroundColor(if (modoPapelera) Color.parseColor("#1E1B4B") else Color.parseColor("#0F172A")) }
-            fun addCell(t: String, c: Int = Color.WHITE) {
-                row.addView(TextView(this).apply { text = t; setTextColor(c); textSize = 12f; setPadding(0, 0, 40, 0) })
+            val row = TableRow(this).apply {
+                setPadding(10, 20, 10, 20)
+                setBackgroundColor(
+                    if (modoPapelera) Color.parseColor("#1E1B4B")
+                    else Color.parseColor("#0F172A")
+                )
             }
-            addCell(dato.fecha); addCell(dato.hora); addCell(dato.supervisor); addCell(dato.nombre); addCell(dato.dni); addCell(dato.equipo)
+
+            fun addCell(t: String, c: Int = Color.WHITE) {
+                row.addView(TextView(this).apply {
+                    text = t
+                    setTextColor(c)
+                    textSize = 12f
+                    setPadding(0, 0, 40, 0)
+                })
+            }
+
+            addCell(dato.fecha)
+            addCell(dato.hora)
+            addCell(dato.supervisor)
+            addCell(dato.nombre)
+            addCell(dato.dni)
+            addCell(dato.equipo)
             addCell("${dato.nota}%", if (dato.nota >= 75) Color.GREEN else Color.RED)
             addCell(dato.estado, if (dato.estado == "APTO") Color.GREEN else Color.RED)
+            addCell(dato.tiempoTotal, Color.CYAN)  // ✅ NUEVA COLUMNA
+
             val btn = Button(this).apply {
                 text = if (modoPapelera) "♻️" else "🗑️"
-                setBackgroundColor(if (modoPapelera) Color.parseColor("#10B981") else Color.parseColor("#DC2626"))
-                setOnClickListener { if (modoPapelera) restaurarRegistro(dato) else mostrarDialogoEliminar(dato) }
+                setBackgroundColor(
+                    if (modoPapelera) Color.parseColor("#10B981")
+                    else Color.parseColor("#DC2626")
+                )
+                setOnClickListener {
+                    if (modoPapelera) restaurarRegistro(dato)
+                    else mostrarDialogoEliminar(dato)
+                }
             }
-            row.addView(btn); tabla.addView(row)
+            row.addView(btn)
+            tabla.addView(row)
         }
     }
 
     private fun mostrarDialogoEliminar(dato: RegistroData) {
-        AlertDialog.Builder(this).setTitle("🗑️ MOVER A PAPELERA").setMessage("¿Deseas mover el registro de ${dato.nombre}?").setPositiveButton("MOVER") { _, _ -> eliminarRegistro(dato) }.setNegativeButton("CANCELAR", null).show()
+        AlertDialog.Builder(this)
+            .setTitle("🗑️ MOVER A PAPELERA")
+            .setMessage("¿Deseas mover el registro de ${dato.nombre}?")
+            .setPositiveButton("MOVER") { _, _ -> eliminarRegistro(dato) }
+            .setNegativeButton("CANCELAR", null)
+            .show()
     }
 
     private fun eliminarRegistro(dato: RegistroData) {
         val ref = FirebaseDatabase.getInstance().getReference("registros")
         val papeleraRef = FirebaseDatabase.getInstance().getReference("papelera")
+
         ref.get().addOnSuccessListener { snapshot ->
             for (child in snapshot.children) {
-                if (child.child("dni").getValue(String::class.java) == dato.dni && child.child("hora").getValue(String::class.java) == dato.hora) {
-                    papeleraRef.push().setValue(dato).addOnSuccessListener { child.ref.removeValue().addOnSuccessListener { cargarDesdeFirebase(findViewById(R.id.table_registros)) } }
+                if (child.child("dni").getValue(String::class.java) == dato.dni &&
+                    child.child("hora").getValue(String::class.java) == dato.hora) {
+                    papeleraRef.push().setValue(dato).addOnSuccessListener {
+                        child.ref.removeValue().addOnSuccessListener {
+                            cargarDesdeFirebase(findViewById(R.id.table_registros))
+                        }
+                    }
                     break
                 }
             }
@@ -271,10 +347,16 @@ class AdminActivity : AppCompatActivity() {
     private fun restaurarRegistro(dato: RegistroData) {
         val ref = FirebaseDatabase.getInstance().getReference("registros")
         val papeleraRef = FirebaseDatabase.getInstance().getReference("papelera")
+
         papeleraRef.get().addOnSuccessListener { snapshot ->
             for (child in snapshot.children) {
-                if (child.child("dni").getValue(String::class.java) == dato.dni && child.child("hora").getValue(String::class.java) == dato.hora) {
-                    ref.push().setValue(dato).addOnSuccessListener { child.ref.removeValue().addOnSuccessListener { cargarDesdeFirebase(findViewById(R.id.table_registros), "papelera") } }
+                if (child.child("dni").getValue(String::class.java) == dato.dni &&
+                    child.child("hora").getValue(String::class.java) == dato.hora) {
+                    ref.push().setValue(dato).addOnSuccessListener {
+                        child.ref.removeValue().addOnSuccessListener {
+                            cargarDesdeFirebase(findViewById(R.id.table_registros), "papelera")
+                        }
+                    }
                     break
                 }
             }
@@ -284,16 +366,38 @@ class AdminActivity : AppCompatActivity() {
     private fun mostrarDialogoConfigEmail() {
         val prefs = getSharedPreferences("CortexAdmin", Context.MODE_PRIVATE)
         val emailActual = prefs.getString("email_reportes", "")
-        val input = EditText(this).apply { hint = "correo@ejemplo.com"; setText(emailActual); setPadding(50, 40, 50, 40) }
-        AlertDialog.Builder(this).setTitle("CONFIGURAR DESTINATARIO").setMessage("Ingrese el correo:").setView(input).setPositiveButton("GUARDAR") { _, _ ->
-            val nuevoEmail = input.text.toString().trim()
-            if (android.util.Patterns.EMAIL_ADDRESS.matcher(nuevoEmail).matches()) { prefs.edit().putString("email_reportes", nuevoEmail).apply(); Toast.makeText(this, "✅ Guardado", Toast.LENGTH_SHORT).show() }
-            else { Toast.makeText(this, "❌ Correo inválido", Toast.LENGTH_SHORT).show() }
-        }.setNegativeButton("CANCELAR", null).show()
+
+        val input = EditText(this).apply {
+            hint = "correo@ejemplo.com"
+            setText(emailActual)
+            setPadding(50, 40, 50, 40)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("CONFIGURAR DESTINATARIO")
+            .setMessage("Ingrese el correo:")
+            .setView(input)
+            .setPositiveButton("GUARDAR") { _, _ ->
+                val nuevoEmail = input.text.toString().trim()
+                if (android.util.Patterns.EMAIL_ADDRESS.matcher(nuevoEmail).matches()) {
+                    prefs.edit().putString("email_reportes", nuevoEmail).apply()
+                    Toast.makeText(this, "✅ Guardado", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "❌ Correo inválido", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("CANCELAR", null)
+            .show()
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ EMAIL CON TIEMPO TOTAL
+    // ═══════════════════════════════════════════════════════════════════════
+
     private fun prepararYEnviarEmail() {
-        val destinatario = getSharedPreferences("CortexAdmin", Context.MODE_PRIVATE).getString("email_reportes", "")
+        val destinatario = getSharedPreferences("CortexAdmin", Context.MODE_PRIVATE)
+            .getString("email_reportes", "")
+
         if (destinatario.isNullOrEmpty()) {
             mostrarDialogoConfigEmail()
             return
@@ -305,23 +409,25 @@ class AdminActivity : AppCompatActivity() {
         }
 
         try {
-            // Guardar en el cache interno para evitar problemas de permisos externos en versiones nuevas de Android
             val reportesDir = File(cacheDir, "reportes")
             if (!reportesDir.exists()) reportesDir.mkdirs()
-            
+
             val tempFile = File(reportesDir, "Reporte_Cortex.xlsx")
             val outputStream = FileOutputStream(tempFile)
             val workbook = XSSFWorkbook()
             val sheet = workbook.createSheet("Historial")
-            
-            // Cabecera
+
+            // ✅ Cabecera CON tiempo total
             val header = sheet.createRow(0)
-            listOf("FECHA", "HORA", "SUPERVISOR", "NOMBRE", "DNI", "EQUIPO", "NOTA", "ESTADO").forEachIndexed { i, t -> 
-                header.createCell(i).setCellValue(t) 
+            listOf(
+                "FECHA", "HORA", "SUPERVISOR", "NOMBRE", "DNI",
+                "EQUIPO", "NOTA", "ESTADO", "TIEMPO TOTAL"
+            ).forEachIndexed { i, t ->
+                header.createCell(i).setCellValue(t)
             }
-            
-            // Datos
-            CortexManager.historialGlobal.forEachIndexed { i, d -> 
+
+            // ✅ Datos CON tiempo total
+            CortexManager.historialGlobal.forEachIndexed { i, d ->
                 val r = sheet.createRow(i + 1)
                 r.createCell(0).setCellValue(d.fecha)
                 r.createCell(1).setCellValue(d.hora)
@@ -331,14 +437,15 @@ class AdminActivity : AppCompatActivity() {
                 r.createCell(5).setCellValue(d.equipo)
                 r.createCell(6).setCellValue("${d.nota}%")
                 r.createCell(7).setCellValue(d.estado)
+                r.createCell(8).setCellValue(d.tiempoTotal)
             }
-            
+
             workbook.write(outputStream)
             workbook.close()
             outputStream.close()
 
             val uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", tempFile)
-            
+
             val emailIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 putExtra(Intent.EXTRA_EMAIL, arrayOf(destinatario))
@@ -352,23 +459,57 @@ class AdminActivity : AppCompatActivity() {
 
         } catch (e: Exception) {
             Log.e("AdminActivity", "Error al enviar email: ${e.message}")
-            Toast.makeText(this, "Error al generar el reporte: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this,
+                "Error al generar el reporte: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ✅ EXCEL DESCARGABLE CON TIEMPO TOTAL
+    // ═══════════════════════════════════════════════════════════════════════
 
     private fun escribirDatosEnExcel(uri: Uri) {
         try {
             contentResolver.openOutputStream(uri)?.use { os ->
                 val workbook = XSSFWorkbook()
                 val sheet = workbook.createSheet("Historial")
+
+                // ✅ Cabecera CON tiempo total
                 val header = sheet.createRow(0)
-                listOf("FECHA", "HORA", "SUPERVISOR", "NOMBRE", "DNI", "EQUIPO", "NOTA", "ESTADO").forEachIndexed { i, t -> header.createCell(i).setCellValue(t) }
-                CortexManager.historialGlobal.forEachIndexed { i, d -> val r = sheet.createRow(i + 1); r.createCell(0).setCellValue(d.fecha); r.createCell(1).setCellValue(d.hora); r.createCell(2).setCellValue(d.supervisor); r.createCell(3).setCellValue(d.nombre); r.createCell(4).setCellValue(d.dni); r.createCell(5).setCellValue(d.equipo); r.createCell(6).setCellValue("${d.nota}%"); r.createCell(7).setCellValue(d.estado) }
-                workbook.write(os); workbook.close()
+                listOf(
+                    "FECHA", "HORA", "SUPERVISOR", "NOMBRE", "DNI",
+                    "EQUIPO", "NOTA", "ESTADO", "TIEMPO TOTAL"
+                ).forEachIndexed { i, t ->
+                    header.createCell(i).setCellValue(t)
+                }
+
+                // ✅ Datos CON tiempo total
+                CortexManager.historialGlobal.forEachIndexed { i, d ->
+                    val r = sheet.createRow(i + 1)
+                    r.createCell(0).setCellValue(d.fecha)
+                    r.createCell(1).setCellValue(d.hora)
+                    r.createCell(2).setCellValue(d.supervisor)
+                    r.createCell(3).setCellValue(d.nombre)
+                    r.createCell(4).setCellValue(d.dni)
+                    r.createCell(5).setCellValue(d.equipo)
+                    r.createCell(6).setCellValue("${d.nota}%")
+                    r.createCell(7).setCellValue(d.estado)
+                    r.createCell(8).setCellValue(d.tiempoTotal)
+                }
+
+                workbook.write(os)
+                workbook.close()
                 Toast.makeText(this, "✅ Excel guardado", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
-            Toast.makeText(this, "Error al guardar Excel: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Error al guardar Excel: ${e.message}",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 }
