@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
@@ -287,24 +288,72 @@ class AdminActivity : AppCompatActivity() {
         AlertDialog.Builder(this).setTitle("CONFIGURAR DESTINATARIO").setMessage("Ingrese el correo:").setView(input).setPositiveButton("GUARDAR") { _, _ ->
             val nuevoEmail = input.text.toString().trim()
             if (android.util.Patterns.EMAIL_ADDRESS.matcher(nuevoEmail).matches()) { prefs.edit().putString("email_reportes", nuevoEmail).apply(); Toast.makeText(this, "✅ Guardado", Toast.LENGTH_SHORT).show() }
+            else { Toast.makeText(this, "❌ Correo inválido", Toast.LENGTH_SHORT).show() }
         }.setNegativeButton("CANCELAR", null).show()
     }
 
     private fun prepararYEnviarEmail() {
         val destinatario = getSharedPreferences("CortexAdmin", Context.MODE_PRIVATE).getString("email_reportes", "")
-        if (destinatario.isNullOrEmpty()) { mostrarDialogoConfigEmail(); return }
+        if (destinatario.isNullOrEmpty()) {
+            mostrarDialogoConfigEmail()
+            return
+        }
+
+        if (CortexManager.historialGlobal.isEmpty()) {
+            Toast.makeText(this, "No hay datos para enviar", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         try {
-            val tempFile = File(externalCacheDir, "Reporte_Cortex_Temp.xlsx")
+            // Guardar en el cache interno para evitar problemas de permisos externos en versiones nuevas de Android
+            val reportesDir = File(cacheDir, "reportes")
+            if (!reportesDir.exists()) reportesDir.mkdirs()
+            
+            val tempFile = File(reportesDir, "Reporte_Cortex.xlsx")
             val outputStream = FileOutputStream(tempFile)
             val workbook = XSSFWorkbook()
             val sheet = workbook.createSheet("Historial")
+            
+            // Cabecera
             val header = sheet.createRow(0)
-            listOf("FECHA", "HORA", "SUPERVISOR", "NOMBRE", "DNI", "EQUIPO", "NOTA", "ESTADO").forEachIndexed { i, t -> header.createCell(i).setCellValue(t) }
-            CortexManager.historialGlobal.forEachIndexed { i, d -> val r = sheet.createRow(i + 1); r.createCell(0).setCellValue(d.fecha); r.createCell(1).setCellValue(d.hora); r.createCell(2).setCellValue(d.supervisor); r.createCell(3).setCellValue(d.nombre); r.createCell(4).setCellValue(d.dni); r.createCell(5).setCellValue(d.equipo); r.createCell(6).setCellValue("${d.nota}%"); r.createCell(7).setCellValue(d.estado) }
-            workbook.write(outputStream); workbook.close(); outputStream.close()
+            listOf("FECHA", "HORA", "SUPERVISOR", "NOMBRE", "DNI", "EQUIPO", "NOTA", "ESTADO").forEachIndexed { i, t -> 
+                header.createCell(i).setCellValue(t) 
+            }
+            
+            // Datos
+            CortexManager.historialGlobal.forEachIndexed { i, d -> 
+                val r = sheet.createRow(i + 1)
+                r.createCell(0).setCellValue(d.fecha)
+                r.createCell(1).setCellValue(d.hora)
+                r.createCell(2).setCellValue(d.supervisor)
+                r.createCell(3).setCellValue(d.nombre)
+                r.createCell(4).setCellValue(d.dni)
+                r.createCell(5).setCellValue(d.equipo)
+                r.createCell(6).setCellValue("${d.nota}%")
+                r.createCell(7).setCellValue(d.estado)
+            }
+            
+            workbook.write(outputStream)
+            workbook.close()
+            outputStream.close()
+
             val uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", tempFile)
-            startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; putExtra(Intent.EXTRA_EMAIL, arrayOf(destinatario)); putExtra(Intent.EXTRA_SUBJECT, "REPORTE CORTEX"); putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }, "Enviar reporte..."))
-        } catch (e: Exception) { }
+            
+            val emailIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                putExtra(Intent.EXTRA_EMAIL, arrayOf(destinatario))
+                putExtra(Intent.EXTRA_SUBJECT, "REPORTE CORTEX - ${System.currentTimeMillis()}")
+                putExtra(Intent.EXTRA_TEXT, "Adjunto se envía el reporte de evaluaciones Cortex.")
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            startActivity(Intent.createChooser(emailIntent, "Enviar reporte vía..."))
+
+        } catch (e: Exception) {
+            Log.e("AdminActivity", "Error al enviar email: ${e.message}")
+            Toast.makeText(this, "Error al generar el reporte: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun escribirDatosEnExcel(uri: Uri) {
@@ -318,6 +367,8 @@ class AdminActivity : AppCompatActivity() {
                 workbook.write(os); workbook.close()
                 Toast.makeText(this, "✅ Excel guardado", Toast.LENGTH_SHORT).show()
             }
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error al guardar Excel: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 }
