@@ -88,11 +88,14 @@ class DecisionTestActivity : TestBaseActivity() {
         if (intentoActual == 1 && notaFinal < 95) {
             mostrarDialogoReintento(notaFinal, aciertos)
         } else {
+            val titulo = if (notaFinal >= 95) "¡EXCELENTE! 😎✅" else "DECISIÓN"
+            val resultado = if (notaFinal >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
+            
             AlertDialog.Builder(this)
-                .setTitle("EVALUACIÓN FINALIZADA")
-                .setMessage("Aciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $notaFinal%\nPenalización ausencia: -$penalizacionPorAusencia pts")
+                .setTitle(titulo)
+                .setMessage("$resultado\n\nAciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $notaFinal%\nPenalización ausencia: -$penalizacionPorAusencia pts")
                 .setCancelable(false)
-                .setPositiveButton("VER REPORTE") { _, _ ->
+                .setPositiveButton("➡️ VER REPORTE") { _, _ ->
                     CortexManager.navegarAlSiguiente(this)
                     finish()
                 }
@@ -102,8 +105,8 @@ class DecisionTestActivity : TestBaseActivity() {
 
     private fun mostrarDialogoReintento(nota: Int, aciertos: Int) {
         AlertDialog.Builder(this)
-            .setTitle("DECISIÓN - INTENTO 1")
-            .setMessage("Aciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $nota%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\n⚠️ Tendrás un segundo intento.")
+            .setTitle("DECISIÓN")
+            .setMessage("INTENTO REGISTRADO\n\nAciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $nota%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\nNecesitas 95% para saltarte el segundo intento.")
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
                 startActivity(Intent(this, DecisionTestActivity::class.java))

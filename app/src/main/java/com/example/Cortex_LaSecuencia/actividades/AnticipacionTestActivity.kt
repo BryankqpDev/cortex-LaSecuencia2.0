@@ -218,14 +218,15 @@ class AnticipacionTestActivity : TestBaseActivity() {
         if (intentoActual == 1 && puntaje < 95) {
             testFinalizado = true
             mostrarDialogoFin(
-                "INTENTO FALLIDO",
-                "$mensaje\n\nNota: $puntaje%\n\nQueda 1 intento más.",
+                "ANTICIPACIÓN",
+                "INTENTO REGISTRADO\n\n$mensaje\n\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.",
                 true
             )
         } else {
             testFinalizado = true
-            val titulo = if(puntaje >= 80) "PRUEBA SUPERADA ✅" else "TEST FINALIZADO"
-            mostrarDialogoFin(titulo, "Resultado Final:\nNota: $puntaje%\n\n$mensaje", false)
+            val titulo = if(puntaje >= 95) "¡EXCELENTE! 😎✅" else "ANTICIPACIÓN"
+            val resultado = if(puntaje >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
+            mostrarDialogoFin(titulo, "$resultado\n\nNota: $puntaje%\n\n$mensaje", false)
         }
     }
 

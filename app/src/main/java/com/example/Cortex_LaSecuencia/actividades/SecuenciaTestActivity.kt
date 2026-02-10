@@ -163,9 +163,9 @@ class SecuenciaTestActivity : TestBaseActivity() {
         val puntajeBase = (aciertos.toFloat() / LONGITUD_SECUENCIA * 100).toInt()
         val puntajeFinal = (puntajeBase - penalizacionPorAusencia).coerceAtLeast(0)
 
+        val intentoActual = CortexManager.obtenerIntentoActual("t2")
         CortexManager.guardarPuntaje("t2", puntajeFinal)
 
-        val intentoActual = CortexManager.obtenerIntentoActual("t2")
         if (intentoActual == 1 && puntajeFinal < 95) {
             mostrarDialogoReintento(puntajeFinal)
         } else {
@@ -185,8 +185,8 @@ class SecuenciaTestActivity : TestBaseActivity() {
 
     private fun mostrarDialogoReintento(puntaje: Int) {
         AlertDialog.Builder(this)
-            .setTitle("SECUENCIA - INTENTO 1")
-            .setMessage("Has completado parcialmente la secuencia.\nNota: $puntaje%\n\n⚠️ Tendrás un segundo intento.")
+            .setTitle("MEMORIA")
+            .setMessage("INTENTO REGISTRADO\n\nHas completado parcialmente la secuencia.\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.")
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
                 startActivity(Intent(this, SecuenciaTestActivity::class.java))
@@ -197,11 +197,14 @@ class SecuenciaTestActivity : TestBaseActivity() {
 
     private fun mostrarDialogoFinal(puntaje: Int, mensaje: String) {
         if (isFinishing) return
+        val titulo = if (puntaje >= 95) "¡EXCELENTE! 😎✅" else "MEMORIA"
+        val resultado = if (puntaje >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
+        
         AlertDialog.Builder(this)
-            .setTitle("MEMORIA SECUENCIAL")
-            .setMessage("$mensaje\nNota Final: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia")
+            .setTitle(titulo)
+            .setMessage("$resultado\n\n$mensaje\nNota Final: $puntaje%")
             .setCancelable(false)
-            .setPositiveButton("SIGUIENTE") { _, _ ->
+            .setPositiveButton("➡️ SIGUIENTE") { _, _ ->
                 CortexManager.navegarAlSiguiente(this)
                 finish()
             }

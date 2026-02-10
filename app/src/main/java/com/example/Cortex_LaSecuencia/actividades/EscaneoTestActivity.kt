@@ -132,10 +132,12 @@ class EscaneoTestActivity : TestBaseActivity() {
             "factor_penalizacion" to sessionParams.factorPenalizacion
         )
         CortexManager.logPerformanceMetric("t6", puntajeFinal, details)
-        CortexManager.guardarPuntaje("t6", puntajeFinal)
 
         // ✅ Umbral 95% (igual que CortexManager)
-        if (CortexManager.obtenerIntentoActual("t6") == 1 && puntajeFinal < 95) {
+        val intentoActual = CortexManager.obtenerIntentoActual("t6")
+        CortexManager.guardarPuntaje("t6", puntajeFinal)
+
+        if (intentoActual == 1 && puntajeFinal < 95) {
             mostrarDialogoReintento(puntajeFinal, duracion)
         } else {
             finalizarActivity(puntajeFinal, duracion)
@@ -143,10 +145,9 @@ class EscaneoTestActivity : TestBaseActivity() {
     }
 
     private fun mostrarDialogoReintento(puntaje: Int, tiempoMs: Long) {
-        val mensaje = if (puntaje >= 75) "¡Velocidad Óptima!" else "Reacción lenta."
         AlertDialog.Builder(this)
-            .setTitle("ESCANEO - INTENTO 1")
-            .setMessage("Tiempo: ${tiempoMs}ms\nNota: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n$mensaje\n\n⚠️ Tendrás un segundo intento.")
+            .setTitle("ESCANEO")
+            .setMessage("INTENTO REGISTRADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\nNecesitas 95% para saltarte el segundo intento.")
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
                 startActivity(Intent(this, EscaneoTestActivity::class.java))
@@ -157,13 +158,14 @@ class EscaneoTestActivity : TestBaseActivity() {
 
     private fun finalizarActivity(puntaje: Int, tiempoMs: Long) {
         if (isFinishing) return
-        val mensaje = if (puntaje >= 75) "¡Velocidad Óptima!" else "Reacción lenta."
+        val titulo = if (puntaje >= 95) "¡EXCELENTE! 😎✅" else "ESCANEO"
+        val resultado = if (puntaje >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
 
         AlertDialog.Builder(this)
-            .setTitle("ESCANEO COMPLETADO")
-            .setMessage("Tiempo: ${tiempoMs}ms\nNota: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n$mensaje")
+            .setTitle(titulo)
+            .setMessage("$resultado\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts")
             .setCancelable(false)
-            .setPositiveButton("SIGUIENTE") { _, _ ->
+            .setPositiveButton("➡️ SIGUIENTE") { _, _ ->
                 CortexManager.navegarAlSiguiente(this)
                 finish()
             }

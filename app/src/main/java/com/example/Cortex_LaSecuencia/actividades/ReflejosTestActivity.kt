@@ -152,13 +152,13 @@ class ReflejosTestActivity : TestBaseActivity() {
 
     private fun mostrarResultadoConReintento(puntaje: Int, tiempoMs: Long, errorAnticipacion: Boolean) {
         val mensaje = when {
-            errorAnticipacion -> "PRESIONASTE ANTES DE TIEMPO!\n\nDebes esperar a que el círculo se ponga VERDE.\n\nNota: 0%\n\n⚠️ Tendrás un segundo intento."
-            tiempoMs < sessionParams.umbralEliteMs -> "Tiempo: ${tiempoMs}ms\nNota: $puntaje%\n\n⚠️ Tendrás un segundo intento."
-            else -> "Tiempo: ${tiempoMs}ms\nNota: $puntaje%\n\n⚠️ Tendrás un segundo intento."
+            errorAnticipacion -> "PRESIONASTE ANTES DE TIEMPO!\n\nDebes esperar a que el círculo se ponga VERDE.\n\nNota: 0%\n\nNecesitas 95% para saltarte el segundo intento."
+            tiempoMs < sessionParams.umbralEliteMs -> "INTENTO REGISTRADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento."
+            else -> "INTENTO REGISTRADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento."
         }
 
         AlertDialog.Builder(this)
-            .setTitle("REFLEJOS - INTENTO 1")
+            .setTitle("REFLEJOS")
             .setMessage(mensaje)
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
@@ -169,15 +169,16 @@ class ReflejosTestActivity : TestBaseActivity() {
     }
 
     private fun mostrarResultado(puntaje: Int, tiempoMs: Long, errorAnticipacion: Boolean) {
+        val titulo = if (puntaje >= 95) "¡EXCELENTE! 😎✅" else "REFLEJOS"
         val mensaje = when {
             errorAnticipacion -> "PRESIONASTE ANTES DE TIEMPO!\n\nDebes esperar a que el círculo se ponga VERDE.\n\nNota: 0%"
-            tiempoMs < sessionParams.umbralEliteMs -> "¡INCREÍBLE!\n\nTiempo: ${tiempoMs}ms\nReflejos de élite.\n\nNota: $puntaje%"
-            tiempoMs < 400 -> "MUY BIEN\n\nTiempo: ${tiempoMs}ms\nBuen reflejo.\n\nNota: $puntaje%"
-            else -> "LENTO\n\nTiempo: ${tiempoMs}ms\nPosible fatiga detectada.\n\nNota: $puntaje%"
+            puntaje >= 95 -> "¡EXCELENTE!\n\nTiempo: ${tiempoMs}ms\nReflejos de élite.\n\nNota: $puntaje%"
+            tiempoMs < 400 -> "MÓDULO FINALIZADO\n\nTiempo: ${tiempoMs}ms\nBuen reflejo.\n\nNota: $puntaje%"
+            else -> "MÓDULO FINALIZADO\n\nTiempo: ${tiempoMs}ms\nPosible fatiga detectada.\n\nNota: $puntaje%"
         }
 
         AlertDialog.Builder(this)
-            .setTitle("REFLEJOS")
+            .setTitle(titulo)
             .setMessage(mensaje)
             .setCancelable(false)
             .setPositiveButton("CONTINUAR") { _, _ ->
