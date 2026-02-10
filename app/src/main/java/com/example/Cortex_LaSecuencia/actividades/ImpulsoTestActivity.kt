@@ -37,7 +37,7 @@ class ImpulsoTestActivity : TestBaseActivity() {
     private val random = Random()
 
     private var rondaActual = 0
-    private val TOTAL_RONDAS = 12
+    private val TOTAL_RONDAS = 5
     private var erroresImpulso = 0
     private var erroresOmision = 0
     private val tiemposDeReaccionGo = mutableListOf<Long>()
@@ -176,11 +176,14 @@ class ImpulsoTestActivity : TestBaseActivity() {
         if (CortexManager.obtenerIntentoActual("t7") == 1 && notaFinal < 95) {
             mostrarDialogoReintento(notaFinal)
         } else {
+            val titulo = if (notaFinal >= 95) "¡EXCELENTE! 😎✅" else "IMPULSO"
+            val resultado = if (notaFinal >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
+            
             AlertDialog.Builder(this)
-                .setTitle("CONTROL DE IMPULSO")
-                .setMessage("Nota Final: $notaFinal%\nPenalización ausencia: -$penalizacionPorAusencia pts")
+                .setTitle(titulo)
+                .setMessage("$resultado\n\nNota Final: $notaFinal%\nPenalización ausencia: -$penalizacionPorAusencia pts")
                 .setCancelable(false)
-                .setPositiveButton("SIGUIENTE") { _, _ ->
+                .setPositiveButton("➡️ SIGUIENTE") { _, _ ->
                     CortexManager.navegarAlSiguiente(this)
                     finish()
                 }
@@ -190,8 +193,8 @@ class ImpulsoTestActivity : TestBaseActivity() {
 
     private fun mostrarDialogoReintento(puntaje: Int) {
         AlertDialog.Builder(this)
-            .setTitle("IMPULSO - INTENTO 1")
-            .setMessage("Nota Final: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\n⚠️ Tendrás un segundo intento.")
+            .setTitle("IMPULSO")
+            .setMessage("INTENTO REGISTRADO\n\nNota Final: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\nNecesitas 95% para saltarte el segundo intento.")
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
                 startActivity(Intent(this, ImpulsoTestActivity::class.java))

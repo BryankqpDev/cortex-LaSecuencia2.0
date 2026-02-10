@@ -20,7 +20,7 @@ class EspacialTestActivity : TestBaseActivity() {
     private var direccionCorrecta = 0
     private var esAzul = true
     private var rondaActual = 0
-    private val TOTAL_RONDAS = 10
+    private val TOTAL_RONDAS = 4
     private var aciertos = 0
     private var intentoActual = 1
 
@@ -144,18 +144,19 @@ class EspacialTestActivity : TestBaseActivity() {
         // Si es el primer intento y no alcanzó 95%, permitir reintento
         if (intentoActual == 1 && !aprobado) {
             AlertDialog.Builder(this)
-                .setTitle("⚠️ INTENTO 1 - NO APROBADO")
+                .setTitle("ORIENTACIÓN ESPACIAL")
                 .setMessage(
                     "━━━━━━━━━━━━━━━━━━━━━━\n" +
+                            "INTENTO REGISTRADO\n" +
+                            "━━━━━━━━━━━━━━━━━━━━━━\n\n" +
                             "Aciertos: $aciertos/$TOTAL_RONDAS\n" +
                             "Nota Base: $notaBase%\n" +
                             "Penalización: -$penalizacionPorAusencia pts\n" +
-                            "Nota Final: $notaFinal%\n" +
-                            "━━━━━━━━━━━━━━━━━━━━━━\n\n" +
+                            "Nota Final: $notaFinal%\n\n" +
                             "RECUERDA:\n" +
                             "🟦 AZUL → Presiona donde apunta\n" +
                             "🟥 ROJA → Presiona dirección opuesta\n\n" +
-                            "Necesitas 95% para aprobar."
+                            "Necesitas 95% para saltarte el segundo intento."
                 )
                 .setCancelable(false)
                 .setPositiveButton("INTENTO 2 →") { _, _ ->
@@ -165,14 +166,14 @@ class EspacialTestActivity : TestBaseActivity() {
                 .show()
         } else {
             // Segundo intento o aprobado
-            val emoji = if (aprobado) "✅" else "❌"
-            val estado = if (aprobado) "APROBADO" else "NO APROBADO"
+            val titulo = if (aprobado) "¡EXCELENTE! 😎✅" else "ORIENTACIÓN ESPACIAL"
+            val resultado = if (aprobado) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
 
             AlertDialog.Builder(this)
-                .setTitle("$emoji ORIENTACIÓN ESPACIAL")
+                .setTitle(titulo)
                 .setMessage(
                     "━━━━━━━━━━━━━━━━━━━━━━\n" +
-                            "RESULTADO: $estado\n" +
+                            "$resultado\n" +
                             "━━━━━━━━━━━━━━━━━━━━━━\n\n" +
                             "Aciertos: $aciertos/$TOTAL_RONDAS\n" +
                             "Nota Base: $notaBase%\n" +

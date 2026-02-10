@@ -239,12 +239,14 @@ class RastreoTestActivity : TestBaseActivity() {
             "duracion_pasos" to maxPasos
         )
         CortexManager.logPerformanceMetric("t8", puntajeFinal, details)
+
+        val intentoActual = CortexManager.obtenerIntentoActual("t8")
         CortexManager.guardarPuntaje("t8", puntajeFinal)
 
-        handler.postDelayed({ if (!isFinishing) mostrarResultado(puntajeFinal, aciertos) }, 1500)
+        handler.postDelayed({ if (!isFinishing) mostrarResultado(puntajeFinal, aciertos, intentoActual) }, 1500)
     }
 
-    private fun mostrarResultado(puntaje: Int, aciertos: Int) {
+    private fun mostrarResultado(puntaje: Int, aciertos: Int, intentoActual: Int) {
         if (isFinishing) return
         val mensaje = when (aciertos) {
             2 -> "¡EXCELENTE!\nIdentificaste los 2 objetivos correctamente."
@@ -253,24 +255,29 @@ class RastreoTestActivity : TestBaseActivity() {
         }
         val mensajeCompleto = "$mensaje\n\nNota: $puntaje%" + (if (penalizacionPorAusencia > 0) "\nPenalización ausencia: -$penalizacionPorAusencia" else "")
 
-        AlertDialog.Builder(this)
-            .setTitle("RASTREO FINALIZADO")
-            .setMessage(mensajeCompleto)
-            .setCancelable(false)
-            .setPositiveButton("CONTINUAR") { _, _ ->
-                // ✅ Umbral 95% (igual que CortexManager)
-                if (CortexManager.obtenerIntentoActual("t8") == 1 && puntaje < 95) {
-                    mostrarDialogoReintento(puntaje)
+        // ✅ Umbral 95% (igual que CortexManager)
+        if (intentoActual == 1 && puntaje < 95) {
+            mostrarDialogoReintento(puntaje)
+        } else {
+            val titulo = if (puntaje >= 95) "¡EXCELENTE! 😎✅" else "RASTREO"
+            val resultado = if (puntaje >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
+            
+            AlertDialog.Builder(this)
+                .setTitle(titulo)
+                .setMessage("$resultado\n\n$mensajeCompleto")
+                .setCancelable(false)
+                .setPositiveButton("➡️ CONTINUAR") { _, _ ->
+                    CortexManager.navegarAlSiguiente(this)
+                    finish()
                 }
-                else { CortexManager.navegarAlSiguiente(this); finish() }
-            }
-            .show()
+                .show()
+        }
     }
 
     private fun mostrarDialogoReintento(puntaje: Int) {
         AlertDialog.Builder(this)
-            .setTitle("RASTREO - INTENTO 1")
-            .setMessage("Nota: $puntaje%\n\n⚠️ Tendrás un segundo intento.")
+            .setTitle("RASTREO")
+            .setMessage("INTENTO REGISTRADO\n\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.")
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
                 startActivity(Intent(this, RastreoTestActivity::class.java))

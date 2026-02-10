@@ -32,7 +32,7 @@ class AtencionTestActivity : TestBaseActivity() {
     )
 
     private var rondaActual = 0
-    private val TOTAL_RONDAS = 10
+    private val TOTAL_RONDAS = 4
     private var aciertos = 0
     private var colorCorrectoActual = -1
     private var intentoActual = 1
@@ -105,11 +105,24 @@ class AtencionTestActivity : TestBaseActivity() {
 
     private fun mostrarDialogoFin(nota: Int, esReintento: Boolean) {
         if (isFinishing) return
+        
+        val titulo = when {
+            esReintento -> "ATENCIÓN"
+            nota >= 95 -> "¡EXCELENTE! 😎✅"
+            else -> "ATENCIÓN"
+        }
+        
+        val mensaje = when {
+            esReintento -> "INTENTO REGISTRADO\n\nNota Final: $nota%\nPenalización por ausencia: -$penalizacionPorAusencia pts\n\nNecesitas 95% para saltarte el segundo intento."
+            nota >= 95 -> "¡EXCELENTE!\n\nNota Final: $nota%\nPenalización por ausencia: -$penalizacionPorAusencia pts"
+            else -> "MÓDULO FINALIZADO\n\nNota Final: $nota%\nPenalización por ausencia: -$penalizacionPorAusencia pts"
+        }
+        
         AlertDialog.Builder(this)
-            .setTitle(if (esReintento) "ATENCIÓN DISPERSA ⚠️" else "TEST FINALIZADO")
-            .setMessage("Nota Final: $nota%\nPenalización por ausencia: -$penalizacionPorAusencia pts")
+            .setTitle(titulo)
+            .setMessage(mensaje)
             .setCancelable(false)
-            .setPositiveButton(if (esReintento) "INTENTO 2" else "SIGUIENTE") { _, _ ->
+            .setPositiveButton(if (esReintento) "INTENTO 2 →" else "➡️ SIGUIENTE") { _, _ ->
                 if (esReintento) {
                     startActivity(Intent(this, AtencionTestActivity::class.java))
                     finish()
