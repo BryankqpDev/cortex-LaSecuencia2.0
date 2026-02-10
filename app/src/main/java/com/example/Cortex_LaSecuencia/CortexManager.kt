@@ -18,7 +18,6 @@ data class TestMetricLog(
     val details: Map<String, Any> = mapOf()
 )
 
-// ✅ RegistroData se queda aquí
 data class RegistroData(
     val fecha: String = "",
     val hora: String = "",
@@ -28,6 +27,7 @@ data class RegistroData(
     val equipo: String = "",
     val nota: Int = 0,
     val estado: String = "",
+    val tiempoTotal: String = "",  //
     var enPapelera: Boolean = false
 )
 

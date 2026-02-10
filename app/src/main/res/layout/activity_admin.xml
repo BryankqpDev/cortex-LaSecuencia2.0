@@ -67,30 +67,34 @@
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="10dp"
-                android:visibility="gone"/> <HorizontalScrollView
-            android:id="@+id/scroll_solicitudes"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#2A1810"
-            android:padding="5dp"
-            android:layout_marginBottom="25dp"
-            android:visibility="gone"> <TableLayout
-            android:id="@+id/table_solicitudes"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:stretchColumns="*">
+                android:visibility="gone"/>
 
-            <TableRow
-                android:background="#451A03"
-                android:padding="10dp">
-                <TextView android:text="DNI" android:textColor="#F59E0B" android:textStyle="bold" android:paddingEnd="15dp"/>
-                <TextView android:text="NOMBRE" android:textColor="#F59E0B" android:textStyle="bold" android:paddingEnd="15dp"/>
-                <TextView android:text="MOTIVO" android:textColor="#F59E0B" android:textStyle="bold" android:paddingEnd="15dp"/>
-                <TextView android:text="FECHA" android:textColor="#F59E0B" android:textStyle="bold" android:paddingEnd="15dp"/>
-                <TextView android:text="ACCIÓN" android:textColor="#F59E0B" android:textStyle="bold"/>
-            </TableRow>
-        </TableLayout>
-        </HorizontalScrollView>
+            <HorizontalScrollView
+                android:id="@+id/scroll_solicitudes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#2A1810"
+                android:padding="5dp"
+                android:layout_marginBottom="25dp"
+                android:visibility="gone">
+
+                <TableLayout
+                    android:id="@+id/table_solicitudes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:stretchColumns="*">
+
+                    <TableRow
+                        android:background="#451A03"
+                        android:padding="10dp">
+                        <TextView android:text="DNI" android:textColor="#F59E0B" android:textStyle="bold" android:paddingEnd="15dp"/>
+                        <TextView android:text="NOMBRE" android:textColor="#F59E0B" android:textStyle="bold" android:paddingEnd="15dp"/>
+                        <TextView android:text="MOTIVO" android:textColor="#F59E0B" android:textStyle="bold" android:paddingEnd="15dp"/>
+                        <TextView android:text="FECHA" android:textColor="#F59E0B" android:textStyle="bold" android:paddingEnd="15dp"/>
+                        <TextView android:text="ACCIÓN" android:textColor="#F59E0B" android:textStyle="bold"/>
+                    </TableRow>
+                </TableLayout>
+            </HorizontalScrollView>
 
             <View
                 android:layout_width="match_parent"
@@ -132,6 +136,7 @@
                         <TextView android:text="EQUIPO" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
                         <TextView android:text="NOTA" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
                         <TextView android:text="ESTADO" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
+                        <TextView android:text="TIEMPO" android:textColor="#00F0FF" android:textStyle="bold" android:paddingEnd="15dp"/>
                         <TextView android:text="ACCIÓN" android:textColor="#00F0FF" android:textStyle="bold"/>
                     </TableRow>
 

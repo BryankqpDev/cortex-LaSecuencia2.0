@@ -65,7 +65,7 @@ class AnticipacionTestActivity : TestBaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_anticipacion_test)
 
-        vehiculo = findViewById(R.id.img_vehiculo)
+        vehiculo = findViewById(R.id.ic_pickup)
         zonaMeta = findViewById(R.id.zona_meta)
         btnFrenar = findViewById(R.id.btn_frenar)
         pista = findViewById(R.id.pista_container)
