@@ -20,10 +20,11 @@ import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
  * ════════════════════════════════════════════════════════════════════════════
  *
  * Cambios implementados:
- *  Delay aleatorio por ejecución (evita memorización)
- *  Umbrales de puntaje adaptativos (equidad según dificultad)
- *  Registro de parámetros para auditoría
- *  UX sin cambios (usuario no nota la diferencia)
+ *  ✅ Delay aleatorio por ejecución (evita memorización)
+ *  ✅ Umbrales de puntaje adaptativos (equidad según dificultad)
+ *  ✅ Registro de parámetros para auditoría
+ *  ✅ Mensajes mejorados con feedback del 95%
+ *  ✅ Fix cámara oscura: TestBaseActivity ya tiene delay de 300ms para reintentos
  *
  * ════════════════════════════════════════════════════════════════════════════
  */
@@ -86,8 +87,6 @@ class ReflejosTestActivity : TestBaseActivity() {
         // ═══════════════════════════════════════════════════════════════════
         // ✅ USAR DELAY ALEATORIO GENERADO
         // ═══════════════════════════════════════════════════════════════════
-        // Antes: (2000 + (Math.random() * 3000)).toLong() → Predecible
-        // Ahora: Rango único por sesión usando SecureRandom
         val tiempoEspera = TestSessionParams.randomInRange(
             sessionParams.delayMinMs,
             sessionParams.delayMaxMs
@@ -162,6 +161,8 @@ class ReflejosTestActivity : TestBaseActivity() {
             .setMessage(mensaje)
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
+                // ✅ El onPause() automático liberará la cámara
+                // ✅ El onCreate() del reintento esperará 300ms (ya implementado en TestBaseActivity)
                 startActivity(Intent(this, ReflejosTestActivity::class.java))
                 finish()
             }
@@ -206,17 +207,3 @@ class ReflejosTestActivity : TestBaseActivity() {
         esperaRunnable?.let { handler.removeCallbacks(it) }
     }
 }
-
-/**
- * ════════════════════════════════════════════════════════════════════════════
- * EXTENSIÓN NECESARIA EN TestSessionParams
- * ════════════════════════════════════════════════════════════════════════════
- *
- * Agregar esta función a TestSessionParams.kt:
- */
-/*
-fun randomInRange(min: Long, max: Long): Long {
-    val range = max - min
-    return min + (secureRandom.nextDouble() * range).roundToLong()
-}
-*/
