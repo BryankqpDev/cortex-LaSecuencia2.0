@@ -200,7 +200,8 @@ abstract class TestBaseActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         if (!testFinalizado) fueInterrumpido = true
-        imageAnalyzer?.clearAnalyzer()
+        // ❌ NO limpiar el analyzer aquí, causa pantalla negra en reintento
+        // imageAnalyzer?.clearAnalyzer()
     }
 
     override fun onResume() {
@@ -215,6 +216,8 @@ abstract class TestBaseActivity : AppCompatActivity() {
         super.onDestroy()
         testFinalizado = true
         handlerAusencia.removeCallbacksAndMessages(null)
+        // ✅ Limpiar correctamente la cámara solo al destruir
+        imageAnalyzer?.clearAnalyzer()
         cameraProvider?.unbindAll()
     }
 
