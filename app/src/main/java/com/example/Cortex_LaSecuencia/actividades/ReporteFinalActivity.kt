@@ -59,6 +59,22 @@ class ReporteFinalActivity : AppCompatActivity() {
         CortexManager.registrarEvaluacion(promedio, esApto)
         CortexManager.registrarNube(promedio, esApto)
 
+        val operador = CortexManager.operadorActual
+        if (operador != null && operador.timestampInicio > 0) {
+            val timestampFin = System.currentTimeMillis()
+            val tiempoTranscurridoMs = timestampFin - operador.timestampInicio
+            val tiempoSegundos = (tiempoTranscurridoMs / 1000).toInt()
+
+            // Guardar el tiempo en el operador
+            operador.tiempoTotalSegundos = tiempoSegundos
+
+            android.util.Log.d(
+                "ReporteFinalActivity",
+                "⏱️ Tiempo total: ${tiempoSegundos}s (${tiempoTranscurridoMs}ms)"
+            )
+        }
+
+
         if (esApto) {
             txtIcono.text = "😎"
             txtEstado.text = "APTO"

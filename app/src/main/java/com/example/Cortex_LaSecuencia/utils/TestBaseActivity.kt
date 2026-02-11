@@ -26,7 +26,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 
 abstract class TestBaseActivity : AppCompatActivity() {
-    
+
     protected var testId: String = ""
     protected var testFinalizado = false
     protected var fueInterrumpido = false
@@ -34,18 +34,26 @@ abstract class TestBaseActivity : AppCompatActivity() {
     private var cameraProvider: ProcessCameraProvider? = null
     private var imageAnalyzer: ImageAnalysis? = null
     private var preview: Preview? = null
-    
-    // ✅ CAMBIO A PROTECTED para evitar duplicidad en hijos
-    protected var estaEnPausaPorAusencia = false 
+    private var camera: Camera? = null
+
+    protected var estaEnPausaPorAusencia = false
     private val handlerAusencia = Handler(Looper.getMainLooper())
-    
+
     private var overlayAlerta: LinearLayout? = null
     private var txtContadorAlerta: TextView? = null
-    protected var penalizacionPorAusencia = 0 
+    protected var penalizacionPorAusencia = 0
+
+    private var estaProcesandoFrame = false
+
+    // ✅ NUEVO: Flag para saber si es un reintento
+    private var esReintento = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         testId = obtenerTestId()
+
+        // ✅ NUEVO: Detectar si es un reintento
+        esReintento = CortexManager.obtenerIntentoActual(testId) == 2
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -65,37 +73,93 @@ abstract class TestBaseActivity : AppCompatActivity() {
             return
         }
 
+        // ✅ CRÍTICO: Si es reintento, esperar 300ms antes de inicializar cámara
+        // Esto permite que la instancia anterior libere completamente los recursos
+        val delayInicio = if (esReintento) 300L else 0L
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (isFinishing || isDestroyed) return@postDelayed
+            inicializarCamara(previewView, statusText)
+        }, delayInicio)
+    }
+
+    private fun inicializarCamara(previewView: PreviewView, statusText: TextView?) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
             try {
                 if (isFinishing || isDestroyed) return@addListener
-                
-                // ✅ CRÍTICO: Limpiar cualquier binding anterior antes de configurar
-                cameraProvider?.unbindAll()
-                
+
                 cameraProvider = cameraProviderFuture.get()
-                preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
+
+                // ✅ Desvincular todos los casos de uso ANTES de configurar nuevos
+                cameraProvider?.unbindAll()
+
+                // ✅ Configurar Preview con optimizaciones
+                preview = Preview.Builder()
+                    .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+                    .build()
+                    .also {
+                        it.setSurfaceProvider(previewView.surfaceProvider)
+                    }
+
+                // ✅ Configurar ImageAnalysis con resolución optimizada
                 imageAnalyzer = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+                    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                     .build()
                     .also {
                         it.setAnalyzer(ContextCompat.getMainExecutor(this)) { imageProxy ->
-                            if (!testFinalizado) analizarRostroSentinel(imageProxy, statusText)
-                            else imageProxy.close()
+                            // ✅ Prevenir procesamiento concurrente
+                            if (!testFinalizado && !estaProcesandoFrame) {
+                                analizarRostroSentinel(imageProxy, statusText)
+                            } else {
+                                imageProxy.close()
+                            }
                         }
                     }
-                
-                // ✅ Asegurar que todo está limpio antes de vincular
-                cameraProvider?.unbindAll()
-                cameraProvider?.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalyzer)
-            } catch (e: Exception) { 
+
+                // ✅ Vincular casos de uso y obtener el CameraControl
+                camera = cameraProvider?.bindToLifecycle(
+                    this,
+                    CameraSelector.DEFAULT_FRONT_CAMERA,
+                    preview,
+                    imageAnalyzer
+                )
+
+                // ✅ CRÍTICO: Activar auto-enfoque continuo y exposición automática
+                camera?.cameraControl?.apply {
+                    // Resetear zoom para evitar configuraciones previas
+                    try {
+                        setLinearZoom(0f)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+
+                    // Cancelar cualquier bloqueo de enfoque/exposición previo
+                    cancelFocusAndMetering()
+
+                    // CameraX maneja auto-focus y auto-exposure por defecto,
+                    // pero aseguramos que no haya interferencias previas
+                }
+
+                // ✅ Configurar info de exposición/ISO si es necesario (opcional)
+                camera?.cameraInfo?.exposureState?.let { exposureState ->
+                    // Log para debug (opcional)
+                    // Log.d("TestBase", "Exposure compensation: ${exposureState.exposureCompensationIndex}")
+                }
+
+            } catch (e: Exception) {
                 e.printStackTrace()
+                Toast.makeText(this, "Error al inicializar cámara", Toast.LENGTH_SHORT).show()
             }
         }, ContextCompat.getMainExecutor(this))
     }
 
     @OptIn(ExperimentalGetImage::class)
     private fun analizarRostroSentinel(imageProxy: ImageProxy, statusText: TextView?) {
+        estaProcesandoFrame = true
+
         val mediaImage = imageProxy.image
         if (mediaImage != null) {
             val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
@@ -104,9 +168,16 @@ abstract class TestBaseActivity : AppCompatActivity() {
                     if (testFinalizado) return@addOnSuccessListener
                     gestionarAusencia(faces.isEmpty(), statusText)
                 }
-                .addOnCompleteListener { imageProxy.close() }
+                .addOnFailureListener { e ->
+                    e.printStackTrace()
+                }
+                .addOnCompleteListener {
+                    imageProxy.close()
+                    estaProcesandoFrame = false
+                }
         } else {
             imageProxy.close()
+            estaProcesandoFrame = false
         }
     }
 
@@ -130,12 +201,11 @@ abstract class TestBaseActivity : AppCompatActivity() {
         overlayAlerta = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setBackgroundColor(Color.parseColor("#CC000000")) 
-            // ✅ BLOQUEAR CLICS PARA QUE NO SIGAN JUGANDO
-            isClickable = true 
+            setBackgroundColor(Color.parseColor("#CC000000"))
+            isClickable = true
             isFocusable = true
             layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-            
+
             addView(TextView(context).apply {
                 text = "⚠️ ROSTRO NO DETECTADO"
                 setTextColor(Color.RED)
@@ -143,7 +213,7 @@ abstract class TestBaseActivity : AppCompatActivity() {
                 gravity = Gravity.CENTER
                 setPadding(20, 40, 20, 10)
             })
-            
+
             txtContadorAlerta = TextView(context).apply {
                 text = "5"
                 setTextColor(Color.WHITE)
@@ -151,7 +221,7 @@ abstract class TestBaseActivity : AppCompatActivity() {
                 gravity = Gravity.CENTER
             }
             addView(txtContadorAlerta)
-            
+
             addView(TextView(context).apply {
                 text = "Regresa a la cámara\nEvita penalizaciones por distracción"
                 setTextColor(Color.LTGRAY)
@@ -208,8 +278,16 @@ abstract class TestBaseActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         if (!testFinalizado) fueInterrumpido = true
-        // ❌ NO limpiar el analyzer aquí, causa pantalla negra en reintento
-        // imageAnalyzer?.clearAnalyzer()
+
+        // ✅ CRÍTICO: Pausar el análisis correctamente
+        imageAnalyzer?.clearAnalyzer()
+
+        // ✅ NUEVO: Desvincular la cámara para liberar recursos
+        try {
+            cameraProvider?.unbindAll()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onResume() {
@@ -223,18 +301,27 @@ abstract class TestBaseActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         testFinalizado = true
+        estaProcesandoFrame = false
+
+        // ✅ Limpiar todos los recursos
         handlerAusencia.removeCallbacksAndMessages(null)
-        
-        // ✅ Limpiar completamente todos los recursos de la cámara
+        imageAnalyzer?.clearAnalyzer()
+
         try {
-            imageAnalyzer?.clearAnalyzer()
-            imageAnalyzer = null
-            preview = null
             cameraProvider?.unbindAll()
-            cameraProvider = null
         } catch (e: Exception) {
             e.printStackTrace()
         }
+
+        // ✅ CRÍTICO: Dar tiempo al sistema para liberar antes de anular referencias
+        Handler(Looper.getMainLooper()).postDelayed({
+            cameraProvider = null
+            camera = null
+            preview = null
+            imageAnalyzer = null
+        }, 100)
+
+        ocultarOverlayAlerta()
     }
 
     abstract fun obtenerTestId(): String

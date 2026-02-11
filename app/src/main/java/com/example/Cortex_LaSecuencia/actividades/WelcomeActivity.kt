@@ -28,12 +28,10 @@ class WelcomeActivity : AppCompatActivity() {
         val txtName = findViewById<TextView>(R.id.wel_name)
         val btnStart = findViewById<Button>(R.id.btn_start_eval)
 
-        // Obtener nombre del operador
         val operador = CortexManager.operadorActual
         val nombreUsuario = operador?.nombre ?: "OPERADOR"
         txtName.text = nombreUsuario.uppercase()
 
-        // Saludo según hora del día (como en HTML)
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         val greeting = when {
             hour >= 18 || hour < 5 -> "¡BUENAS NOCHES! 🌙"
@@ -41,26 +39,20 @@ class WelcomeActivity : AppCompatActivity() {
             else -> "¡BUENOS DÍAS! ☀️"
         }
         txtGreeting.text = greeting
-        
-        // Hablar saludo (como en HTML: speak)
+
         AudioManager.hablar("$greeting Hola $nombreUsuario. Iniciemos la verificación.")
 
-        // Botón para iniciar evaluación (como en HTML: verifica cámara primero)
         btnStart.setOnClickListener {
             verificarPermisosYComenzar()
         }
     }
 
     private fun verificarPermisosYComenzar() {
-        // Verificar si ya tenemos permisos de cámara
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             == PackageManager.PERMISSION_GRANTED) {
-            // Permisos otorgados, iniciar evaluación
             iniciarEvaluacion()
         } else {
-            // Solicitar permisos (como en HTML: muestra mensaje si no se otorgan)
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
-                // Mostrar explicación
                 AlertDialog.Builder(this)
                     .setTitle("Acceso a Cámara Requerido")
                     .setMessage("Sentinel requiere acceso a la cámara para monitorear tu presencia durante los tests. Es necesario para garantizar la seguridad del proceso.")
@@ -74,7 +66,6 @@ class WelcomeActivity : AppCompatActivity() {
                     .setNegativeButton("CANCELAR", null)
                     .show()
             } else {
-                // Solicitar permisos directamente
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(Manifest.permission.CAMERA),
@@ -90,20 +81,17 @@ class WelcomeActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        
+
         if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permiso otorgado, iniciar evaluación
                 iniciarEvaluacion()
             } else {
-                // Permiso denegado (como en HTML: muestra mensaje y botón de reintento)
                 Toast.makeText(
                     this,
                     "⚠️ Acceso a cámara requerido para Sentinel",
                     Toast.LENGTH_LONG
                 ).show()
-                
-                // Mostrar botón de reintento (similar al HTML)
+
                 AlertDialog.Builder(this)
                     .setTitle("Cámara Requerida")
                     .setMessage("Sentinel necesita acceso a la cámara para operar. Por favor, otorga el permiso en Configuración o presiona 'ACTIVAR CÁMARA MANUALMENTE'.")
@@ -117,7 +105,19 @@ class WelcomeActivity : AppCompatActivity() {
     }
 
     private fun iniciarEvaluacion() {
-        // Navegar al primer test usando CortexManager (como en HTML: startTestSequence)
+        // ═══════════════════════════════════════════════════════════════════
+        // ✅ INICIAR CRONÓMETRO: Guardar timestamp de inicio
+        // ═══════════════════════════════════════════════════════════════════
+        val operador = CortexManager.operadorActual
+        if (operador != null && operador.timestampInicio == 0L) {
+            operador.timestampInicio = System.currentTimeMillis()
+            android.util.Log.d(
+                "WelcomeActivity",
+                "⏱️ Cronómetro iniciado: ${operador.timestampInicio}"
+            )
+        }
+
+        // Navegar al primer test
         CortexManager.navegarAlSiguiente(this)
     }
 }
