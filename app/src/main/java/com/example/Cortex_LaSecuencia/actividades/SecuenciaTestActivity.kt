@@ -158,6 +158,7 @@ class SecuenciaTestActivity : TestBaseActivity() {
         testFinalizado = true
         esTurnoDelUsuario = false
 
+        // holi
         // El puntaje es proporcional a cuántos pasos acertó antes de fallar
         val aciertos = (secuenciaUsuario.size - 1).coerceAtLeast(0)
         val puntajeBase = (aciertos.toFloat() / LONGITUD_SECUENCIA * 100).toInt()
