@@ -144,14 +144,26 @@ class EscaneoTestActivity : TestBaseActivity() {
         }
     }
 
+    private fun reiniciarTest() {
+        testFinalizado = false
+        fueInterrumpido = false
+        clicsErroneos = 0
+
+        sessionParams = TestSessionParams.generarEscaneoParams()
+        TestSessionParams.registrarParametros("t6", sessionParams)
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!testFinalizado) iniciarPrueba()
+        }, 500)
+    }
+
     private fun mostrarDialogoReintento(puntaje: Int, tiempoMs: Long) {
         AlertDialog.Builder(this)
             .setTitle("ESCANEO")
             .setMessage("INTENTO REGISTRADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\nNecesitas 95% para saltarte el segundo intento.")
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
-                startActivity(Intent(this, EscaneoTestActivity::class.java))
-                finish()
+                reiniciarTest()
             }
             .show()
     }

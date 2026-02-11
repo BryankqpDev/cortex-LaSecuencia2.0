@@ -238,8 +238,7 @@ class AnticipacionTestActivity : TestBaseActivity() {
             .setCancelable(false)
             .setPositiveButton(if (esReintento) "REINTENTAR" else "SIGUIENTE") { _, _ ->
                 if (esReintento) {
-                    startActivity(Intent(this, AnticipacionTestActivity::class.java))
-                    finish()
+                    reiniciarTest()
                 }
                 else {
                     CortexManager.navegarAlSiguiente(this)
@@ -247,6 +246,22 @@ class AnticipacionTestActivity : TestBaseActivity() {
                 }
             }
             .show()
+    }
+    
+    private fun reiniciarTest() {
+        testFinalizado = false
+        fueInterrumpido = false
+        juegoActivo = false
+        intentosRealizados = 0
+        animador?.cancel()
+        animador = null
+        
+        sessionParams = TestSessionParams.generarAnticipacionParams()
+        TestSessionParams.registrarParametros("t3", sessionParams)
+        
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!testFinalizado) iniciarCuentaRegresiva()
+        }, 500)
     }
 
     override fun onTestPaused() {

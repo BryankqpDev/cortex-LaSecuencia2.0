@@ -241,21 +241,7 @@ class RastreoTestActivity : TestBaseActivity() {
         CortexManager.logPerformanceMetric("t8", puntajeFinal, details)
 
         val intentoActual = CortexManager.obtenerIntentoActual("t8")
-        CortexManager.guardarPuntaje("t8", puntajeFinal)
-
-        handler.postDelayed({ if (!isFinishing) mostrarResultado(puntajeFinal, aciertos, intentoActual) }, 1500)
-    }
-
-    private fun mostrarResultado(puntaje: Int, aciertos: Int, intentoActual: Int) {
-        if (isFinishing) return
-        val mensaje = when (aciertos) {
-            2 -> "¡EXCELENTE!\nIdentificaste los 2 objetivos correctamente."
-            1 -> "REGULAR\nSolo identificaste 1 de los 2 objetivos."
-            else -> "FALLASTE\nNo identificaste ningún objetivo."
-        }
-        val mensajeCompleto = "$mensaje\n\nNota: $puntaje%" + (if (penalizacionPorAusencia > 0) "\nPenalización ausencia: -$penalizacionPorAusencia" else "")
-
-        // ✅ Umbral 95% (igual que CortexManager)
+    // ✅ Umbral 95% (igual que CortexManager)
         if (intentoActual == 1 && puntaje < 95) {
             mostrarDialogoReintento(puntaje)
         } else {
@@ -274,14 +260,34 @@ class RastreoTestActivity : TestBaseActivity() {
         }
     }
 
+    private fun reiniciarTest() {
+        testFinalizado = false
+        animacionActiva = false
+        faseSeleccionHabilitada = false
+        txtMensaje.text = getString(R.string.t8_memorize_instruction)
+        btnConfirmar.visibility = View.GONE
+        indicesSeleccionados.clear()
+        indicesObjetivo.clear()
+        bolas.clear()
+        areaRastreo.removeAllViews()
+        pasosRealizados = 0
+
+        sessionParams = TestSessionParams.generarRastreoParams()
+        maxPasos = sessionParams.duracionAnimacionPasos
+        TestSessionParams.registrarParametros("t8", sessionParams)
+
+        handler.postDelayed({
+            if (!testFinalizado) iniciarTest()
+        }, 500)
+    }
+    
     private fun mostrarDialogoReintento(puntaje: Int) {
         AlertDialog.Builder(this)
             .setTitle("RASTREO")
             .setMessage("INTENTO REGISTRADO\n\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.")
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
-                startActivity(Intent(this, RastreoTestActivity::class.java))
-                finish()
+                reiniciarTest()
             }
             .show()
     }

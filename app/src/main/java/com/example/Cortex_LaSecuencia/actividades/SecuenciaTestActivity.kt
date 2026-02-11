@@ -158,6 +158,7 @@ class SecuenciaTestActivity : TestBaseActivity() {
         testFinalizado = true
         esTurnoDelUsuario = false
 
+        // holi
         // El puntaje es proporcional a cuántos pasos acertó antes de fallar
         val aciertos = (secuenciaUsuario.size - 1).coerceAtLeast(0)
         val puntajeBase = (aciertos.toFloat() / LONGITUD_SECUENCIA * 100).toInt()
@@ -189,10 +190,28 @@ class SecuenciaTestActivity : TestBaseActivity() {
             .setMessage("INTENTO REGISTRADO\n\nHas completado parcialmente la secuencia.\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.")
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
-                startActivity(Intent(this, SecuenciaTestActivity::class.java))
-                finish()
+                // ✅ SOLUCIÓN: Reiniciar test en la misma actividad sin destruir la cámara
+                reiniciarTest()
             }
             .show()
+    }
+    
+    private fun reiniciarTest() {
+        // Resetear variables del test
+        testFinalizado = false
+        fueInterrumpido = false
+        secuenciaGenerada.clear()
+        secuenciaUsuario.clear()
+        esTurnoDelUsuario = false
+        
+        // Generar nuevos parámetros para el segundo intento
+        sessionParams = TestSessionParams.generarSecuenciaParams()
+        TestSessionParams.registrarParametros("t2", sessionParams)
+        
+        // Reiniciar el test
+        Handler(Looper.getMainLooper()).postDelayed({ 
+            if (!testFinalizado) prepararSecuenciaUnica() 
+        }, 500)
     }
 
     private fun mostrarDialogoFinal(puntaje: Int, mensaje: String) {

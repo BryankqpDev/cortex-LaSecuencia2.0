@@ -29,7 +29,7 @@ abstract class TestBaseActivity : AppCompatActivity() {
 
     protected var testId: String = ""
     protected var testFinalizado = false
-    private var fueInterrumpido = false
+    protected var fueInterrumpido = false
 
     private var cameraProvider: ProcessCameraProvider? = null
     private var imageAnalyzer: ImageAnalysis? = null

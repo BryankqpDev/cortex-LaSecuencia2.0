@@ -191,14 +191,29 @@ class ImpulsoTestActivity : TestBaseActivity() {
         }
     }
 
-    private fun mostrarDialogoReintento(puntaje: Int) {
+    private fun reiniciarTest() {
+        testFinalizado = false
+        estaEnPausaPorAusencia = false // Changed from fueInterrumpido
+        rondaActual = 0
+        erroresImpulso = 0 // Resetting relevant test state
+        erroresOmision = 0 // Resetting relevant test state
+        tiemposDeReaccionGo.clear() // Resetting relevant test state
+        
+        sessionParams = TestSessionParams.generarImpulsoParams()
+        TestSessionParams.registrarParametros("t7", sessionParams)
+        
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!testFinalizado) programarSiguiente(0) // Changed from iniciarRonda()
+        }, 500)
+    }
+    
+    private fun mostrarResultadoFinal(puntaje: Int, mensaje: String) {
         AlertDialog.Builder(this)
             .setTitle("IMPULSO")
-            .setMessage("INTENTO REGISTRADO\n\nNota Final: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\nNecesitas 95% para saltarte el segundo intento.")
+            .setMessage("INTENTO REGISTRADO\n\nNota Final: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\n$mensaje")
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
-                startActivity(Intent(this, ImpulsoTestActivity::class.java))
-                finish()
+                reiniciarTest()
             }
             .show()
     }

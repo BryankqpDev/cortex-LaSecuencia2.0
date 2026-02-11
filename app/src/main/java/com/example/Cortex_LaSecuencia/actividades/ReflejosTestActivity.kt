@@ -168,6 +168,19 @@ class ReflejosTestActivity : TestBaseActivity() {
             }
             .show()
     }
+    
+    private fun reiniciarTest() {
+        testFinalizado = false
+        fueInterrumpido = false
+        testEnProgreso = false
+        botonActivo = false
+        tiempoInicio = 0L
+        
+        sessionParams = TestSessionParams.generarReflejosParams()
+        TestSessionParams.registrarParametros("t1", sessionParams)
+        
+        handler.postDelayed({ if (!isFinishing && !testFinalizado) iniciarTest() }, 500)
+    }
 
     private fun mostrarResultado(puntaje: Int, tiempoMs: Long, errorAnticipacion: Boolean) {
         val titulo = if (puntaje >= 95) "¡EXCELENTE! 😎✅" else "REFLEJOS"

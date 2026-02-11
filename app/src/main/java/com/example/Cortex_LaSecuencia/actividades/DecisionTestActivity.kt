@@ -103,14 +103,28 @@ class DecisionTestActivity : TestBaseActivity() {
         }
     }
 
-    private fun mostrarDialogoReintento(nota: Int, aciertos: Int) {
+    private fun reiniciarTest() {
+        testFinalizado = false
+        fueInterrumpido = false
+        rondaActual = 0
+        puntosAcumulados = 0
+        aciertos = 0 // Reset aciertos as well
+
+        sessionParams = TestSessionParams.generarDecisionParams()
+        TestSessionParams.registrarParametros("t10", sessionParams)
+        
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!testFinalizado) siguienteRonda() // Changed iniciarRonda to siguienteRonda
+        }, 500)
+    }
+    
+    private fun mostrarResultadoFinal(puntaje: Int, aciertos: Int) {
         AlertDialog.Builder(this)
             .setTitle("DECISIÓN")
-            .setMessage("INTENTO REGISTRADO\n\nAciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $nota%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\nNecesitas 95% para saltarte el segundo intento.")
+            .setMessage("INTENTO REGISTRADO\n\nAciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\nNecesitas 95% para saltarte el segundo intento.")
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
-                startActivity(Intent(this, DecisionTestActivity::class.java))
-                finish()
+                reiniciarTest()
             }
             .show()
     }

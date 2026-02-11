@@ -162,10 +162,25 @@ class CoordinacionTestActivity : TestBaseActivity() {
             .setMessage("INTENTO REGISTRADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.")
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
-                startActivity(Intent(this, CoordinacionTestActivity::class.java))
-                finish()
+                reiniciarTest()
             }
             .show()
+    }
+    
+    private fun reiniciarTest() {
+        testFinalizado = false
+        fueInterrumpido = false
+        hitsCount = 0
+        timerInicio?.cancel()
+        timerInicio = null
+        containerJuego.removeAllViews()
+        
+        sessionParams = TestSessionParams.generarCoordinacionParams()
+        TestSessionParams.registrarParametros("t4", sessionParams)
+        
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!testFinalizado) startTest()
+        }, 500)
     }
 
     private fun updateProgressText() {

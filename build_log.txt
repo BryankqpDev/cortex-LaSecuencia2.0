@@ -1,0 +1,244 @@
+﻿> Task :app:clean
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDebugResValues
+> Task :app:dataBindingMergeDependencyArtifactsDebug
+> Task :app:generateDebugResources
+> Task :app:processDebugGoogleServices
+> Task :app:packageDebugResources
+> Task :app:processDebugNavigationResources
+> Task :app:mapDebugSourceSetPaths
+> Task :app:compileDebugNavigationResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:parseDebugLocalResources
+> Task :app:checkDebugAarMetadata
+
+> Task :app:processDebugMainManifest
+[org.tensorflow:tensorflow-lite:2.14.0] C:\Users\Bryan K. Quispe Puma\.gradle\caches\8.13\transforms\a8e17af20fa6f91e1f4ec9baf51a4f1b\transformed\tensorflow-lite-2.14.0\AndroidManifest.xml Warning:
+	Namespace 'org.tensorflow.lite' is used in multiple modules and/or libraries: org.tensorflow:tensorflow-lite:2.14.0, org.tensorflow:tensorflow-lite-api:2.14.0. Please ensure that all modules and libraries have a unique namespace. For more information, See https://developer.android.com/studio/build/configure-app-module#set-namespace
+[org.tensorflow:tensorflow-lite-support:0.4.4] C:\Users\Bryan K. Quispe Puma\.gradle\caches\8.13\transforms\cf46e2250867b802e696a8493bf84308\transformed\tensorflow-lite-support-0.4.4\AndroidManifest.xml Warning:
+	Namespace 'org.tensorflow.lite.support' is used in multiple modules and/or libraries: org.tensorflow:tensorflow-lite-support:0.4.4, org.tensorflow:tensorflow-lite-support-api:0.4.4. Please ensure that all modules and libraries have a unique namespace. For more information, See https://developer.android.com/studio/build/configure-app-module#set-namespace
+
+> Task :app:processDebugManifest
+> Task :app:javaPreCompileDebug
+> Task :app:mergeDebugShaders
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugResources
+> Task :app:mergeDebugAssets
+> Task :app:dataBindingGenBaseClassesDebug
+> Task :app:desugarDebugFileDependencies
+> Task :app:mergeDebugJniLibFolders
+> Task :app:processDebugManifestForPackage
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :app:checkDebugDuplicateClasses
+> Task :app:compressDebugAssets
+> Task :app:mergeDebugNativeLibs
+> Task :app:mergeLibDexDebug
+
+> Task :app:stripDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libface_detector_v2_jni.so, libimage_processing_util_jni.so, libtensorflowlite_jni.so. Run with --info option to learn more.
+
+> Task :app:processDebugResources
+
+> Task :app:compileDebugKotlin FAILED
+./gradlew : e: file:///D:/Programas%20An
+droid%20Studio/Cortex_LaSecuencia/app/sr
+c/main/java/com/example/Cortex_LaSecuenc
+ia/actividades/AtencionTestActivity.kt:1
+41:9 Unresolved reference 
+'puntosAcumulados'.
+En línea: 1 Carácter: 1
++ ./gradlew clean assembleDebug 2>&1 | 
+Out-File -FilePath "build_log.tx ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecif 
+   ied: (e: file:///D:/P...tosAcumulad  
+  os'.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCom 
+   mandError
+ 
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/AtencionTestActivity.kt:143:9 
+Unresolved reference 'sessionParams'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/AtencionTestActivity.kt:143:25 
+Unresolved reference 
+'TestSessionParams'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/AtencionTestActivity.kt:144:9 
+Unresolved reference 
+'TestSessionParams'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/AtencionTestActivity.kt:144:53 
+Unresolved reference 'sessionParams'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/AtencionTestActivity.kt:147:34 
+Unresolved reference 'iniciarRonda'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/CoordinacionTestActivity.kt:181:9 
+Unresolved reference 'Handler'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/CoordinacionTestActivity.kt:181:17 
+Unresolved reference 'Looper'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/DecisionTestActivity.kt:89:13 
+Unresolved reference 
+'mostrarDialogoReintento'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/DecisionTestActivity.kt:110:9 
+Unresolved reference 'puntosAcumulados'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/DecisionTestActivity.kt:113:9 
+Unresolved reference 'sessionParams'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/DecisionTestActivity.kt:113:25 
+Unresolved reference 
+'TestSessionParams'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/DecisionTestActivity.kt:114:9 
+Unresolved reference 
+'TestSessionParams'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/DecisionTestActivity.kt:114:54 
+Unresolved reference 'sessionParams'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/DecisionTestActivity.kt:116:9 
+Unresolved reference 'Handler'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/DecisionTestActivity.kt:116:17 
+Unresolved reference 'Looper'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/EscaneoTestActivity.kt:155:9 
+Unresolved reference 'Handler'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/EscaneoTestActivity.kt:155:17 
+Unresolved reference 'Looper'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/EspacialTestActivity.kt:114:9 
+Unresolved reference 'sessionParams'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/EspacialTestActivity.kt:114:25 
+Unresolved reference 
+'TestSessionParams'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/EspacialTestActivity.kt:115:9 
+Unresolved reference 
+'TestSessionParams'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/EspacialTestActivity.kt:115:53 
+Unresolved reference 'sessionParams'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/EspacialTestActivity.kt:117:9 
+Unresolved reference 'Handler'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/EspacialTestActivity.kt:117:17 
+Unresolved reference 'Looper'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/ImpulsoTestActivity.kt:177:13 
+Unresolved reference 
+'mostrarDialogoReintento'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/RastreoTestActivity.kt:245:35 
+Unresolved reference 'puntaje'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/RastreoTestActivity.kt:246:37 
+Unresolved reference 'puntaje'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/RastreoTestActivity.kt:248:30 
+Unresolved reference 'puntaje'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/RastreoTestActivity.kt:249:33 
+Unresolved reference 'puntaje'.
+e: file:///D:/Programas%20Android%20Stud
+io/Cortex_LaSecuencia/app/src/main/java/
+com/example/Cortex_LaSecuencia/actividad
+es/RastreoTestActivity.kt:253:45 
+Unresolved reference 'mensajeCompleto'.
+
+> Task :app:mergeExtDexDebug
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task 
+':app:compileDebugKotlin'.
+> A failure occurred while executing org
+.jetbrains.kotlin.compilerRunner.GradleC
+ompilerRunnerWithWorkers$GradleKotlinCom
+pilerWorkAction
+   > Compilation error. See log for 
+more details
+
+* Try:
+> Run with --stacktrace option to get 
+the stack trace.
+> Run with --info or --debug option to 
+get more log output.
+> Run with --scan to get full insights.
+> Get more help at 
+https://help.gradle.org.
+
+BUILD FAILED in 1m 1s
+34 actionable tasks: 34 executed
