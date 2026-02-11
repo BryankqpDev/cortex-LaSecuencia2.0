@@ -3,6 +3,8 @@ package com.example.Cortex_LaSecuencia.actividades
 import android.content.Intent
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
@@ -17,12 +19,6 @@ import java.util.Random
 /**
  * ════════════════════════════════════════════════════════════════════════════
  * TEST DE COORDINACIÓN (t4) - VERSIÓN RANDOMIZADA
- * ════════════════════════════════════════════════════════════════════════════
- *
- * Cambios implementados:
- * ✅ Scoring adaptativo con tiempo base variable
- * ✅ Factor de dificultad que afecta la evaluación
- *
  * ════════════════════════════════════════════════════════════════════════════
  */
 class CoordinacionTestActivity : TestBaseActivity() {
@@ -39,9 +35,6 @@ class CoordinacionTestActivity : TestBaseActivity() {
     private val random = Random()
     private var timerInicio: CountDownTimer? = null
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // ✅ PARÁMETROS ALEATORIOS DE ESTA SESIÓN
-    // ═══════════════════════════════════════════════════════════════════════
     private lateinit var sessionParams: TestSessionParams.CoordinacionParams
 
     override fun obtenerTestId(): String = "t4"
@@ -55,9 +48,6 @@ class CoordinacionTestActivity : TestBaseActivity() {
 
         intentoActual = CortexManager.obtenerIntentoActual("t4")
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ GENERAR PARÁMETROS ÚNICOS PARA ESTA EJECUCIÓN
-        // ═══════════════════════════════════════════════════════════════════
         sessionParams = TestSessionParams.generarCoordinacionParams()
         TestSessionParams.registrarParametros("t4", sessionParams)
 
@@ -133,9 +123,6 @@ class CoordinacionTestActivity : TestBaseActivity() {
         testFinalizado = true
         val totalTime = System.currentTimeMillis() - startTime
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ USAR SCORING ADAPTATIVO
-        // ═══════════════════════════════════════════════════════════════════
         val scoreBase = AdaptiveScoring.calcularPuntajeCoordinacion(totalTime, sessionParams)
         val scoreFinal = AdaptiveScoring.aplicarPenalizacionAusencia(scoreBase, penalizacionPorAusencia)
 
@@ -148,7 +135,6 @@ class CoordinacionTestActivity : TestBaseActivity() {
         CortexManager.logPerformanceMetric("t4", scoreFinal, details)
         CortexManager.guardarPuntaje("t4", scoreFinal)
 
-        // ✅ Umbral 95% (igual que CortexManager)
         if (intentoActual == 1 && scoreFinal < 95) {
             mostrarDialogoReintento(scoreFinal, totalTime)
         } else {
@@ -169,12 +155,13 @@ class CoordinacionTestActivity : TestBaseActivity() {
     
     private fun reiniciarTest() {
         testFinalizado = false
-        fueInterrumpido = false
         hitsCount = 0
+        penalizacionPorAusencia = 0
         timerInicio?.cancel()
         timerInicio = null
         containerJuego.removeAllViews()
         
+        intentoActual = CortexManager.obtenerIntentoActual("t4")
         sessionParams = TestSessionParams.generarCoordinacionParams()
         TestSessionParams.registrarParametros("t4", sessionParams)
         

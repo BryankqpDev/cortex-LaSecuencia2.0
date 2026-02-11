@@ -3,6 +3,8 @@ package com.example.Cortex_LaSecuencia.actividades
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -34,14 +36,12 @@ class EspacialTestActivity : TestBaseActivity() {
         txtInstruccion = findViewById(R.id.txt_instruccion)
         intentoActual = CortexManager.obtenerIntentoActual("t9")
 
-        // Asegurar visibilidad inicial
         imgFlecha.alpha = 1.0f
         imgFlecha.visibility = View.VISIBLE
 
         val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
         configurarSentinel(viewFinder, txtInstruccion)
 
-        // Configurar botones direccionales
         findViewById<ImageButton>(R.id.btn_up).setOnClickListener {
             if(!estaEnPausaPorAusencia && !testFinalizado) verificarRespuesta(0)
         }
@@ -55,7 +55,6 @@ class EspacialTestActivity : TestBaseActivity() {
             if(!estaEnPausaPorAusencia && !testFinalizado) verificarRespuesta(270)
         }
 
-        // Iniciar primera ronda
         siguienteRonda()
     }
 
@@ -68,26 +67,14 @@ class EspacialTestActivity : TestBaseActivity() {
         }
 
         rondaActual++
-
-        // Determinar color aleatoriamente
         esAzul = Random.nextBoolean()
-
-        // Elegir dirección aleatoria
-        // 0° = ARRIBA, 90° = DERECHA, 180° = ABAJO, 270° = IZQUIERDA
         direccionCorrecta = listOf(0, 90, 180, 270).random()
 
-        // Actualizar instrucción con progreso
         actualizarInstruccion()
 
-        // Rotar la flecha a la dirección elegida
         imgFlecha.rotation = direccionCorrecta.toFloat()
-
-        // Aplicar color según la regla:
-        // AZUL = responder hacia donde apunta la flecha
-        // ROJA = responder OPUESTO a donde apunta la flecha
         imgFlecha.setColorFilter(
-            if (esAzul) Color.parseColor("#3B82F6") // Azul brillante
-            else Color.parseColor("#EF4444") // Rojo brillante
+            if (esAzul) Color.parseColor("#3B82F6") else Color.parseColor("#EF4444")
         )
 
         imgFlecha.alpha = 1.0f
@@ -107,38 +94,26 @@ class EspacialTestActivity : TestBaseActivity() {
 
     private fun reiniciarTest() {
         testFinalizado = false
-        fueInterrumpido = false
         rondaActual = 0
-        aciertos = 0 // Changed from puntosAcumulados to aciertos
-        
-        sessionParams = TestSessionParams.generarEspacialParams()
-        TestSessionParams.registrarParametros("t9", sessionParams)
+        aciertos = 0
+        penalizacionPorAusencia = 0
+        intentoActual = CortexManager.obtenerIntentoActual("t9")
         
         Handler(Looper.getMainLooper()).postDelayed({
-            if (!testFinalizado) siguienteRonda() // Changed from iniciarRonda to siguienteRonda
+            if (!testFinalizado) siguienteRonda()
         }, 500)
     }
     
-    private fun verificarRespuesta(direccionUsuario: Int) { // Renamed from mostrarResultadoFinal to verificarRespuesta
+    private fun verificarRespuesta(direccionUsuario: Int) {
         if (testFinalizado || estaEnPausaPorAusencia) return
 
-        // Calcular la dirección esperada según el color
-        val direccionEsperada = if (esAzul) {
-            // Si es AZUL, responder hacia donde apunta la flecha
-            direccionCorrecta
-        } else {
-            // Si es ROJA, responder al lado OPUESTO (180 grados)
-            (direccionCorrecta + 180) % 360
-        }
+        val direccionEsperada = if (esAzul) direccionCorrecta else (direccionCorrecta + 180) % 360
 
-        // Verificar si el usuario acertó
         if (direccionUsuario == direccionEsperada) {
             aciertos++
-            // Feedback visual rápido
             imgFlecha.alpha = 0.5f
         }
 
-        // Pequeño delay antes de la siguiente ronda para feedback visual
         imgFlecha.postDelayed({
             siguienteRonda()
         }, 300)
@@ -146,53 +121,25 @@ class EspacialTestActivity : TestBaseActivity() {
 
     private fun finalizarTest() {
         testFinalizado = true
-
         val notaBase = (aciertos.toFloat() / TOTAL_RONDAS * 100).toInt()
         val notaFinal = (notaBase - penalizacionPorAusencia).coerceIn(0, 100)
 
         CortexManager.guardarPuntaje("t9", notaFinal)
 
-        // ✅ Umbral 95% (igual que CortexManager)
-        val aprobado = notaFinal >= 95
-
-        // Si es el primer intento y no alcanzó 95%, permitir reintento
-        if (intentoActual == 1 && !aprobado) {
+        if (intentoActual == 1 && notaFinal < 95) {
             AlertDialog.Builder(this)
                 .setTitle("ORIENTACIÓN ESPACIAL")
-                .setMessage(
-                    "━━━━━━━━━━━━━━━━━━━━━━\n" +
-                            "INTENTO REGISTRADO\n" +
-                            "━━━━━━━━━━━━━━━━━━━━━━\n\n" +
-                            "Aciertos: $aciertos/$TOTAL_RONDAS\n" +
-                            "Nota Base: $notaBase%\n" +
-                            "Penalización: -$penalizacionPorAusencia pts\n" +
-                            "Nota Final: $notaFinal%\n\n" +
-                            "RECUERDA:\n" +
-                            "🟦 AZUL → Presiona donde apunta\n" +
-                            "🟥 ROJA → Presiona dirección opuesta\n\n" +
-                            "Necesitas 95% para saltarte el segundo intento."
-                )
+                .setMessage("INTENTO REGISTRADO\n\nAciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $notaFinal%\n\nNecesitas 95% para saltarte el segundo intento.")
                 .setCancelable(false)
                 .setPositiveButton("INTENTO 2 →") { _, _ ->
                     reiniciarTest()
                 }
                 .show()
         } else {
-            // Segundo intento o aprobado
-            val titulo = if (aprobado) "¡EXCELENTE! 😎✅" else "ORIENTACIÓN ESPACIAL"
-            val resultado = if (aprobado) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
-
+            val titulo = if (notaFinal >= 95) "¡EXCELENTE! 😎✅" else "ORIENTACIÓN ESPACIAL"
             AlertDialog.Builder(this)
                 .setTitle(titulo)
-                .setMessage(
-                    "━━━━━━━━━━━━━━━━━━━━━━\n" +
-                            "$resultado\n" +
-                            "━━━━━━━━━━━━━━━━━━━━━━\n\n" +
-                            "Aciertos: $aciertos/$TOTAL_RONDAS\n" +
-                            "Nota Base: $notaBase%\n" +
-                            "Penalización: -$penalizacionPorAusencia pts\n" +
-                            "Nota Final: $notaFinal%"
-                )
+                .setMessage("MÓDULO FINALIZADO\n\nAciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $notaFinal%\nPenalización ausencia: -$penalizacionPorAusencia pts")
                 .setCancelable(false)
                 .setPositiveButton("➡️ SIGUIENTE") { _, _ ->
                     CortexManager.navegarAlSiguiente(this)
@@ -203,12 +150,10 @@ class EspacialTestActivity : TestBaseActivity() {
     }
 
     override fun onTestPaused() {
-        // Ocultar flecha cuando el usuario está ausente
         imgFlecha.visibility = View.INVISIBLE
     }
 
     override fun onTestResumed() {
-        // Mostrar flecha cuando el usuario regresa
         if (!testFinalizado) {
             imgFlecha.visibility = View.VISIBLE
             imgFlecha.alpha = 1.0f

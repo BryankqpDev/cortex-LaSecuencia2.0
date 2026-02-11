@@ -3,6 +3,8 @@ package com.example.Cortex_LaSecuencia.actividades
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.widget.GridLayout
@@ -15,17 +17,6 @@ import com.example.Cortex_LaSecuencia.utils.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import kotlin.random.Random
 
-/**
- * ════════════════════════════════════════════════════════════════════════════
- * TEST DE ESCANEO VISUAL (t6) - VERSIÓN RANDOMIZADA
- * ════════════════════════════════════════════════════════════════════════════
- *
- * Cambios implementados:
- * ✅ Scoring adaptativo con tiempo base variable
- * ✅ Factor de penalización ajustable
- *
- * ════════════════════════════════════════════════════════════════════════════
- */
 class EscaneoTestActivity : TestBaseActivity() {
 
     private lateinit var txtObjetivo: TextView
@@ -36,10 +27,8 @@ class EscaneoTestActivity : TestBaseActivity() {
     private var tiempoInicio: Long = 0
     private var juegoActivo = true
     private var clicsErroneos = 0
+    private var intentoActual = 1
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // ✅ PARÁMETROS ALEATORIOS DE ESTA SESIÓN
-    // ═══════════════════════════════════════════════════════════════════════
     private lateinit var sessionParams: TestSessionParams.EscaneoParams
 
     override fun obtenerTestId(): String = "t6"
@@ -52,9 +41,8 @@ class EscaneoTestActivity : TestBaseActivity() {
         gridNumeros = findViewById(R.id.grid_numeros)
         txtFeedback = findViewById(R.id.txt_instruccion)
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ GENERAR PARÁMETROS ÚNICOS PARA ESTA EJECUCIÓN
-        // ═══════════════════════════════════════════════════════════════════
+        intentoActual = CortexManager.obtenerIntentoActual("t6")
+
         sessionParams = TestSessionParams.generarEscaneoParams()
         TestSessionParams.registrarParametros("t6", sessionParams)
 
@@ -65,6 +53,8 @@ class EscaneoTestActivity : TestBaseActivity() {
     }
 
     private fun iniciarPrueba() {
+        if (testFinalizado) return
+        juegoActivo = true
         numeroObjetivo = Random.nextInt(10, 100)
         txtObjetivo.text = numeroObjetivo.toString()
 
@@ -95,7 +85,7 @@ class EscaneoTestActivity : TestBaseActivity() {
                 setTextColor(Color.WHITE)
                 gravity = Gravity.CENTER
                 setBackgroundColor(Color.parseColor("#1E293B"))
-                setOnClickListener { if (juegoActivo && !testFinalizado) verificarSeleccion(this, num) }
+                setOnClickListener { if (juegoActivo && !testFinalizado && !estaEnPausaPorAusencia) verificarSeleccion(this, num) }
             }
             gridNumeros.addView(celda)
         }
@@ -118,37 +108,31 @@ class EscaneoTestActivity : TestBaseActivity() {
         testFinalizado = true
         val duracion = System.currentTimeMillis() - tiempoInicio
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ USAR SCORING ADAPTATIVO
-        // ═══════════════════════════════════════════════════════════════════
         val puntajeBase = AdaptiveScoring.calcularPuntajeEscaneo(duracion, sessionParams)
-        val puntajeFinal = AdaptiveScoring.aplicarPenalizacionAusencia(puntajeBase, penalizacionPorAusencia)
+        val scoreFinal = (puntajeBase - penalizacionPorAusencia).coerceIn(0, 100)
 
         val details = mapOf(
             "tiempo_total_ms" to duracion,
             "clics_erroneos" to clicsErroneos,
-            "penaliz_ausencia" to penalizacionPorAusencia,
-            "tiempo_base_config" to sessionParams.tiempoBaseMs,
-            "factor_penalizacion" to sessionParams.factorPenalizacion
+            "penaliz_ausencia" to penalizacionPorAusencia
         )
-        CortexManager.logPerformanceMetric("t6", puntajeFinal, details)
+        CortexManager.logPerformanceMetric("t6", scoreFinal, details)
+        CortexManager.guardarPuntaje("t6", scoreFinal)
 
-        // ✅ Umbral 95% (igual que CortexManager)
-        val intentoActual = CortexManager.obtenerIntentoActual("t6")
-        CortexManager.guardarPuntaje("t6", puntajeFinal)
-
-        if (intentoActual == 1 && puntajeFinal < 95) {
-            mostrarDialogoReintento(puntajeFinal, duracion)
+        if (intentoActual == 1 && scoreFinal < 95) {
+            mostrarDialogoReintento(scoreFinal, duracion)
         } else {
-            finalizarActivity(puntajeFinal, duracion)
+            finalizarActivity(scoreFinal, duracion)
         }
     }
 
     private fun reiniciarTest() {
         testFinalizado = false
-        fueInterrumpido = false
         clicsErroneos = 0
-
+        penalizacionPorAusencia = 0
+        juegoActivo = true
+        
+        intentoActual = CortexManager.obtenerIntentoActual("t6")
         sessionParams = TestSessionParams.generarEscaneoParams()
         TestSessionParams.registrarParametros("t6", sessionParams)
 
@@ -160,7 +144,7 @@ class EscaneoTestActivity : TestBaseActivity() {
     private fun mostrarDialogoReintento(puntaje: Int, tiempoMs: Long) {
         AlertDialog.Builder(this)
             .setTitle("ESCANEO")
-            .setMessage("INTENTO REGISTRADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\nNecesitas 95% para saltarte el segundo intento.")
+            .setMessage("INTENTO REGISTRADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.")
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
                 reiniciarTest()

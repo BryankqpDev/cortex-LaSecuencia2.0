@@ -3,6 +3,8 @@ package com.example.Cortex_LaSecuencia.actividades
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AlertDialog
@@ -57,7 +59,6 @@ class DecisionTestActivity : TestBaseActivity() {
         esReglaMayor = Random.nextBoolean()
         val colorRegra = if (esReglaMayor) Color.parseColor("#3B82F6") else Color.parseColor("#F59E0B")
         
-        // Aplicar color a los casilleros (botones) para que sea más claro
         btnOpcion1.backgroundTintList = android.content.res.ColorStateList.valueOf(colorRegra)
         btnOpcion2.backgroundTintList = android.content.res.ColorStateList.valueOf(colorRegra)
         indicadorRegla.setBackgroundColor(colorRegra)
@@ -84,9 +85,8 @@ class DecisionTestActivity : TestBaseActivity() {
 
         CortexManager.guardarPuntaje("t10", notaFinal)
 
-        // ✅ Umbral 95% (igual que CortexManager)
         if (intentoActual == 1 && notaFinal < 95) {
-            mostrarDialogoReintento(notaFinal, aciertos)
+            mostrarResultadoFinal(notaFinal, aciertos)
         } else {
             val titulo = if (notaFinal >= 95) "¡EXCELENTE! 😎✅" else "DECISIÓN"
             val resultado = if (notaFinal >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
@@ -95,7 +95,7 @@ class DecisionTestActivity : TestBaseActivity() {
                 .setTitle(titulo)
                 .setMessage("$resultado\n\nAciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $notaFinal%\nPenalización ausencia: -$penalizacionPorAusencia pts")
                 .setCancelable(false)
-                .setPositiveButton("➡️ VER REPORTE") { _, _ ->
+                .setPositiveButton("➡️ SIGUIENTE") { _, _ ->
                     CortexManager.navegarAlSiguiente(this)
                     finish()
                 }
@@ -105,16 +105,13 @@ class DecisionTestActivity : TestBaseActivity() {
 
     private fun reiniciarTest() {
         testFinalizado = false
-        fueInterrumpido = false
         rondaActual = 0
-        puntosAcumulados = 0
-        aciertos = 0 // Reset aciertos as well
-
-        sessionParams = TestSessionParams.generarDecisionParams()
-        TestSessionParams.registrarParametros("t10", sessionParams)
+        aciertos = 0
+        penalizacionPorAusencia = 0
+        intentoActual = CortexManager.obtenerIntentoActual("t10")
         
         Handler(Looper.getMainLooper()).postDelayed({
-            if (!testFinalizado) siguienteRonda() // Changed iniciarRonda to siguienteRonda
+            if (!testFinalizado) siguienteRonda()
         }, 500)
     }
     

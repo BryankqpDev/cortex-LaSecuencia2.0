@@ -136,15 +136,13 @@ class AtencionTestActivity : TestBaseActivity() {
 
     private fun reiniciarTest() {
         testFinalizado = false
-        fueInterrumpido = false
         rondaActual = 0
-        puntosAcumulados = 0
-        
-        sessionParams = TestSessionParams.generarAtencionParams()
-        TestSessionParams.registrarParametros("t5", sessionParams)
+        aciertos = 0
+        penalizacionPorAusencia = 0
+        intentoActual = CortexManager.obtenerIntentoActual("t5")
         
         Handler(Looper.getMainLooper()).postDelayed({
-            if (!testFinalizado) iniciarRonda()
+            if (!testFinalizado) generarEstimuloStroop()
         }, 500)
     }
     

@@ -14,20 +14,6 @@ import com.example.Cortex_LaSecuencia.logic.AdaptiveScoring
 import com.example.Cortex_LaSecuencia.utils.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 
-/**
- * ════════════════════════════════════════════════════════════════════════════
- * TEST DE REFLEJOS (t1) - VERSIÓN RANDOMIZADA
- * ════════════════════════════════════════════════════════════════════════════
- *
- * Cambios implementados:
- *  ✅ Delay aleatorio por ejecución (evita memorización)
- *  ✅ Umbrales de puntaje adaptativos (equidad según dificultad)
- *  ✅ Registro de parámetros para auditoría
- *  ✅ Mensajes mejorados con feedback del 95%
- *  ✅ Fix cámara oscura: TestBaseActivity ya tiene delay de 300ms para reintentos
- *
- * ════════════════════════════════════════════════════════════════════════════
- */
 class ReflejosTestActivity : TestBaseActivity() {
 
     private lateinit var btnReflejo: CardView
@@ -40,10 +26,8 @@ class ReflejosTestActivity : TestBaseActivity() {
     private var esperaRunnable: Runnable? = null
     private var botonActivo = false
     private var testEnProgreso = true
+    private var intentoActual = 1
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // ✅ PARÁMETROS ALEATORIOS DE ESTA SESIÓN
-    // ═══════════════════════════════════════════════════════════════════════
     private lateinit var sessionParams: TestSessionParams.ReflejosParams
 
     override fun obtenerTestId(): String = "t1"
@@ -57,12 +41,9 @@ class ReflejosTestActivity : TestBaseActivity() {
         txtIntento = findViewById(R.id.txt_intento)
         txtFeedback = findViewById(R.id.txt_feedback)
 
-        val intentoActual = CortexManager.obtenerIntentoActual("t1")
+        intentoActual = CortexManager.obtenerIntentoActual("t1")
         txtIntento.text = "INTENTO $intentoActual/2"
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ GENERAR PARÁMETROS ÚNICOS PARA ESTA EJECUCIÓN
-        // ═══════════════════════════════════════════════════════════════════
         sessionParams = TestSessionParams.generarReflejosParams()
         TestSessionParams.registrarParametros("t1", sessionParams)
 
@@ -70,7 +51,6 @@ class ReflejosTestActivity : TestBaseActivity() {
 
         handler.postDelayed({ if (!isFinishing && !testFinalizado) iniciarTest() }, 1000)
 
-        // Conectar con SENTINEL de la base
         val viewFinder = findViewById<androidx.camera.view.PreviewView>(R.id.viewFinder)
         configurarSentinel(viewFinder, txtFeedback)
     }
@@ -84,9 +64,6 @@ class ReflejosTestActivity : TestBaseActivity() {
         txtEstado.setTextColor(Color.WHITE)
         txtFeedback.visibility = TextView.GONE
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ USAR DELAY ALEATORIO GENERADO
-        // ═══════════════════════════════════════════════════════════════════
         val tiempoEspera = TestSessionParams.randomInRange(
             sessionParams.delayMinMs,
             sessionParams.delayMaxMs
@@ -117,10 +94,6 @@ class ReflejosTestActivity : TestBaseActivity() {
 
         if (botonActivo) {
             tiempoReaccion = System.currentTimeMillis() - tiempoInicio
-
-            // ═══════════════════════════════════════════════════════════════
-            // ✅ USAR SCORING ADAPTATIVO
-            // ═══════════════════════════════════════════════════════════════
             puntaje = AdaptiveScoring.calcularPuntajeReflejos(tiempoReaccion, sessionParams)
             errorAnticipacion = false
         } else {
@@ -132,27 +105,24 @@ class ReflejosTestActivity : TestBaseActivity() {
         val details = mapOf(
             "tiempo_reaccion_ms" to tiempoReaccion,
             "error_anticipacion" to errorAnticipacion,
-            "delay_usado_ms" to sessionParams.delayMinMs,
-            "umbral_elite_usado" to sessionParams.umbralEliteMs,
-            "umbral_penalizacion_usado" to sessionParams.umbralPenalizacionMs
+            "penaliz_ausencia" to penalizacionPorAusencia
         )
-        CortexManager.logPerformanceMetric("t1", puntaje, details)
-        CortexManager.guardarPuntaje("t1", puntaje)
+        
+        val scoreFinal = (puntaje - penalizacionPorAusencia).coerceIn(0, 100)
+        CortexManager.logPerformanceMetric("t1", scoreFinal, details)
+        CortexManager.guardarPuntaje("t1", scoreFinal)
 
-        // ✅ Umbral 95% (igual que CortexManager)
-        if (eraPrimerIntento && puntaje < 95) {
-            testFinalizado = true
-            mostrarResultadoConReintento(puntaje, tiempoReaccion, errorAnticipacion)
+        testFinalizado = true
+        if (eraPrimerIntento && scoreFinal < 95) {
+            mostrarResultadoConReintento(scoreFinal, tiempoReaccion, errorAnticipacion)
         } else {
-            testFinalizado = true
-            mostrarResultado(puntaje, tiempoReaccion, errorAnticipacion)
+            mostrarResultado(scoreFinal, tiempoReaccion, errorAnticipacion)
         }
     }
 
     private fun mostrarResultadoConReintento(puntaje: Int, tiempoMs: Long, errorAnticipacion: Boolean) {
         val mensaje = when {
-            errorAnticipacion -> "PRESIONASTE ANTES DE TIEMPO!\n\nDebes esperar a que el círculo se ponga VERDE.\n\nNota: 0%\n\nNecesitas 95% para saltarte el segundo intento."
-            tiempoMs < sessionParams.umbralEliteMs -> "INTENTO REGISTRADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento."
+            errorAnticipacion -> "PRESIONASTE ANTES DE TIEMPO!\n\nNota: 0%\n\nNecesitas 95% para saltarte el segundo intento."
             else -> "INTENTO REGISTRADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento."
         }
 
@@ -161,20 +131,20 @@ class ReflejosTestActivity : TestBaseActivity() {
             .setMessage(mensaje)
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
-                // ✅ El onPause() automático liberará la cámara
-                // ✅ El onCreate() del reintento esperará 300ms (ya implementado en TestBaseActivity)
-                startActivity(Intent(this, ReflejosTestActivity::class.java))
-                finish()
+                reiniciarTest()
             }
             .show()
     }
     
     private fun reiniciarTest() {
         testFinalizado = false
-        fueInterrumpido = false
         testEnProgreso = false
         botonActivo = false
         tiempoInicio = 0L
+        penalizacionPorAusencia = 0
+        
+        intentoActual = CortexManager.obtenerIntentoActual("t1")
+        txtIntento.text = "INTENTO $intentoActual/2"
         
         sessionParams = TestSessionParams.generarReflejosParams()
         TestSessionParams.registrarParametros("t1", sessionParams)
@@ -185,10 +155,8 @@ class ReflejosTestActivity : TestBaseActivity() {
     private fun mostrarResultado(puntaje: Int, tiempoMs: Long, errorAnticipacion: Boolean) {
         val titulo = if (puntaje >= 95) "¡EXCELENTE! 😎✅" else "REFLEJOS"
         val mensaje = when {
-            errorAnticipacion -> "PRESIONASTE ANTES DE TIEMPO!\n\nDebes esperar a que el círculo se ponga VERDE.\n\nNota: 0%"
-            puntaje >= 95 -> "¡EXCELENTE!\n\nTiempo: ${tiempoMs}ms\nReflejos de élite.\n\nNota: $puntaje%"
-            tiempoMs < 400 -> "MÓDULO FINALIZADO\n\nTiempo: ${tiempoMs}ms\nBuen reflejo.\n\nNota: $puntaje%"
-            else -> "MÓDULO FINALIZADO\n\nTiempo: ${tiempoMs}ms\nPosible fatiga detectada.\n\nNota: $puntaje%"
+            errorAnticipacion -> "PRESIONASTE ANTES DE TIEMPO!\n\nNota: 0%"
+            else -> "MÓDULO FINALIZADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts"
         }
 
         AlertDialog.Builder(this)
@@ -202,7 +170,6 @@ class ReflejosTestActivity : TestBaseActivity() {
             .show()
     }
 
-    // Lógica de pausa/reanudación por SENTINEL
     override fun onTestPaused() {
         esperaRunnable?.let { handler.removeCallbacks(it) }
         testEnProgreso = false

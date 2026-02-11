@@ -15,17 +15,6 @@ import com.example.Cortex_LaSecuencia.utils.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import java.util.Random
 
-/**
- * ════════════════════════════════════════════════════════════════════════════
- * TEST DE CONTROL DE IMPULSO (t7) - VERSIÓN RANDOMIZADA
- * ════════════════════════════════════════════════════════════════════════════
- *
- * Cambios implementados:
- * ✅ Duración del estímulo variable (evita memorización)
- * ✅ Delay entre rondas aleatorio
- *
- * ════════════════════════════════════════════════════════════════════════════
- */
 class ImpulsoTestActivity : TestBaseActivity() {
 
     private lateinit var cardEstimulo: CardView
@@ -46,12 +35,10 @@ class ImpulsoTestActivity : TestBaseActivity() {
     private var esperandoRespuesta = false
     private var respondioEnEstaRonda = false
     private var tiempoInicioEstimulo: Long = 0
+    private var intentoActual = 1
 
     private var runnableRonda: Runnable? = null
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // ✅ PARÁMETROS ALEATORIOS DE ESTA SESIÓN
-    // ═══════════════════════════════════════════════════════════════════════
     private lateinit var sessionParams: TestSessionParams.ImpulsoParams
 
     override fun obtenerTestId(): String = "t7"
@@ -65,9 +52,8 @@ class ImpulsoTestActivity : TestBaseActivity() {
         txtFeedback = findViewById(R.id.txt_feedback)
         layoutRoot = findViewById(R.id.layout_root)
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ GENERAR PARÁMETROS ÚNICOS PARA ESTA EJECUCIÓN
-        // ═══════════════════════════════════════════════════════════════════
+        intentoActual = CortexManager.obtenerIntentoActual("t7")
+
         sessionParams = TestSessionParams.generarImpulsoParams()
         TestSessionParams.registrarParametros("t7", sessionParams)
 
@@ -109,11 +95,6 @@ class ImpulsoTestActivity : TestBaseActivity() {
         tiempoInicioEstimulo = System.currentTimeMillis()
         txtFeedback.text = "..."
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ USAR DURACIÓN DE ESTÍMULO ALEATORIA
-        // ═══════════════════════════════════════════════════════════════════
-        // Antes: 900ms fijo (memorizable)
-        // Ahora: Variable por sesión
         runnableRonda = Runnable { if (!testFinalizado && !estaEnPausaPorAusencia) evaluarFinDeRonda() }
         handler.postDelayed(runnableRonda!!, sessionParams.duracionEstimuloMs)
     }
@@ -145,9 +126,6 @@ class ImpulsoTestActivity : TestBaseActivity() {
         txtIcono.text = ""
         esperandoRespuesta = false
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ USAR DELAY ENTRE RONDAS ALEATORIO
-        // ═══════════════════════════════════════════════════════════════════
         programarSiguiente(sessionParams.delayEntreRondasMs)
     }
 
@@ -156,25 +134,20 @@ class ImpulsoTestActivity : TestBaseActivity() {
         testFinalizado = true
         handler.removeCallbacksAndMessages(null)
 
-        val penalizacionTotal = (erroresImpulso * 20) + (erroresOmision * 10) + penalizacionPorAusencia
-        val notaFinal = (100 - penalizacionTotal).coerceIn(0, 100)
-
-        CortexManager.guardarPuntaje("t7", notaFinal)
+        val penalizacionTotal = (erroresImpulso * 20) + (erroresOmision * 10)
+        val notaBase = (100 - penalizacionTotal).coerceIn(0, 100)
+        val notaFinal = (notaBase - penalizacionPorAusencia).coerceIn(0, 100)
 
         val details = mapOf(
-            "tiempos_reaccion_ms" to tiemposDeReaccionGo,
             "errores_impulso" to erroresImpulso,
             "errores_omision" to erroresOmision,
-            "penaliz_ausencia" to penalizacionPorAusencia,
-            "duracion_estimulo_config" to sessionParams.duracionEstimuloMs,
-            "delay_entre_rondas_config" to sessionParams.delayEntreRondasMs
+            "penaliz_ausencia" to penalizacionPorAusencia
         )
         CortexManager.logPerformanceMetric("t7", notaFinal, details)
         CortexManager.guardarPuntaje("t7", notaFinal)
 
-        // ✅ Umbral 95% (igual que CortexManager)
-        if (CortexManager.obtenerIntentoActual("t7") == 1 && notaFinal < 95) {
-            mostrarDialogoReintento(notaFinal)
+        if (intentoActual == 1 && notaFinal < 95) {
+            mostrarResultadoFinal(notaFinal, "Necesitas 95% para saltarte el segundo intento.")
         } else {
             val titulo = if (notaFinal >= 95) "¡EXCELENTE! 😎✅" else "IMPULSO"
             val resultado = if (notaFinal >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
@@ -193,17 +166,18 @@ class ImpulsoTestActivity : TestBaseActivity() {
 
     private fun reiniciarTest() {
         testFinalizado = false
-        estaEnPausaPorAusencia = false // Changed from fueInterrumpido
         rondaActual = 0
-        erroresImpulso = 0 // Resetting relevant test state
-        erroresOmision = 0 // Resetting relevant test state
-        tiemposDeReaccionGo.clear() // Resetting relevant test state
+        erroresImpulso = 0
+        erroresOmision = 0
+        tiemposDeReaccionGo.clear()
+        penalizacionPorAusencia = 0
+        intentoActual = CortexManager.obtenerIntentoActual("t7")
         
         sessionParams = TestSessionParams.generarImpulsoParams()
         TestSessionParams.registrarParametros("t7", sessionParams)
         
         Handler(Looper.getMainLooper()).postDelayed({
-            if (!testFinalizado) programarSiguiente(0) // Changed from iniciarRonda()
+            if (!testFinalizado) programarSiguiente(0)
         }, 500)
     }
     
@@ -224,8 +198,10 @@ class ImpulsoTestActivity : TestBaseActivity() {
     }
 
     override fun onTestResumed() {
-        txtFeedback.text = "REANUDANDO..."
-        programarSiguiente(1000)
+        if (!testFinalizado) {
+            txtFeedback.text = "REANUDANDO..."
+            programarSiguiente(1000)
+        }
     }
 
     override fun onDestroy() {

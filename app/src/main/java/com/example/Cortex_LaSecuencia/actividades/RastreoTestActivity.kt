@@ -16,18 +16,6 @@ import com.example.Cortex_LaSecuencia.utils.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import kotlin.random.Random
 
-/**
- * ════════════════════════════════════════════════════════════════════════════
- * TEST DE RASTREO VISUAL (t8) - VERSIÓN RANDOMIZADA
- * ════════════════════════════════════════════════════════════════════════════
- *
- * Cambios implementados:
- * ✅ Velocidad de bolas variable (evita memorización de trayectorias)
- * ✅ Duración de animación variable (número de pasos aleatorio)
- * ✅ Cada ejecución es única
- *
- * ════════════════════════════════════════════════════════════════════════════
- */
 class RastreoTestActivity : TestBaseActivity() {
 
     private lateinit var areaRastreo: FrameLayout
@@ -43,12 +31,10 @@ class RastreoTestActivity : TestBaseActivity() {
     private var animacionActiva = false
     private var faseSeleccionHabilitada = false
     private var pasosRealizados = 0
-    private var maxPasos = 300 // Ahora será variable
+    private var maxPasos = 300
     private var tiempoInicioSeleccion: Long = 0
+    private var intentoActual = 1
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // ✅ PARÁMETROS ALEATORIOS DE ESTA SESIÓN
-    // ═══════════════════════════════════════════════════════════════════════
     private lateinit var sessionParams: TestSessionParams.RastreoParams
 
     override fun obtenerTestId(): String = "t8"
@@ -62,12 +48,9 @@ class RastreoTestActivity : TestBaseActivity() {
         btnConfirmar = findViewById(R.id.btn_confirmar)
         txtIntento = findViewById(R.id.txt_intento)
 
-        val intentoActual = CortexManager.obtenerIntentoActual("t8")
+        intentoActual = CortexManager.obtenerIntentoActual("t8")
         txtIntento.text = "INTENTO $intentoActual/2"
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ GENERAR PARÁMETROS ÚNICOS PARA ESTA EJECUCIÓN
-        // ═══════════════════════════════════════════════════════════════════
         sessionParams = TestSessionParams.generarRastreoParams()
         maxPasos = sessionParams.duracionAnimacionPasos
         TestSessionParams.registrarParametros("t8", sessionParams)
@@ -88,7 +71,7 @@ class RastreoTestActivity : TestBaseActivity() {
         testFinalizado = false
         animacionActiva = false
         faseSeleccionHabilitada = false
-        txtMensaje.text = getString(R.string.t8_memorize_instruction)
+        txtMensaje.text = "MEMORIZA LAS BOLAS AZULES"
         btnConfirmar.visibility = View.GONE
         indicesSeleccionados.clear()
         indicesObjetivo.clear()
@@ -112,12 +95,6 @@ class RastreoTestActivity : TestBaseActivity() {
                 bola.posX = 0.15f + Random.nextFloat() * 0.7f
                 bola.posY = 0.15f + Random.nextFloat() * 0.7f
 
-                // ═══════════════════════════════════════════════════════════
-                // ✅ USAR VELOCIDAD ALEATORIA POR BOLA
-                // ═══════════════════════════════════════════════════════════
-                // Antes: velocidad = 0.015f + Random.nextFloat() * 0.015f
-                //        → Rango limitado: 0.015-0.030
-                // Ahora: Rango amplio y único por sesión
                 val velocidad = TestSessionParams.randomFloatInRange(
                     sessionParams.velocidadMinBolas,
                     sessionParams.velocidadMaxBolas
@@ -173,9 +150,6 @@ class RastreoTestActivity : TestBaseActivity() {
 
             pasosRealizados++
 
-            // ═══════════════════════════════════════════════════════════════
-            // ✅ USAR DURACIÓN VARIABLE (maxPasos ahora es aleatorio)
-            // ═══════════════════════════════════════════════════════════════
             if (pasosRealizados >= maxPasos) {
                 animacionActiva = false
                 handler.post { habilitarSeleccion() }
@@ -188,7 +162,7 @@ class RastreoTestActivity : TestBaseActivity() {
     private fun iniciarAnimacion() {
         if (testFinalizado) return
         bolas.forEach { it.cambiarColor(Color.WHITE) }
-        txtMensaje.text = getString(R.string.t8_tracking)
+        txtMensaje.text = "RASTREANDO..."
         animacionActiva = true
         handler.post(animacionRunnable)
     }
@@ -198,7 +172,7 @@ class RastreoTestActivity : TestBaseActivity() {
         faseSeleccionHabilitada = true
         tiempoInicioSeleccion = System.currentTimeMillis()
         btnConfirmar.visibility = View.GONE
-        txtMensaje.text = getString(R.string.t8_touch_targets)
+        txtMensaje.text = "TOCA LAS BOLAS QUE ERAN AZULES"
 
         bolas.forEachIndexed { indice, bola ->
             bola.setOnClickListener {
@@ -207,7 +181,7 @@ class RastreoTestActivity : TestBaseActivity() {
 
                 indicesSeleccionados.add(indice)
                 bola.cambiarColor(Color.parseColor("#F59E0B"))
-                btnConfirmar.text = getString(R.string.btn_confirm_tracking, indicesSeleccionados.size)
+                btnConfirmar.text = "CONFIRMAR (${indicesSeleccionados.size})"
                 if (indicesSeleccionados.size == 2) btnConfirmar.visibility = View.VISIBLE
             }
         }
@@ -222,35 +196,32 @@ class RastreoTestActivity : TestBaseActivity() {
         val tiempoDecision = System.currentTimeMillis() - tiempoInicioSeleccion
         indicesObjetivo.forEach { bolas[it].cambiarColor(Color.parseColor("#10B981")) }
 
-        var aciertos = 0
+        var aciertosCount = 0
         indicesSeleccionados.forEach {
-            if (indicesObjetivo.contains(it)) aciertos++
+            if (indicesObjetivo.contains(it)) aciertosCount++
             else bolas[it].cambiarColor(Color.parseColor("#EF4444"))
         }
 
-        val puntajeBase = when (aciertos) { 2 -> 100; 1 -> 50; else -> 0 }
+        val puntajeBase = when (aciertosCount) { 2 -> 100; 1 -> 50; else -> 0 }
         val puntajeFinal = (puntajeBase - penalizacionPorAusencia).coerceIn(0, 100)
 
         val details = mapOf(
-            "aciertos" to aciertos,
+            "aciertos" to aciertosCount,
             "tiempo_ms" to tiempoDecision,
-            "velocidad_min_config" to sessionParams.velocidadMinBolas,
-            "velocidad_max_config" to sessionParams.velocidadMaxBolas,
-            "duracion_pasos" to maxPasos
+            "penaliz_ausencia" to penalizacionPorAusencia
         )
         CortexManager.logPerformanceMetric("t8", puntajeFinal, details)
+        CortexManager.guardarPuntaje("t8", puntajeFinal)
 
-        val intentoActual = CortexManager.obtenerIntentoActual("t8")
-    // ✅ Umbral 95% (igual que CortexManager)
-        if (intentoActual == 1 && puntaje < 95) {
-            mostrarDialogoReintento(puntaje)
+        if (intentoActual == 1 && puntajeFinal < 95) {
+            mostrarDialogoReintento(puntajeFinal)
         } else {
-            val titulo = if (puntaje >= 95) "¡EXCELENTE! 😎✅" else "RASTREO"
-            val resultado = if (puntaje >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
+            val titulo = if (puntajeFinal >= 95) "¡EXCELENTE! 😎✅" else "RASTREO"
+            val resultado = if (puntajeFinal >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
             
             AlertDialog.Builder(this)
                 .setTitle(titulo)
-                .setMessage("$resultado\n\n$mensajeCompleto")
+                .setMessage("$resultado\n\nAciertos: $aciertosCount/2\nNota Final: $puntajeFinal%\nPenalización ausencia: -$penalizacionPorAusencia pts")
                 .setCancelable(false)
                 .setPositiveButton("➡️ CONTINUAR") { _, _ ->
                     CortexManager.navegarAlSiguiente(this)
@@ -264,7 +235,8 @@ class RastreoTestActivity : TestBaseActivity() {
         testFinalizado = false
         animacionActiva = false
         faseSeleccionHabilitada = false
-        txtMensaje.text = getString(R.string.t8_memorize_instruction)
+        penalizacionPorAusencia = 0
+        txtMensaje.text = "MEMORIZA LAS BOLAS AZULES"
         btnConfirmar.visibility = View.GONE
         indicesSeleccionados.clear()
         indicesObjetivo.clear()
@@ -272,6 +244,9 @@ class RastreoTestActivity : TestBaseActivity() {
         areaRastreo.removeAllViews()
         pasosRealizados = 0
 
+        intentoActual = CortexManager.obtenerIntentoActual("t8")
+        txtIntento.text = "INTENTO $intentoActual/2"
+        
         sessionParams = TestSessionParams.generarRastreoParams()
         maxPasos = sessionParams.duracionAnimacionPasos
         TestSessionParams.registrarParametros("t8", sessionParams)
@@ -293,17 +268,17 @@ class RastreoTestActivity : TestBaseActivity() {
     }
 
     override fun onTestPaused() {
-        txtMensaje.text = getString(R.string.t8_pause)
+        txtMensaje.text = "PAUSA POR AUSENCIA"
         handler.removeCallbacksAndMessages(null)
     }
 
     override fun onTestResumed() {
         if (!testFinalizado) {
             if (animacionActiva) {
-                txtMensaje.text = getString(R.string.t8_tracking)
+                txtMensaje.text = "RASTREANDO..."
                 handler.post(animacionRunnable)
             } else if (faseSeleccionHabilitada) {
-                txtMensaje.text = getString(R.string.t8_touch_targets)
+                txtMensaje.text = "TOCA LAS BOLAS"
             } else if (pasosRealizados == 0) {
                 handler.postDelayed({ if (!testFinalizado && !estaEnPausaPorAusencia) iniciarAnimacion() }, 500)
             }

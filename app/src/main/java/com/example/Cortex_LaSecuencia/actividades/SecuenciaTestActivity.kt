@@ -14,18 +14,6 @@ import com.example.Cortex_LaSecuencia.utils.TestSessionParams
 import com.example.Cortex_LaSecuencia.utils.TestBaseActivity
 import kotlin.random.Random
 
-/**
- * ════════════════════════════════════════════════════════════════════════════
- * TEST DE SECUENCIA (t2) - VERSIÓN RANDOMIZADA
- * ════════════════════════════════════════════════════════════════════════════
- *
- * Cambios implementados:
- * ✅ Tiempo entre pasos variable (evita memorización del ritmo)
- * ✅ Delay antes de habilitar respuesta aleatorio
- * ✅ Cada ejecución tiene timing único
- *
- * ════════════════════════════════════════════════════════════════════════════
- */
 class SecuenciaTestActivity : TestBaseActivity() {
 
     private lateinit var botones: List<View>
@@ -35,10 +23,8 @@ class SecuenciaTestActivity : TestBaseActivity() {
     private val secuenciaUsuario = mutableListOf<Int>()
     private val LONGITUD_SECUENCIA = 6
     private var esTurnoDelUsuario = false
+    private var intentoActual = 1
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // ✅ PARÁMETROS ALEATORIOS DE ESTA SESIÓN
-    // ═══════════════════════════════════════════════════════════════════════
     private lateinit var sessionParams: TestSessionParams.SecuenciaParams
 
     override fun obtenerTestId(): String = "t2"
@@ -54,9 +40,8 @@ class SecuenciaTestActivity : TestBaseActivity() {
             findViewById(R.id.btn_7), findViewById(R.id.btn_8), findViewById(R.id.btn_9)
         )
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ GENERAR PARÁMETROS ÚNICOS PARA ESTA EJECUCIÓN
-        // ═══════════════════════════════════════════════════════════════════
+        intentoActual = CortexManager.obtenerIntentoActual("t2")
+
         sessionParams = TestSessionParams.generarSecuenciaParams()
         TestSessionParams.registrarParametros("t2", sessionParams)
 
@@ -71,7 +56,7 @@ class SecuenciaTestActivity : TestBaseActivity() {
     private fun configurarClicks() {
         botones.forEachIndexed { index, view ->
             view.setOnClickListener {
-                if (esTurnoDelUsuario && !testFinalizado) {
+                if (esTurnoDelUsuario && !testFinalizado && !estaEnPausaPorAusencia) {
                     iluminarBoton(index, true)
                     secuenciaUsuario.add(index)
                     verificarEntrada()
@@ -87,12 +72,11 @@ class SecuenciaTestActivity : TestBaseActivity() {
         secuenciaUsuario.clear()
         secuenciaGenerada.clear()
 
-        // Generar 6 pasos aleatorios de una vez
         for (i in 0 until LONGITUD_SECUENCIA) {
             secuenciaGenerada.add(Random.nextInt(0, 9))
         }
 
-        txtInstruccion.text = getString(R.string.t2_instruction_memorize)
+        txtInstruccion.text = "MEMORIZA LA SECUENCIA"
         txtInstruccion.setTextColor(Color.CYAN)
 
         mostrarSecuenciaCompleta()
@@ -100,27 +84,17 @@ class SecuenciaTestActivity : TestBaseActivity() {
 
     private fun mostrarSecuenciaCompleta() {
         val handler = Handler(Looper.getMainLooper())
-
-        // ═══════════════════════════════════════════════════════════════════
-        // ✅ USAR TIEMPO ENTRE PASOS ALEATORIO
-        // ═══════════════════════════════════════════════════════════════════
-        // Antes: val tiempoPaso = 800L (fijo, memorizable)
-        // Ahora: Timing único por sesión
         val tiempoPaso = sessionParams.tiempoPorPasoMs
 
         secuenciaGenerada.forEachIndexed { i, botonIndex ->
             handler.postDelayed({
                 if (!testFinalizado && !isFinishing) iluminarBoton(botonIndex, false)
 
-                // Al llegar al último paso, dar el turno al usuario
                 if (i == secuenciaGenerada.size - 1) {
-                    // ═══════════════════════════════════════════════════════
-                    // ✅ DELAY ADICIONAL ANTES DE HABILITAR RESPUESTA
-                    // ═══════════════════════════════════════════════════════
                     handler.postDelayed({
                         if (!testFinalizado && !isFinishing) {
                             esTurnoDelUsuario = true
-                            txtInstruccion.text = getString(R.string.t2_instruction_replicate)
+                            txtInstruccion.text = "REPITE LA SECUENCIA"
                             txtInstruccion.setTextColor(Color.WHITE)
                         }
                     }, sessionParams.tiempoPreRespuestaMs)
@@ -142,13 +116,11 @@ class SecuenciaTestActivity : TestBaseActivity() {
     private fun verificarEntrada() {
         val indexActual = secuenciaUsuario.size - 1
 
-        // Si se equivoca en cualquier paso
         if (secuenciaUsuario[indexActual] != secuenciaGenerada[indexActual]) {
             gestionarFallo()
             return
         }
 
-        // Si completa los 6 pasos correctamente
         if (secuenciaUsuario.size == LONGITUD_SECUENCIA) {
             finalizarConExito()
         }
@@ -158,13 +130,10 @@ class SecuenciaTestActivity : TestBaseActivity() {
         testFinalizado = true
         esTurnoDelUsuario = false
 
-        // holi
-        // El puntaje es proporcional a cuántos pasos acertó antes de fallar
         val aciertos = (secuenciaUsuario.size - 1).coerceAtLeast(0)
         val puntajeBase = (aciertos.toFloat() / LONGITUD_SECUENCIA * 100).toInt()
         val puntajeFinal = (puntajeBase - penalizacionPorAusencia).coerceAtLeast(0)
 
-        val intentoActual = CortexManager.obtenerIntentoActual("t2")
         CortexManager.guardarPuntaje("t2", puntajeFinal)
 
         if (intentoActual == 1 && puntajeFinal < 95) {
@@ -187,28 +156,25 @@ class SecuenciaTestActivity : TestBaseActivity() {
     private fun mostrarDialogoReintento(puntaje: Int) {
         AlertDialog.Builder(this)
             .setTitle("MEMORIA")
-            .setMessage("INTENTO REGISTRADO\n\nHas completado parcialmente la secuencia.\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.")
+            .setMessage("INTENTO REGISTRADO\n\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.")
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
-                // ✅ SOLUCIÓN: Reiniciar test en la misma actividad sin destruir la cámara
                 reiniciarTest()
             }
             .show()
     }
     
     private fun reiniciarTest() {
-        // Resetear variables del test
         testFinalizado = false
-        fueInterrumpido = false
         secuenciaGenerada.clear()
         secuenciaUsuario.clear()
         esTurnoDelUsuario = false
+        penalizacionPorAusencia = 0
+        intentoActual = CortexManager.obtenerIntentoActual("t2")
         
-        // Generar nuevos parámetros para el segundo intento
         sessionParams = TestSessionParams.generarSecuenciaParams()
         TestSessionParams.registrarParametros("t2", sessionParams)
         
-        // Reiniciar el test
         Handler(Looper.getMainLooper()).postDelayed({ 
             if (!testFinalizado) prepararSecuenciaUnica() 
         }, 500)
@@ -221,7 +187,7 @@ class SecuenciaTestActivity : TestBaseActivity() {
         
         AlertDialog.Builder(this)
             .setTitle(titulo)
-            .setMessage("$resultado\n\n$mensaje\nNota Final: $puntaje%")
+            .setMessage("$resultado\n\n$mensaje\nNota Final: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts")
             .setCancelable(false)
             .setPositiveButton("➡️ SIGUIENTE") { _, _ ->
                 CortexManager.navegarAlSiguiente(this)
@@ -232,13 +198,13 @@ class SecuenciaTestActivity : TestBaseActivity() {
 
     override fun onTestPaused() {
         esTurnoDelUsuario = false
-        txtInstruccion.text = getString(R.string.t2_instruction_pause)
+        txtInstruccion.text = "PAUSA POR AUSENCIA"
     }
 
     override fun onTestResumed() {
         if (!testFinalizado) {
             esTurnoDelUsuario = true
-            txtInstruccion.text = getString(R.string.t2_instruction_continue)
+            txtInstruccion.text = "CONTINUAR"
         }
     }
 }
