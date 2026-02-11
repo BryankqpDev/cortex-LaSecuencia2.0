@@ -162,10 +162,22 @@ class ReflejosTestActivity : TestBaseActivity() {
             .setMessage(mensaje)
             .setCancelable(false)
             .setPositiveButton("INTENTO 2 →") { _, _ ->
-                startActivity(Intent(this, ReflejosTestActivity::class.java))
-                finish()
+                reiniciarTest()
             }
             .show()
+    }
+    
+    private fun reiniciarTest() {
+        testFinalizado = false
+        fueInterrumpido = false
+        testEnProgreso = false
+        botonActivo = false
+        tiempoInicio = 0L
+        
+        sessionParams = TestSessionParams.generarReflejosParams()
+        TestSessionParams.registrarParametros("t1", sessionParams)
+        
+        handler.postDelayed({ if (!isFinishing && !testFinalizado) iniciarTest() }, 500)
     }
 
     private fun mostrarResultado(puntaje: Int, tiempoMs: Long, errorAnticipacion: Boolean) {

@@ -124,8 +124,7 @@ class AtencionTestActivity : TestBaseActivity() {
             .setCancelable(false)
             .setPositiveButton(if (esReintento) "INTENTO 2 →" else "➡️ SIGUIENTE") { _, _ ->
                 if (esReintento) {
-                    startActivity(Intent(this, AtencionTestActivity::class.java))
-                    finish()
+                    reiniciarTest()
                 }
                 else {
                     CortexManager.navegarAlSiguiente(this)
@@ -135,6 +134,20 @@ class AtencionTestActivity : TestBaseActivity() {
             .show()
     }
 
+    private fun reiniciarTest() {
+        testFinalizado = false
+        fueInterrumpido = false
+        rondaActual = 0
+        puntosAcumulados = 0
+        
+        sessionParams = TestSessionParams.generarAtencionParams()
+        TestSessionParams.registrarParametros("t5", sessionParams)
+        
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!testFinalizado) iniciarRonda()
+        }, 500)
+    }
+    
     override fun onTestPaused() {
         txtPalabra.text = "PAUSA"
         txtPalabra.setTextColor(Color.GRAY)

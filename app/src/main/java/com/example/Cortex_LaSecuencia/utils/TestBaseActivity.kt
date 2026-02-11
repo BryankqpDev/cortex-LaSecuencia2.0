@@ -29,7 +29,7 @@ abstract class TestBaseActivity : AppCompatActivity() {
     
     protected var testId: String = ""
     protected var testFinalizado = false
-    private var fueInterrumpido = false
+    protected var fueInterrumpido = false
 
     private var cameraProvider: ProcessCameraProvider? = null
     private var imageAnalyzer: ImageAnalysis? = null
@@ -69,6 +69,10 @@ abstract class TestBaseActivity : AppCompatActivity() {
         cameraProviderFuture.addListener({
             try {
                 if (isFinishing || isDestroyed) return@addListener
+                
+                // ✅ CRÍTICO: Limpiar cualquier binding anterior antes de configurar
+                cameraProvider?.unbindAll()
+                
                 cameraProvider = cameraProviderFuture.get()
                 preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
                 imageAnalyzer = ImageAnalysis.Builder()
@@ -80,9 +84,13 @@ abstract class TestBaseActivity : AppCompatActivity() {
                             else imageProxy.close()
                         }
                     }
+                
+                // ✅ Asegurar que todo está limpio antes de vincular
                 cameraProvider?.unbindAll()
                 cameraProvider?.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, preview, imageAnalyzer)
-            } catch (e: Exception) { }
+            } catch (e: Exception) { 
+                e.printStackTrace()
+            }
         }, ContextCompat.getMainExecutor(this))
     }
 
@@ -216,9 +224,17 @@ abstract class TestBaseActivity : AppCompatActivity() {
         super.onDestroy()
         testFinalizado = true
         handlerAusencia.removeCallbacksAndMessages(null)
-        // ✅ Limpiar correctamente la cámara solo al destruir
-        imageAnalyzer?.clearAnalyzer()
-        cameraProvider?.unbindAll()
+        
+        // ✅ Limpiar completamente todos los recursos de la cámara
+        try {
+            imageAnalyzer?.clearAnalyzer()
+            imageAnalyzer = null
+            preview = null
+            cameraProvider?.unbindAll()
+            cameraProvider = null
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     abstract fun obtenerTestId(): String

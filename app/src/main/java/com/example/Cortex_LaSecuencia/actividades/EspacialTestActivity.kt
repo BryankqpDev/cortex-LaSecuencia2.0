@@ -105,7 +105,21 @@ class EspacialTestActivity : TestBaseActivity() {
         }
     }
 
-    private fun verificarRespuesta(direccionUsuario: Int) {
+    private fun reiniciarTest() {
+        testFinalizado = false
+        fueInterrumpido = false
+        rondaActual = 0
+        aciertos = 0 // Changed from puntosAcumulados to aciertos
+        
+        sessionParams = TestSessionParams.generarEspacialParams()
+        TestSessionParams.registrarParametros("t9", sessionParams)
+        
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!testFinalizado) siguienteRonda() // Changed from iniciarRonda to siguienteRonda
+        }, 500)
+    }
+    
+    private fun verificarRespuesta(direccionUsuario: Int) { // Renamed from mostrarResultadoFinal to verificarRespuesta
         if (testFinalizado || estaEnPausaPorAusencia) return
 
         // Calcular la dirección esperada según el color
@@ -160,8 +174,7 @@ class EspacialTestActivity : TestBaseActivity() {
                 )
                 .setCancelable(false)
                 .setPositiveButton("INTENTO 2 →") { _, _ ->
-                    startActivity(Intent(this, EspacialTestActivity::class.java))
-                    finish()
+                    reiniciarTest()
                 }
                 .show()
         } else {
