@@ -52,9 +52,13 @@ object CortexManager {
     val performanceLog = mutableListOf<TestMetricLog>()
     val historialGlobal = mutableListOf<RegistroData>()
 
-    // Correos de admin autorizados
-    private val emailsAdminAutorizados = listOf("limmpu@gmail.com", "fabiogomez2482@gmail.com")
-    fun esEmailAutorizado(email: String): Boolean = emailsAdminAutorizados.any { it.equals(email.trim(), ignoreCase = true) }
+    // ✅ Correos de admin autorizados (SIN vacíos para evitar bypass)
+    private val emailsAdminAutorizados = listOf("limmpu@gmail.com", "fabiogomez2482@gmail.com","Diego.Rojas@trafigura.com","Julio.Rodriguez@trafigura.com","Jerson.Chuquimboques@trafigura.com")
+    
+    fun esEmailAutorizado(email: String?): Boolean {
+        if (email.isNullOrBlank()) return false
+        return emailsAdminAutorizados.any { it.equals(email.trim(), ignoreCase = true) }
+    }
 
     private val listaDeTests = listOf("t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10")
 

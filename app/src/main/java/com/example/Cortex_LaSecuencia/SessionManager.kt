@@ -1,4 +1,4 @@
-package com.example.Cortex_LaSecuencia.utils
+package com.example.Cortex_LaSecuencia
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -37,7 +37,9 @@ class SessionManager(context: Context) {
         return firebaseUser != null && sessionLocal && mantenerSesion
     }
 
-    fun getEmailUsuario(): String = auth.currentUser?.email ?: prefs.getString(KEY_USER_EMAIL, "") ?: ""
+    fun getEmailUsuario(): String {
+        return auth.currentUser?.email ?: prefs.getString(KEY_USER_EMAIL, "") ?: ""
+    }
 
     fun cerrarSesion() {
         auth.signOut()

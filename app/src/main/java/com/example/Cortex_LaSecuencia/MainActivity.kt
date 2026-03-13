@@ -15,9 +15,13 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+
+// ✅ IMPORTACIONES ACTUALIZADAS
 import com.example.Cortex_LaSecuencia.actividades.LockedActivity
-import com.example.Cortex_LaSecuencia.actividades.LoginActivity
 import com.example.Cortex_LaSecuencia.actividades.AdminActivity
+import com.example.Cortex_LaSecuencia.actividades.LoginActivity
+import com.example.Cortex_LaSecuencia.utils.SessionManager
+
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -30,6 +34,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Inicializar SessionManager
         sessionManager = SessionManager(this)
 
         val scrollView = findViewById<ScrollView>(R.id.scroll_view)
@@ -205,12 +210,6 @@ class MainActivity : AppCompatActivity() {
         return n.length == 6 && (n.matches(Regex("^[A-Z]{3}[0-9]{3}$")) || n.matches(Regex("^[0-9]{4}[A-Z]{2}$")))
     }
 
-    /**
-     * ✅ Formatea texto con Capitalize Words (Primera mayúscula, resto minúscula)
-     */
-    /**
-     * ✅ Detecta cuando el teclado aparece y ajusta el scroll automáticamente
-     */
     private fun setupKeyboardListener(scrollView: ScrollView) {
         val rootView = findViewById<View>(android.R.id.content)
         rootView.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
@@ -225,7 +224,6 @@ class MainActivity : AppCompatActivity() {
                 val isKeyboardOpen = keypadHeight > screenHeight * 0.15
 
                 if (isKeyboardOpen && !wasKeyboardOpen) {
-                    // Teclado acaba de aparecer
                     val focusedView = currentFocus
                     if (focusedView != null) {
                         scrollView.postDelayed({
@@ -238,30 +236,20 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    /**
-     * ✅ Scroll inteligente que asegura que la vista esté visible
-     */
     private fun scrollToView(scrollView: ScrollView, view: View) {
         val scrollBounds = Rect()
         scrollView.getHitRect(scrollBounds)
         
         if (!view.getLocalVisibleRect(scrollBounds)) {
-            // La vista no está completamente visible
             val location = IntArray(2)
             view.getLocationInWindow(location)
             val y = location[1]
-            
-            // Scroll para que la vista quede visible con margen extra
             scrollView.smoothScrollTo(0, y - 100)
         } else {
-            // Asegurar que esté en la parte superior visible
             scrollView.smoothScrollTo(0, view.top - 100)
         }
     }
 
-    /**
-     * ✅ Formatea texto con Capitalize Words (Primera mayúscula, resto minúscula)
-     */
     private fun setupCapitalizeWords(editText: EditText) {
         editText.addTextChangedListener(object : TextWatcher {
             private var isFormatting = false
@@ -291,8 +279,9 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("⚠️ Salir")
             .setMessage("¿Deseas salir de la aplicación?")
-            .setPositiveButton("SÍ") { _, _ -> finishAffinity() }
-            .setNegativeButton("NO", null)
+            .setPositiveButton("SÍ") { _, _ ->
+                finishAffinity()
+            }.setNegativeButton("NO", null)
             .show()
     }
 }

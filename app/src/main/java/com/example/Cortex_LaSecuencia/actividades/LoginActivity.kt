@@ -10,7 +10,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.example.Cortex_LaSecuencia.R
-import com.example.Cortex_LaSecuencia.SessionManager
+import com.example.Cortex_LaSecuencia.utils.SessionManager
 import com.example.Cortex_LaSecuencia.MainActivity
 
 class LoginActivity : AppCompatActivity() {
@@ -32,7 +32,6 @@ class LoginActivity : AppCompatActivity() {
         val btnLogin = findViewById<Button>(R.id.btn_login)
         val btnRegistrar = findViewById<Button>(R.id.btn_register)
 
-        // ✅ IMPORTANTE: Por defecto en TRUE
         cbMantenerSesion.isChecked = true
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -65,19 +64,11 @@ class LoginActivity : AppCompatActivity() {
 
     private fun validarCampos(email: String, password: String): Boolean {
         if (email.isEmpty()) {
-            Toast.makeText(this, getString(R.string.msg_error_enter_email), Toast.LENGTH_SHORT).show()
-            return false
-        }
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(this, getString(R.string.msg_error_invalid_email), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Ingrese el correo", Toast.LENGTH_SHORT).show()
             return false
         }
         if (password.isEmpty()) {
-            Toast.makeText(this, getString(R.string.msg_error_enter_password), Toast.LENGTH_SHORT).show()
-            return false
-        }
-        if (password.length < 6) {
-            Toast.makeText(this, getString(R.string.msg_error_min_password), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Ingrese la contraseña", Toast.LENGTH_SHORT).show()
             return false
         }
         return true
@@ -89,21 +80,12 @@ class LoginActivity : AppCompatActivity() {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null) {
-                        // 🔥 CRÍTICO: Guardar sesión ANTES de cambiar de pantalla
                         sessionManager.guardarSesion(user.email ?: email, user.uid, mantenerSesion)
-
-                        // 🔥 DEBUG
-                        android.util.Log.d("LoginActivity", "Login exitoso, sesión guardada")
-
-                        Toast.makeText(this, "✅ Bienvenido, Admin", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "✅ Bienvenido", Toast.LENGTH_SHORT).show()
                         irAAdminActivity()
                     }
                 } else {
-                    Toast.makeText(
-                        this,
-                        "❌ Error: ${task.exception?.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(this, "❌ Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                 }
             }
     }
@@ -114,9 +96,7 @@ class LoginActivity : AppCompatActivity() {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null) {
-                        // 🔥 CRÍTICO: Guardar sesión al registrarse
                         sessionManager.guardarSesion(user.email ?: email, user.uid, true)
-
                         Toast.makeText(this, "✅ Registro exitoso", Toast.LENGTH_SHORT).show()
                         irAAdminActivity()
                     }
