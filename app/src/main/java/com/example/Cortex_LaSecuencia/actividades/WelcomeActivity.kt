@@ -118,6 +118,7 @@ class WelcomeActivity : AppCompatActivity() {
         }
 
         // Navegar al primer test
+        CortexManager.guardarProgreso() // Persistir operador desde el inicio
         CortexManager.navegarAlSiguiente(this)
     }
 }

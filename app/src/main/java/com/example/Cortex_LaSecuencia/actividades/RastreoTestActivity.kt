@@ -214,20 +214,11 @@ class RastreoTestActivity : TestBaseActivity() {
         CortexManager.guardarPuntaje("t8", puntajeFinal)
 
         if (intentoActual == 1 && puntajeFinal < 95) {
-            mostrarDialogoReintento(puntajeFinal)
+            mostrarResultadoEstandarConReintento("RASTREO", puntajeFinal, penalizacion = penalizacionPorAusencia) {
+                reiniciarTest()
+            }
         } else {
-            val titulo = if (puntajeFinal >= 95) "¡EXCELENTE! 😎✅" else "RASTREO"
-            val resultado = if (puntajeFinal >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
-            
-            AlertDialog.Builder(this)
-                .setTitle(titulo)
-                .setMessage("$resultado\n\nAciertos: $aciertosCount/2\nNota Final: $puntajeFinal%\nPenalización ausencia: -$penalizacionPorAusencia pts")
-                .setCancelable(false)
-                .setPositiveButton("➡️ CONTINUAR") { _, _ ->
-                    CortexManager.navegarAlSiguiente(this)
-                    finish()
-                }
-                .show()
+            mostrarResultadoEstandarFinal("RASTREO", puntajeFinal, penalizacion = penalizacionPorAusencia)
         }
     }
 
@@ -254,17 +245,6 @@ class RastreoTestActivity : TestBaseActivity() {
         handler.postDelayed({
             if (!testFinalizado) iniciarTest()
         }, 500)
-    }
-    
-    private fun mostrarDialogoReintento(puntaje: Int) {
-        AlertDialog.Builder(this)
-            .setTitle("RASTREO")
-            .setMessage("INTENTO REGISTRADO\n\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.")
-            .setCancelable(false)
-            .setPositiveButton("INTENTO 2 →") { _, _ ->
-                reiniciarTest()
-            }
-            .show()
     }
 
     override fun onTestPaused() {

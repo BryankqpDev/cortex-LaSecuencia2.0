@@ -121,21 +121,12 @@ class ReflejosTestActivity : TestBaseActivity() {
     }
 
     private fun mostrarResultadoConReintento(puntaje: Int, tiempoMs: Long, errorAnticipacion: Boolean) {
-        val mensaje = when {
-            errorAnticipacion -> "PRESIONASTE ANTES DE TIEMPO!\n\nNota: 0%\n\nNecesitas 95% para saltarte el segundo intento."
-            else -> "INTENTO REGISTRADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento."
+        val tiempo = if (errorAnticipacion) null else tiempoMs
+        mostrarResultadoEstandarConReintento("REFLEJOS", puntaje, tiempo, penalizacionPorAusencia) {
+            reiniciarTest()
         }
-
-        AlertDialog.Builder(this)
-            .setTitle("REFLEJOS")
-            .setMessage(mensaje)
-            .setCancelable(false)
-            .setPositiveButton("INTENTO 2 →") { _, _ ->
-                reiniciarTest()
-            }
-            .show()
     }
-    
+
     private fun reiniciarTest() {
         testFinalizado = false
         testEnProgreso = false
@@ -153,21 +144,8 @@ class ReflejosTestActivity : TestBaseActivity() {
     }
 
     private fun mostrarResultado(puntaje: Int, tiempoMs: Long, errorAnticipacion: Boolean) {
-        val titulo = if (puntaje >= 95) "¡EXCELENTE! 😎✅" else "REFLEJOS"
-        val mensaje = when {
-            errorAnticipacion -> "PRESIONASTE ANTES DE TIEMPO!\n\nNota: 0%"
-            else -> "MÓDULO FINALIZADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts"
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle(titulo)
-            .setMessage(mensaje)
-            .setCancelable(false)
-            .setPositiveButton("CONTINUAR") { _, _ ->
-                CortexManager.navegarAlSiguiente(this)
-                finish()
-            }
-            .show()
+        val tiempo = if (errorAnticipacion) null else tiempoMs
+        mostrarResultadoEstandarFinal("REFLEJOS", puntaje, tiempo, penalizacionPorAusencia)
     }
 
     override fun onTestPaused() {

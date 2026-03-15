@@ -143,16 +143,11 @@ class CoordinacionTestActivity : TestBaseActivity() {
     }
 
     private fun mostrarDialogoReintento(puntaje: Int, tiempoMs: Long) {
-        AlertDialog.Builder(this)
-            .setTitle("COORDINACIÓN")
-            .setMessage("INTENTO REGISTRADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.")
-            .setCancelable(false)
-            .setPositiveButton("INTENTO 2 →") { _, _ ->
-                reiniciarTest()
-            }
-            .show()
+        mostrarResultadoEstandarConReintento("COORDINACIÓN", puntaje, tiempoMs, penalizacionPorAusencia) {
+            reiniciarTest()
+        }
     }
-    
+
     private fun reiniciarTest() {
         testFinalizado = false
         hitsCount = 0
@@ -175,19 +170,7 @@ class CoordinacionTestActivity : TestBaseActivity() {
     }
 
     private fun showFinalDialog(score: Int, timeMs: Long) {
-        val titulo = if (score >= 95) "¡EXCELENTE! 😎✅" else "COORDINACIÓN"
-        val resultado = if (score >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
-        val mensaje = "$resultado\n\nTiempo: ${timeMs}ms\nNota: $score%\nPenalización ausencia: -$penalizacionPorAusencia pts"
-        
-        AlertDialog.Builder(this)
-            .setTitle(titulo)
-            .setMessage(mensaje)
-            .setCancelable(false)
-            .setPositiveButton("➡️ SIGUIENTE") { _, _ ->
-                CortexManager.navegarAlSiguiente(this)
-                finish()
-            }
-            .show()
+        mostrarResultadoEstandarFinal("COORDINACIÓN", score, timeMs, penalizacionPorAusencia)
     }
 
     override fun onTestPaused() {

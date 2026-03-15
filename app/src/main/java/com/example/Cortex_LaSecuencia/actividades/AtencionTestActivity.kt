@@ -106,32 +106,13 @@ class AtencionTestActivity : TestBaseActivity() {
     private fun mostrarDialogoFin(nota: Int, esReintento: Boolean) {
         if (isFinishing) return
         
-        val titulo = when {
-            esReintento -> "ATENCIÓN"
-            nota >= 95 -> "¡EXCELENTE! 😎✅"
-            else -> "ATENCIÓN"
-        }
-        
-        val mensaje = when {
-            esReintento -> "INTENTO REGISTRADO\n\nNota Final: $nota%\nPenalización por ausencia: -$penalizacionPorAusencia pts\n\nNecesitas 95% para saltarte el segundo intento."
-            nota >= 95 -> "¡EXCELENTE!\n\nNota Final: $nota%\nPenalización por ausencia: -$penalizacionPorAusencia pts"
-            else -> "MÓDULO FINALIZADO\n\nNota Final: $nota%\nPenalización por ausencia: -$penalizacionPorAusencia pts"
-        }
-        
-        AlertDialog.Builder(this)
-            .setTitle(titulo)
-            .setMessage(mensaje)
-            .setCancelable(false)
-            .setPositiveButton(if (esReintento) "INTENTO 2 →" else "➡️ SIGUIENTE") { _, _ ->
-                if (esReintento) {
-                    reiniciarTest()
-                }
-                else {
-                    CortexManager.navegarAlSiguiente(this)
-                    finish()
-                }
+        if (esReintento) {
+            mostrarResultadoEstandarConReintento("ATENCIÓN", nota, penalizacion = penalizacionPorAusencia) {
+                reiniciarTest()
             }
-            .show()
+        } else {
+            mostrarResultadoEstandarFinal("ATENCIÓN", nota, penalizacion = penalizacionPorAusencia)
+        }
     }
 
     private fun reiniciarTest() {

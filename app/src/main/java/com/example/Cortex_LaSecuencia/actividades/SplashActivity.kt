@@ -60,7 +60,16 @@ class SplashActivity : AppCompatActivity() {
     private fun verificarYRedirigir() {
         val intent = if (sessionManager.tieneSesionActiva()) {
             Intent(this, AdminActivity::class.java)
+        } else if (CortexManager.restaurarProgreso()) {
+            // ═══════════════════════════════════════════════════════════════
+            // ✅ HAY PROGRESO GUARDADO → Reanudar donde se quedó
+            // ═══════════════════════════════════════════════════════════════
+            android.util.Log.d("SplashActivity", "🔄 Progreso restaurado → Reanudando tests")
+            CortexManager.navegarAlSiguiente(this)
+            return // navegarAlSiguiente ya maneja el intent
         } else {
+            // Sin sesión ni progreso → Ir al registro de conductores
+            android.util.Log.d("SplashActivity", "❌ Sin sesión → MainActivity")
             Intent(this, MainActivity::class.java)
         }
 
