@@ -31,17 +31,18 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <!-- FLECHA PRINCIPAL - Cambiamos el drawable -->
+
     <TextView
         android:id="@+id/txt_instruccion"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="28dp"
         android:text="🟦 FLECHA AZUL: Dirección Real\n🟥 FLECHA ROJA: Dirección CONTRARIA"
         android:textAlignment="center"
         android:textColor="#9CA3AF"
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.217"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/txt_titulo" />
 

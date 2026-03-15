@@ -86,20 +86,11 @@ class DecisionTestActivity : TestBaseActivity() {
         CortexManager.guardarPuntaje("t10", notaFinal)
 
         if (intentoActual == 1 && notaFinal < 95) {
-            mostrarResultadoFinal(notaFinal, aciertos)
+            mostrarResultadoEstandarConReintento("DECISIÓN", notaFinal, penalizacion = penalizacionPorAusencia) {
+                reiniciarTest()
+            }
         } else {
-            val titulo = if (notaFinal >= 95) "¡EXCELENTE! 😎✅" else "DECISIÓN"
-            val resultado = if (notaFinal >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
-            
-            AlertDialog.Builder(this)
-                .setTitle(titulo)
-                .setMessage("$resultado\n\nAciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $notaFinal%\nPenalización ausencia: -$penalizacionPorAusencia pts")
-                .setCancelable(false)
-                .setPositiveButton("➡️ SIGUIENTE") { _, _ ->
-                    CortexManager.navegarAlSiguiente(this)
-                    finish()
-                }
-                .show()
+            mostrarResultadoEstandarFinal("DECISIÓN", notaFinal, penalizacion = penalizacionPorAusencia)
         }
     }
 
@@ -113,17 +104,6 @@ class DecisionTestActivity : TestBaseActivity() {
         Handler(Looper.getMainLooper()).postDelayed({
             if (!testFinalizado) siguienteRonda()
         }, 500)
-    }
-    
-    private fun mostrarResultadoFinal(puntaje: Int, aciertos: Int) {
-        AlertDialog.Builder(this)
-            .setTitle("DECISIÓN")
-            .setMessage("INTENTO REGISTRADO\n\nAciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts\n\nNecesitas 95% para saltarte el segundo intento.")
-            .setCancelable(false)
-            .setPositiveButton("INTENTO 2 →") { _, _ ->
-                reiniciarTest()
-            }
-            .show()
     }
 
     override fun onTestPaused() {

@@ -15,6 +15,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.OptIn
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -322,6 +323,67 @@ abstract class TestBaseActivity : AppCompatActivity() {
         }, 100)
 
         ocultarOverlayAlerta()
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // DIÁLOGOS DE RESULTADO ESTANDARIZADOS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Muestra el resultado del intento 1 con opción de reintento.
+     */
+    protected fun mostrarResultadoEstandarConReintento(
+        tituloTest: String,
+        puntaje: Int,
+        tiempoMs: Long? = null,
+        penalizacion: Int,
+        onReintento: () -> Unit
+    ) {
+        if (isFinishing) return
+        val mensaje = buildResultMessage(puntaje, tiempoMs, penalizacion)
+
+        AlertDialog.Builder(this)
+            .setTitle(tituloTest)
+            .setMessage(mensaje)
+            .setCancelable(false)
+            .setPositiveButton("INTENTO 2 →") { _, _ -> onReintento() }
+            .show()
+    }
+
+    /**
+     * Muestra el resultado final y navega al siguiente test.
+     */
+    protected fun mostrarResultadoEstandarFinal(
+        tituloTest: String,
+        puntaje: Int,
+        tiempoMs: Long? = null,
+        penalizacion: Int
+    ) {
+        if (isFinishing) return
+        val titulo = if (puntaje >= 95) "¡EXCELENTE! 😎✅" else tituloTest
+        val mensaje = buildResultMessage(puntaje, tiempoMs, penalizacion)
+
+        AlertDialog.Builder(this)
+            .setTitle(titulo)
+            .setMessage(mensaje)
+            .setCancelable(false)
+            .setPositiveButton("CONTINUAR") { _, _ ->
+                CortexManager.navegarAlSiguiente(this)
+                finish()
+            }
+            .show()
+    }
+
+    private fun buildResultMessage(puntaje: Int, tiempoMs: Long?, penalizacion: Int): String {
+        val sb = StringBuilder()
+        if (tiempoMs != null && tiempoMs >= 0) {
+            sb.appendLine("Tiempo: ${tiempoMs}ms")
+        }
+        sb.appendLine("Puntaje: $puntaje%")
+        if (penalizacion > 0) {
+            sb.appendLine("Penalización: -$penalizacion pts")
+        }
+        return sb.toString().trim()
     }
 
     abstract fun obtenerTestId(): String

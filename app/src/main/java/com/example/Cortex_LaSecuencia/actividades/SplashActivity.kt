@@ -95,8 +95,15 @@ class SplashActivity : AppCompatActivity() {
             // Hay sesión de admin → Ir al panel
             android.util.Log.d("SplashActivity", "✅ Sesión activa → AdminActivity")
             Intent(this, AdminActivity::class.java)
+        } else if (CortexManager.restaurarProgreso()) {
+            // ═══════════════════════════════════════════════════════════════
+            // ✅ HAY PROGRESO GUARDADO → Reanudar donde se quedó
+            // ═══════════════════════════════════════════════════════════════
+            android.util.Log.d("SplashActivity", "🔄 Progreso restaurado → Reanudando tests")
+            CortexManager.navegarAlSiguiente(this)
+            return // navegarAlSiguiente ya maneja el intent
         } else {
-            // Sin sesión → Ir al registro de conductores
+            // Sin sesión ni progreso → Ir al registro de conductores
             android.util.Log.d("SplashActivity", "❌ Sin sesión → MainActivity")
             Intent(this, MainActivity::class.java)
         }

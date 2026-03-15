@@ -18,8 +18,13 @@ object AudioManager {
         // Inicializar TTS
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale("es", "ES")
+                // Usar español latinoamericano para una voz diferente
+                val result = tts?.setLanguage(Locale("es", "US"))
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    tts?.language = Locale("es", "MX") // Fallback a México
+                }
                 tts?.setSpeechRate(1.0f)
+                tts?.setPitch(0.9f)
             }
         }
 

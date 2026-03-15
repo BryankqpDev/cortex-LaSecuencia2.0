@@ -154,16 +154,11 @@ class SecuenciaTestActivity : TestBaseActivity() {
     }
 
     private fun mostrarDialogoReintento(puntaje: Int) {
-        AlertDialog.Builder(this)
-            .setTitle("MEMORIA")
-            .setMessage("INTENTO REGISTRADO\n\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.")
-            .setCancelable(false)
-            .setPositiveButton("INTENTO 2 →") { _, _ ->
-                reiniciarTest()
-            }
-            .show()
+        mostrarResultadoEstandarConReintento("MEMORIA", puntaje, penalizacion = penalizacionPorAusencia) {
+            reiniciarTest()
+        }
     }
-    
+
     private fun reiniciarTest() {
         testFinalizado = false
         secuenciaGenerada.clear()
@@ -181,19 +176,7 @@ class SecuenciaTestActivity : TestBaseActivity() {
     }
 
     private fun mostrarDialogoFinal(puntaje: Int, mensaje: String) {
-        if (isFinishing) return
-        val titulo = if (puntaje >= 95) "¡EXCELENTE! 😎✅" else "MEMORIA"
-        val resultado = if (puntaje >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
-        
-        AlertDialog.Builder(this)
-            .setTitle(titulo)
-            .setMessage("$resultado\n\n$mensaje\nNota Final: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts")
-            .setCancelable(false)
-            .setPositiveButton("➡️ SIGUIENTE") { _, _ ->
-                CortexManager.navegarAlSiguiente(this)
-                finish()
-            }
-            .show()
+        mostrarResultadoEstandarFinal("MEMORIA", puntaje, penalizacion = penalizacionPorAusencia)
     }
 
     override fun onTestPaused() {

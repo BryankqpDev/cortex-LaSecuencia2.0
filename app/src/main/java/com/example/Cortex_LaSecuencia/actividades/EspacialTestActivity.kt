@@ -127,25 +127,11 @@ class EspacialTestActivity : TestBaseActivity() {
         CortexManager.guardarPuntaje("t9", notaFinal)
 
         if (intentoActual == 1 && notaFinal < 95) {
-            AlertDialog.Builder(this)
-                .setTitle("ORIENTACIÓN ESPACIAL")
-                .setMessage("INTENTO REGISTRADO\n\nAciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $notaFinal%\n\nNecesitas 95% para saltarte el segundo intento.")
-                .setCancelable(false)
-                .setPositiveButton("INTENTO 2 →") { _, _ ->
-                    reiniciarTest()
-                }
-                .show()
+            mostrarResultadoEstandarConReintento("ORIENTACIÓN ESPACIAL", notaFinal, penalizacion = penalizacionPorAusencia) {
+                reiniciarTest()
+            }
         } else {
-            val titulo = if (notaFinal >= 95) "¡EXCELENTE! 😎✅" else "ORIENTACIÓN ESPACIAL"
-            AlertDialog.Builder(this)
-                .setTitle(titulo)
-                .setMessage("MÓDULO FINALIZADO\n\nAciertos: $aciertos/$TOTAL_RONDAS\nNota Final: $notaFinal%\nPenalización ausencia: -$penalizacionPorAusencia pts")
-                .setCancelable(false)
-                .setPositiveButton("➡️ SIGUIENTE") { _, _ ->
-                    CortexManager.navegarAlSiguiente(this)
-                    finish()
-                }
-                .show()
+            mostrarResultadoEstandarFinal("ORIENTACIÓN ESPACIAL", notaFinal, penalizacion = penalizacionPorAusencia)
         }
     }
 

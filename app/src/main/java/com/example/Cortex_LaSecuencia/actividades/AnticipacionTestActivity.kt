@@ -217,35 +217,13 @@ class AnticipacionTestActivity : TestBaseActivity() {
         // ✅ Umbral 95% (igual que CortexManager)
         if (intentoActual == 1 && puntaje < 95) {
             testFinalizado = true
-            mostrarDialogoFin(
-                "ANTICIPACIÓN",
-                "INTENTO REGISTRADO\n\n$mensaje\n\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.",
-                true
-            )
+            mostrarResultadoEstandarConReintento("ANTICIPACIÓN", puntaje, penalizacion = penalizacionPorAusencia) {
+                reiniciarTest()
+            }
         } else {
             testFinalizado = true
-            val titulo = if(puntaje >= 95) "¡EXCELENTE! 😎✅" else "ANTICIPACIÓN"
-            val resultado = if(puntaje >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
-            mostrarDialogoFin(titulo, "$resultado\n\nNota: $puntaje%\n\n$mensaje", false)
+            mostrarResultadoEstandarFinal("ANTICIPACIÓN", puntaje, penalizacion = penalizacionPorAusencia)
         }
-    }
-
-    private fun mostrarDialogoFin(titulo: String, mensaje: String, esReintento: Boolean) {
-        if (isFinishing) return
-        AlertDialog.Builder(this)
-            .setTitle(titulo)
-            .setMessage(mensaje)
-            .setCancelable(false)
-            .setPositiveButton(if (esReintento) "REINTENTAR" else "SIGUIENTE") { _, _ ->
-                if (esReintento) {
-                    reiniciarTest()
-                }
-                else {
-                    CortexManager.navegarAlSiguiente(this)
-                    finish()
-                }
-            }
-            .show()
     }
     
     private fun reiniciarTest() {

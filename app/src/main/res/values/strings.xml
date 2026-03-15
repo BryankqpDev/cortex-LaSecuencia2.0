@@ -16,12 +16,12 @@
     
     <!-- Test 1: Reflejos -->
     <string name="t1_title">1. REFLEJOS</string>
-    <string name="t1_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Medición de fatiga y vía retino-cortical.</string>
+    <string name="t1_analysis"><b>ANÁLISIS CEREBRAL:</b> Medición de fatiga y vía retino-cortical.</string>
     <string name="t1_mission">🏁 <b>TU MISIÓN:</b> El botón está GRIS. Espera... Cuando se ponga VERDE 🟩 ¡Presiona al instante! Si tardas, el sistema detecta \'microsueño\'.</string>
     
     <!-- Test 2: Memoria -->
     <string name="t2_title">2. MEMORIA</string>
-    <string name="t2_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Memoria de trabajo y retención visual.</string>
+    <string name="t2_analysis"><b>ANÁLISIS CEREBRAL:</b> Memoria de trabajo y retención visual.</string>
     <string name="t2_mission">🏁 <b>TU MISIÓN:</b> Memoriza el patrón de luces que se encienden ✨. Luego toca los mismos cuadros en el mismo orden.</string>
     <string name="t2_instruction_observe">OBSERVA LA SECUENCIA</string>
     <string name="t2_instruction_memorize">MEMORICE LA SECUENCIA (6 PASOS)</string>
@@ -31,32 +31,32 @@
     
     <!-- Test 3: Anticipación -->
     <string name="t3_title">3. ANTICIPACIÓN</string>
-    <string name="t3_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Lóbulo Parietal (Cálculo Espacio-Tiempo).</string>
+    <string name="t3_analysis"><b>ANÁLISIS CEREBRAL:</b> Lóbulo Parietal (Cálculo Espacio-Tiempo).</string>
     <string name="t3_mission">🏁 <b>TU MISIÓN:</b> El camión 🚛 acelerará por la pista. Calcula bien su movimiento y frena 🛑 exactamente cuando esté dentro de la ZONA VERDE.</string>
     
     <!-- Test 4: Coordinación -->
     <string name="t4_title">4. COORDINACIÓN</string>
-    <string name="t4_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Precisión motora fina y cerebelo.</string>
+    <string name="t4_analysis"><b>ANÁLISIS CEREBRAL:</b> Precisión motora fina y cerebelo.</string>
     <string name="t4_mission">🏁 <b>TU MISIÓN:</b> Aparecerán bolitas amarillas 🟡. Sé rápido y atrapa exactamente 5 con tu dedo.</string>
     
     <!-- Test 5: Atención -->
     <string name="t5_title">5. ATENCIÓN</string>
-    <string name="t5_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Inhibición de distractores (Stroop).</string>
+    <string name="t5_analysis"><b>ANÁLISIS CEREBRAL:</b> Inhibición de distractores (Stroop).</string>
     <string name="t5_mission">🏁 <b>TU MISIÓN:</b> ¡Cuidado con la trampa! Mira el COLOR DE LA TINTA 🎨, no leas la palabra. Si dice \'ROJO\' pero es verde, presiona VERDE.</string>
     
     <!-- Test 6: Escaneo -->
     <string name="t6_title">6. ESCANEO</string>
-    <string name="t6_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Búsqueda visual en entornos complejos.</string>
+    <string name="t6_analysis"><b>ANÁLISIS CEREBRAL:</b> Búsqueda visual en entornos complejos.</string>
     <string name="t6_mission">🏁 <b>TU MISIÓN:</b> Te diré un número arriba (ej: 45). Búscalo rápido 🔎 entre todos los números de abajo y tócalo.</string>
     
     <!-- Test 7: Impulso -->
     <string name="t7_title">7. IMPULSO</string>
-    <string name="t7_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Control de impulsos (Corteza Prefrontal).</string>
+    <string name="t7_analysis"><b>ANÁLISIS CEREBRAL:</b> Control de impulsos (Corteza Prefrontal).</string>
     <string name="t7_mission">🏁 <b>TU MISIÓN:</b><br/>💎 AZUL = ¡TOCA!<br/>❌ NARANJA = ¡NO TOQUES! (Contrólate).</string>
     
     <!-- Test 8: Rastreo -->
     <string name="t8_title">8. RASTREO</string>
-    <string name="t8_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Conciencia Situacional (MOT).</string>
+    <string name="t8_analysis"><b>ANÁLISIS CEREBRAL:</b> Conciencia Situacional (MOT).</string>
     <string name="t8_mission">🏁 <b>TU MISIÓN:</b> Mira las 2 bolitas AZULES 🔵🔵. Se volverán blancas y se mezclarán. Síguelas con la vista 👀. Al final, dime cuáles eran.</string>
     <string name="t8_subtitle">CONCIENCIA SITUACIONAL (MOT)</string>
     <string name="t8_memorize_blue">Memorice las 2 bolitas AZULES</string>
@@ -67,13 +67,13 @@
     
     <!-- Test 9: Espacial -->
     <string name="t9_title">9. ESPACIAL</string>
-    <string name="t9_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Orientación y conflicto direccional.</string>
+    <string name="t9_analysis"><b>ANÁLISIS CEREBRAL:</b> Orientación y conflicto direccional.</string>
     <string name="t9_mission">🏁 <b>TU MISIÓN:</b><br/>🟦 Flecha AZUL: Marca su dirección real.<br/>🟥 Flecha ROJA: ¡Marca la dirección CONTRARIA!</string>
     
     <!-- Test 10: Decisión -->
     <string name="t10_title">10. DECISIÓN</string>
-    <string name="t10_analysis">🧠 <b>ANÁLISIS CEREBRAL:</b> Flexibilidad Cognitiva.</string>
-    <string name="t10_mission">🏁 <b>TU MISIÓN:</b> La regla cambia:<br/>🟦 Si es AZUL = Toca el número MAYOR.<br/>🟧 Si es NARANJA = Toca el número MENOR.</string>
+    <string name="t10_analysis"><b>ANÁLISIS CEREBRAL:</b> Flexibilidad Cognitiva.</string>
+    <string name="t10_mission">🏁 <b>TU MISIÓN:</b> Si el botón es AZUL -> <br/>🟦 Toca el número MAYOR.<br/> Si es NARANJA -> 🟧 Toca el número MENOR.</string>
 
     <!-- ========================================== -->
     <!-- UI - BOTONES COMUNES -->

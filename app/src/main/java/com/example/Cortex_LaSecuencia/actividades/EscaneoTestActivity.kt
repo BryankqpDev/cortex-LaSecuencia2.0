@@ -142,30 +142,13 @@ class EscaneoTestActivity : TestBaseActivity() {
     }
 
     private fun mostrarDialogoReintento(puntaje: Int, tiempoMs: Long) {
-        AlertDialog.Builder(this)
-            .setTitle("ESCANEO")
-            .setMessage("INTENTO REGISTRADO\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.")
-            .setCancelable(false)
-            .setPositiveButton("INTENTO 2 →") { _, _ ->
-                reiniciarTest()
-            }
-            .show()
+        mostrarResultadoEstandarConReintento("ESCANEO", puntaje, tiempoMs, penalizacionPorAusencia) {
+            reiniciarTest()
+        }
     }
 
     private fun finalizarActivity(puntaje: Int, tiempoMs: Long) {
-        if (isFinishing) return
-        val titulo = if (puntaje >= 95) "¡EXCELENTE! 😎✅" else "ESCANEO"
-        val resultado = if (puntaje >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
-
-        AlertDialog.Builder(this)
-            .setTitle(titulo)
-            .setMessage("$resultado\n\nTiempo: ${tiempoMs}ms\nNota: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts")
-            .setCancelable(false)
-            .setPositiveButton("➡️ SIGUIENTE") { _, _ ->
-                CortexManager.navegarAlSiguiente(this)
-                finish()
-            }
-            .show()
+        mostrarResultadoEstandarFinal("ESCANEO", puntaje, tiempoMs, penalizacionPorAusencia)
     }
 
     override fun onTestPaused() {
