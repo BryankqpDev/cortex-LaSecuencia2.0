@@ -13,7 +13,20 @@
           "package_name": "com.example.Cortex_LaSecuencia"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "10692984066-ikn8dimmb95g4ettj37qgpvq9jame8bn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.Cortex_LaSecuencia",
+            "certificate_hash": "f6b33188d7d3069e5535d64d980859098f02122c"
+          }
+        },
+        {
+          "client_id": "10692984066-a84lllcs6h22quktnpicenbggmk7k9gg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCa3oJvTRqdmNnaJ7p4dCPmFStG5YEs8Gk"
@@ -21,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "10692984066-a84lllcs6h22quktnpicenbggmk7k9gg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
