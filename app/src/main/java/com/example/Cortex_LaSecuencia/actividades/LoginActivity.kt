@@ -12,6 +12,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.example.Cortex_LaSecuencia.R
 import com.example.Cortex_LaSecuencia.utils.SessionManager
 import com.example.Cortex_LaSecuencia.MainActivity
+import android.widget.TextView
 
 class LoginActivity : AppCompatActivity() {
 
@@ -31,6 +32,25 @@ class LoginActivity : AppCompatActivity() {
         val cbMantenerSesion = findViewById<CheckBox>(R.id.cb_mantener_sesion)
         val btnLogin = findViewById<Button>(R.id.btn_login)
         val btnRegistrar = findViewById<Button>(R.id.btn_register)
+        val txtForgotPassword = findViewById<TextView>(R.id.txt_forgot_password)
+
+        txtForgotPassword.setOnClickListener {
+            val email = etEmail.text.toString().trim()
+
+            if (email.isEmpty()) {
+                Toast.makeText(this, "Ingresa tu correo primero", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            auth.sendPasswordResetEmail(email)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Toast.makeText(this, "📧 Correo de recuperación enviado", Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(this, "❌ Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+        }
 
         cbMantenerSesion.isChecked = true
 
