@@ -6,61 +6,61 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#0B1121"
-    android:fitsSystemWindows="true"
-    android:paddingTop="8dp">
+    android:fitsSystemWindows="true">
 
-    <!-- ✅ VISOR DE CÁMARA (Esquina Superior Derecha) -->
-
-    <!-- Título y Subtítulo -->
-
+    <!-- VISOR CÁMARA -->
     <androidx.camera.view.PreviewView
         android:id="@+id/viewFinder"
         android:layout_width="61dp"
         android:layout_height="73dp"
-        android:layout_margin="20dp"
-        android:layout_marginTop="36dp"
-        android:layout_marginEnd="48dp"
+        android:layout_margin="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Área de Juego (Pista) -->
-
+    <!-- COLUMNA IZQUIERDA: Título + Pista -->
     <TextView
         android:id="@+id/txt_titulo_t3"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="116dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
         android:text="3. ANTICIPACIÓN"
         android:textColor="#FFFFFF"
-        android:textSize="24sp"
+        android:textSize="18sp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btn_frenar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/txt_subtitulo_t3"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="4dp"
         android:background="@drawable/bg_badge"
-        android:paddingHorizontal="20dp"
-        android:paddingVertical="8dp"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="4dp"
         android:text="FRENA EN ZONA VERDE (INTENTO 1/2)"
         android:textColor="#00F0FF"
-        android:textSize="14sp"
+        android:textSize="11sp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btn_frenar"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txt_titulo_t3" />
+        app:layout_constraintTop_toBottomOf="@+id/txt_titulo_t3" />
 
+    <!-- PISTA: ocupa el espacio central izquierdo -->
     <FrameLayout
         android:id="@+id/pista_container"
-        android:layout_width="match_parent"
-        android:layout_height="80dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
         android:background="#0F172A"
-        android:layout_marginHorizontal="40dp"
-        app:layout_constraintBottom_toTopOf="@+id/btn_frenar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btn_frenar"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/txt_subtitulo_t3">
 
         <View
@@ -77,28 +77,28 @@
             android:layout_height="80dp"
             android:layout_gravity="center_vertical|start"
             android:src="@drawable/ic_pickup"
-            android:rotation="360"/>
+            android:rotation="360" />
     </FrameLayout>
 
-    <!-- Botón de Frenado -->
+    <!-- BOTÓN FRENAR: columna derecha, ocupa toda la altura -->
 
-    <!-- Contador de inicio -->
+    <!-- Countdown -->
 
     <Button
         android:id="@+id/btn_frenar"
-        android:layout_width="242dp"
-        android:layout_height="89dp"
-        android:layout_margin="20dp"
-        android:layout_marginBottom="16dp"
+        android:layout_width="126dp"
+        android:layout_height="0dp"
+        android:layout_margin="12dp"
+        android:layout_marginEnd="28dp"
         android:background="@drawable/bg_boton_frenar"
         android:backgroundTint="@null"
         android:text="🛑 FRENAR"
-        android:textSize="24sp"
+        android:textSize="18sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.52"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/viewFinder"
+        app:layout_constraintVertical_bias="0.5" />
 
     <TextView
         android:id="@+id/txt_countdown"
@@ -108,18 +108,9 @@
         android:textSize="60sp"
         android:textStyle="bold"
         android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <androidx.constraintlayout.widget.Guideline android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <androidx.constraintlayout.widget.Guideline android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <androidx.constraintlayout.widget.Guideline android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        app:layout_constraintTop_toBottomOf="@+id/viewFinder" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

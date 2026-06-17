@@ -28,6 +28,7 @@ import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
+    private val PREFS_NAME = "cortex_conductor_prefs"
     private lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,6 +47,13 @@ class MainActivity : AppCompatActivity() {
         val spinnerEquipo = findViewById<Spinner>(R.id.spinner_equipo)
         val btnSiguiente = findViewById<Button>(R.id.btn_siguiente)
         val btnAdmin = findViewById<Button>(R.id.btn_admin)
+
+        // Cargar datos guardados
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        etEmpresa.setText(prefs.getString("empresa", ""))
+        etSupervisor.setText(prefs.getString("supervisor", ""))
+        etNombre.setText(prefs.getString("nombre", ""))
+        etDni.setText(prefs.getString("dni", ""))
 
         // ✅ FORMATO DE TEXTO: Capitalize Words
         setupCapitalizeWords(etEmpresa)
@@ -140,6 +148,14 @@ class MainActivity : AppCompatActivity() {
                 etUnidad.error = "Placa inválida"
                 return@setOnClickListener
             }
+
+            // Guardar datos en SharedPreferences
+            val editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
+            editor.putString("empresa", empresa)
+            editor.putString("supervisor", supervisor)
+            editor.putString("nombre", nombre)
+            editor.putString("dni", dni)
+            editor.apply()
 
             // ✅ 4. GENERAR FECHA Y HORA ACTUALES
             val fechaActual = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())

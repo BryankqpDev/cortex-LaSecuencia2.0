@@ -19,12 +19,26 @@ object AudioManager {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 // Usar español latinoamericano para una voz diferente
-                val result = tts?.setLanguage(Locale("es", "US"))
-                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    tts?.language = Locale("es", "MX") // Fallback a México
+                val locales = listOf(
+                    Locale("es", "PE"),
+                    Locale("es", "MX"),
+                    Locale("es", "ES"),
+                    Locale("es", "US")
+                )
+                var localeAplicado = false
+                for (locale in locales) {
+                    val result = tts?.setLanguage(locale)
+                    if (result != TextToSpeech.LANG_MISSING_DATA && 
+                        result != TextToSpeech.LANG_NOT_SUPPORTED) {
+                        localeAplicado = true
+                        break
+                    }
                 }
-                tts?.setSpeechRate(1.0f)
-                tts?.setPitch(0.9f)
+                if (!localeAplicado) {
+                    tts?.language = Locale("es", "MX")
+                }
+                tts?.setSpeechRate(0.95f)
+                tts?.setPitch(1.0f)
             }
         }
 
@@ -39,6 +53,10 @@ object AudioManager {
             .replace(Regex("[\uD83C-\uDBFF\uDC00-\uDFFF]+"), "") // Emojis
             .replace("*", "")
             .replace(Regex("<[^>]*>"), " ")
+            .replace(Regex("\\btu\\b", RegexOption.IGNORE_CASE), "tú")
+            .replace(Regex("\\bTU\\b"), "TÚ")
+            .replace(Regex("\\bel\\b", RegexOption.IGNORE_CASE), "él")
+            .replace(Regex("\\bmi\\b", RegexOption.IGNORE_CASE), "mí")
 
         tts?.speak(cleanText, TextToSpeech.QUEUE_FLUSH, null, "cortex_tts")
     }
@@ -120,4 +138,3 @@ object AudioManager {
         ERROR
     }
 }
-

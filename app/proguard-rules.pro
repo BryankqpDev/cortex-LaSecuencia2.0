@@ -1,21 +1,67 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ============================================
+# REGLAS GENERALES DE OFUSCACIÓN
+# ============================================
+-optimizationpasses 5
+-dontusemixedcaseclassnames
+-dontskipnonpubliclibraryclasses
+-verbose
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# ============================================
+# FIREBASE - Necesario para que funcione
+# ============================================
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ============================================
+# MODELOS DE DATOS - Necesario para Firebase
+# ============================================
+-keep class com.example.Cortex_LaSecuencia.RegistroData { *; }
+-keep class com.example.Cortex_LaSecuencia.Operador { *; }
+-keep class com.example.Cortex_LaSecuencia.SolicitudDesbloqueo { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ============================================
+# TENSORFLOW LITE
+# ============================================
+-keep class org.tensorflow.lite.** { *; }
+-keepclassmembers class org.tensorflow.lite.** { *; }
+
+# ============================================
+# ML KIT
+# ============================================
+-keep class com.google.mlkit.** { *; }
+
+# ============================================
+# CAMERAХ
+# ============================================
+-keep class androidx.camera.** { *; }
+
+# ============================================
+# EXCEL / PDF (Apache POI + iText)
+# ============================================
+-keep class org.apache.poi.** { *; }
+-keep class com.itextpdf.** { *; }
+
+# ============================================
+# KOTLIN
+# ============================================
+-keep class kotlin.** { *; }
+-keep class kotlinx.** { *; }
+-keepclassmembers class ** {
+    @kotlin.Metadata *;
+}
+
+# ============================================
+# ACTIVIDADES Y VISTAS
+# ============================================
+-keep public class * extends android.app.Activity
+-keep public class * extends android.app.Service
+-keep public class * extends android.content.BroadcastReceiver
+
+# ============================================
+# EVITAR INGENIERÍA INVERSA
+# ============================================
+-renamesourcefileattribute SourceFile
+-keepattributes SourceFile,LineNumberTable
+-repackageclasses 'cortex'

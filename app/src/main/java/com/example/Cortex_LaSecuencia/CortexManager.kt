@@ -38,10 +38,7 @@ object CortexManager {
 
     private const val PREFS_NAME = "CortexPrefs"
     private const val KEY_LOCK_UNTIL = "cortex_lock_until"
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // CLAVES PARA PERSISTENCIA DE PROGRESO
-    // ═══════════════════════════════════════════════════════════════════════
+    
     private const val KEY_EVAL_EN_PROGRESO = "eval_en_progreso"
     private const val KEY_RESULTADOS = "eval_resultados"
     private const val KEY_INTENTOS = "eval_intentos"
@@ -70,7 +67,7 @@ object CortexManager {
     val historialGlobal = mutableListOf<RegistroData>()
 
     // ✅ Correos de admin autorizados (SIN vacíos para evitar bypass)
-    private val emailsAdminAutorizados = listOf("limmpu@gmail.com", "fabiogomez2482@gmail.com","Diego.Rojas@trafigura.com","Julio.Rodriguez@trafigura.com","Jerson.Chuquimboques@trafigura.com")
+    private val emailsAdminAutorizados = listOf("limmpu@gmail.com", "fabiogomez2482@gmail.com")
     
     fun esEmailAutorizado(email: String?): Boolean {
         if (email.isNullOrBlank()) return false
@@ -83,7 +80,7 @@ object CortexManager {
 
     private val testInfos = mapOf(
         "t1" to TestInfo("1. REFLEJOS", "⚡", "Medición de fatiga..."),
-        "t2" to TestInfo("2. MEMORIA", "🧠", "Memoria de trabajo..."),
+        "t2" to TestInfo("2. MEMORIA", "🧠", "Medición de fatiga..."), //
         "t3" to TestInfo("3. ANTICIPACIÓN", "⏱️", "Lóbulo Parietal..."),
         "t4" to TestInfo("4. COORDINACIÓN", "🎯", "Precisión motora..."),
         "t5" to TestInfo("5. ATENCIÓN", "👁️", "Inhibición distractores..."),
@@ -143,18 +140,20 @@ object CortexManager {
         val intentoActual = intentosPorTest.getOrPut(testId) { 1 }
         if (intentoActual == 1) {
             // ✅ CAMBIO: Umbral de 95% (igual que MVP JavaScript)
-            if (puntajeClamp >= 95) resultados[testId] = puntajeClamp
-            else {
+            if (puntajeClamp >= 95) {
+                resultados[testId] = puntajeClamp
+                guardarProgreso()
+            } else {
                 puntajesTemporales.getOrPut(testId) { mutableListOf() }.add(puntajeClamp)
                 intentosPorTest[testId] = 2
+                guardarProgreso()
             }
         } else {
             puntajesTemporales.getOrPut(testId) { mutableListOf() }.add(puntajeClamp)
             val promedio = (puntajesTemporales[testId]!!.sum() / puntajesTemporales[testId]!!.size).coerceIn(0, 100)
             resultados[testId] = promedio
+            guardarProgreso()
         }
-        // ✅ Auto-guardar progreso después de cada puntaje
-        guardarProgreso()
     }
 
     fun obtenerResultados(): Map<String, Int> = resultados
@@ -178,7 +177,22 @@ object CortexManager {
 
     fun registrarNube(notaFinal: Int, esApto: Boolean) {
         operadorActual?.let { op ->
-            val reg = RegistroData(op.fecha, op.hora, op.supervisor, op.nombre, op.dni, op.equipo, notaFinal, if (esApto) "APTO" else "NO APTO")
+            val tiempoMs = System.currentTimeMillis() - op.timestampInicio
+            val minutos = (tiempoMs / 1000 / 60).toInt()
+            val segundos = ((tiempoMs / 1000) % 60).toInt()
+            val tiempoFormateado = "${minutos}m ${segundos}s"
+
+            val reg = RegistroData(
+                fecha = op.fecha,
+                hora = op.hora,
+                supervisor = op.supervisor,
+                nombre = op.nombre,
+                dni = op.dni,
+                equipo = op.equipo,
+                nota = notaFinal,
+                estado = if (esApto) "APTO" else "NO APTO",
+                tiempoTotal = tiempoFormateado
+            )
             val dbRef = FirebaseDatabase.getInstance().getReference("registros")
             dbRef.push().setValue(reg)
         }
@@ -253,35 +267,18 @@ object CortexManager {
     }
 
     fun resetearEvaluacion() {
-        resultados.clear(); intentosPorTest.clear(); puntajesTemporales.clear(); performanceLog.clear(); operadorActual = null
-        limpiarProgreso()
+        resultados.clear(); intentosPorTest.clear(); puntajesTemporales.clear(); performanceLog.clear(); operadorActual = null; limpiarProgreso()
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // PERSISTENCIA DE PROGRESO
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Guarda el estado actual de la evaluación en SharedPreferences.
-     */
     fun guardarProgreso() {
         val prefs = appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) ?: return
         val editor = prefs.edit()
-
         editor.putBoolean(KEY_EVAL_EN_PROGRESO, true)
-
-        // Guardar resultados: "t1:85,t2:90,..."
         editor.putString(KEY_RESULTADOS, resultados.entries.joinToString(",") { "${it.key}:${it.value}" })
-
-        // Guardar intentos: "t1:1,t2:2,..."
         editor.putString(KEY_INTENTOS, intentosPorTest.entries.joinToString(",") { "${it.key}:${it.value}" })
-
-        // Guardar puntajes temporales: "t1:50|60,t2:30,..."
         editor.putString(KEY_PUNTAJES_TEMP, puntajesTemporales.entries.joinToString(",") { entry ->
-            "${entry.key}:${entry.value.joinToString("|")}" 
+            "${entry.key}:${entry.value.joinToString("|")}"
         })
-
-        // Guardar datos del operador
         operadorActual?.let { op ->
             editor.putString(KEY_OP_NOMBRE, op.nombre)
             editor.putString(KEY_OP_DNI, op.dni)
@@ -293,23 +290,15 @@ object CortexManager {
             editor.putString(KEY_OP_HORA, op.hora)
             editor.putLong(KEY_OP_TIMESTAMP_INICIO, op.timestampInicio)
         }
-
         editor.apply()
         Log.d("CortexManager", "✅ Progreso guardado: ${resultados.size} tests completados")
     }
 
-    /**
-     * Restaura el progreso guardado. Retorna true si había progreso disponible.
-     */
     fun restaurarProgreso(): Boolean {
         val prefs = appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) ?: return false
-
         if (!prefs.getBoolean(KEY_EVAL_EN_PROGRESO, false)) return false
-
-        // Restaurar operador
         val nombre = prefs.getString(KEY_OP_NOMBRE, null) ?: return false
         val dni = prefs.getString(KEY_OP_DNI, null) ?: return false
-
         operadorActual = Operador(
             nombre = nombre,
             dni = dni,
@@ -321,8 +310,6 @@ object CortexManager {
             hora = prefs.getString(KEY_OP_HORA, "") ?: "",
             timestampInicio = prefs.getLong(KEY_OP_TIMESTAMP_INICIO, 0L)
         )
-
-        // Restaurar resultados
         resultados.clear()
         prefs.getString(KEY_RESULTADOS, "")?.split(",")?.forEach { entry ->
             if (entry.contains(":")) {
@@ -330,8 +317,6 @@ object CortexManager {
                 resultados[key] = value.toIntOrNull() ?: 0
             }
         }
-
-        // Restaurar intentos
         intentosPorTest.clear()
         prefs.getString(KEY_INTENTOS, "")?.split(",")?.forEach { entry ->
             if (entry.contains(":")) {
@@ -339,25 +324,20 @@ object CortexManager {
                 intentosPorTest[key] = value.toIntOrNull() ?: 1
             }
         }
-
-        // Restaurar puntajes temporales
         puntajesTemporales.clear()
         prefs.getString(KEY_PUNTAJES_TEMP, "")?.split(",")?.forEach { entry ->
             if (entry.contains(":")) {
                 val parts = entry.split(":")
                 val key = parts[0]
-                val values = parts.getOrNull(1)?.split("|")?.mapNotNull { it.toIntOrNull() }?.toMutableList() ?: mutableListOf()
+                val values = parts.getOrNull(1)?.split("|")
+                    ?.mapNotNull { it.toIntOrNull() }?.toMutableList() ?: mutableListOf()
                 if (values.isNotEmpty()) puntajesTemporales[key] = values
             }
         }
-
         Log.d("CortexManager", "✅ Progreso restaurado: ${resultados.size} tests, operador: $nombre")
         return true
     }
 
-    /**
-     * Limpia todo el progreso guardado.
-     */
     private fun limpiarProgreso() {
         val prefs = appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) ?: return
         prefs.edit()
@@ -378,9 +358,6 @@ object CortexManager {
         Log.d("CortexManager", "🗑️ Progreso limpiado")
     }
 
-    /**
-     * Verifica si hay una evaluación en progreso guardada.
-     */
     fun tieneProgresoGuardado(): Boolean {
         val prefs = appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) ?: return false
         return prefs.getBoolean(KEY_EVAL_EN_PROGRESO, false)
