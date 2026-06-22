@@ -67,7 +67,7 @@ object CortexManager {
     val historialGlobal = mutableListOf<RegistroData>()
 
     // ✅ Correos de admin autorizados (SIN vacíos para evitar bypass)
-    private val emailsAdminAutorizados = listOf("limmpu@gmail.com", "fabiogomez2482@gmail.com")
+    private val emailsAdminAutorizados = listOf("limmpu@gmail.com", "fabiogomez2482@gmail.com","seguridad.catalinah@bjgrupo.com","asste.seguridadcatalinah@bjgrupo.com","residencia.catalinah@bjgrupo.com","Operaciones.catalinah@bjgrupo.com","facilitadoradelsigcatalina@bjgrupo.com")
     
     fun esEmailAutorizado(email: String?): Boolean {
         if (email.isNullOrBlank()) return false
