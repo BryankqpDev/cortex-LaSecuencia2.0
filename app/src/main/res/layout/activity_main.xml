@@ -26,7 +26,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/label_session_active"
+                android:text="👤 Sesión activa"
                 android:textColor="#94A3B8"
                 android:textSize="12sp" />
 
@@ -34,7 +34,7 @@
                 android:id="@+id/btn_cerrar_sesion"
                 android:layout_width="wrap_content"
                 android:layout_height="35dp"
-                android:text="@string/btn_exit"
+                android:text="Cerrar Sesión"
                 android:textSize="11sp"
                 android:backgroundTint="#64748B"
                 android:textColor="#FFFFFF"
@@ -45,7 +45,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/label_registration"
+            android:text="REGISTRO"
             android:textColor="#FFFFFF"
             android:textSize="28sp"
             android:textStyle="bold"
@@ -54,15 +54,16 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/label_sentinel_mode"
+            android:text="SENTINEL: MODO ESTRICTO"
             android:textColor="#94A3B8"
             android:textSize="14sp"
             android:layout_marginBottom="30dp"/>
 
+        <!-- CAMPO EMPRESA: Informativo y deshabilitado -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/label_company"
+            android:text="EMPRESA"
             android:textColor="#06B6D4"
             android:textSize="12sp"
             android:textStyle="bold"
@@ -72,57 +73,18 @@
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:background="@drawable/bg_input_dark"
-            android:hint="@string/hint_company_name"
+            android:hint="NOMBRE EMPRESA"
             android:textColorHint="#475569"
             android:textColor="#FFFFFF"
             android:paddingStart="15dp"
             android:inputType="textCapWords"
             android:layout_marginBottom="15dp"/>
 
+        <!-- 1. DNI (SUBE AL INICIO) -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/label_supervisor"
-            android:textColor="#06B6D4"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="5dp"/>
-        <EditText
-            android:id="@+id/et_supervisor"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:background="@drawable/bg_input_dark"
-            android:hint="@string/hint_supervisor_name"
-            android:textColorHint="#475569"
-            android:textColor="#FFFFFF"
-            android:paddingStart="15dp"
-            android:inputType="textCapWords"
-            android:layout_marginBottom="15dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/label_driver"
-            android:textColor="#06B6D4"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="5dp"/>
-        <EditText
-            android:id="@+id/et_nombre"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:background="@drawable/bg_input_dark"
-            android:hint="@string/hint_driver_name"
-            android:textColorHint="#475569"
-            android:textColor="#FFFFFF"
-            android:paddingStart="15dp"
-            android:inputType="textCapWords"
-            android:layout_marginBottom="15dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/label_dni"
+            android:text="DNI / ID"
             android:textColor="#06B6D4"
             android:textSize="12sp"
             android:textStyle="bold"
@@ -132,7 +94,7 @@
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:background="@drawable/bg_input_dark"
-            android:hint="@string/hint_document"
+            android:hint="DOCUMENTO"
             android:textColorHint="#475569"
             android:textColor="#FFFFFF"
             android:paddingStart="15dp"
@@ -140,10 +102,74 @@
             android:maxLength="8"
             android:layout_marginBottom="15dp"/>
 
+        <!-- 2. NOMBRE -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/label_equipment_type"
+            android:text="CONDUCTOR"
+            android:textColor="#06B6D4"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="5dp"/>
+        <EditText
+            android:id="@+id/et_nombre"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_input_dark"
+            android:hint="APELLIDOS Y NOMBRES"
+            android:textColorHint="#475569"
+            android:textColor="#FFFFFF"
+            android:paddingStart="15dp"
+            android:inputType="textCapWords"
+            android:layout_marginBottom="15dp"/>
+
+        <!-- 3. PUESTO -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PUESTO"
+            android:textColor="#06B6D4"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="5dp"/>
+        <EditText
+            android:id="@+id/et_puesto"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_input_dark"
+            android:hint="Puesto"
+            android:textColorHint="#475569"
+            android:textColor="#FFFFFF"
+            android:paddingStart="15dp"
+            android:inputType="textCapCharacters"
+            android:layout_marginBottom="15dp"/>
+
+        <!-- 4. SUPERVISOR -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SUPERVISOR"
+            android:textColor="#06B6D4"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="5dp"/>
+        <EditText
+            android:id="@+id/et_supervisor"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_input_dark"
+            android:hint="SUPERVISOR A CARGO"
+            android:textColorHint="#475569"
+            android:textColor="#FFFFFF"
+            android:paddingStart="15dp"
+            android:inputType="textCapWords"
+            android:layout_marginBottom="15dp"/>
+
+        <!-- 5. EQUIPO -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TIPO EQUIPO"
             android:textColor="#06B6D4"
             android:textSize="12sp"
             android:textStyle="bold"
@@ -161,6 +187,7 @@
                 android:theme="@style/ThemeOverlay.AppCompat.Dark"/>
         </FrameLayout>
 
+        <!-- 6. CÓDIGO DE EQUIPO -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -185,7 +212,7 @@
             android:id="@+id/btn_siguiente"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:text="@string/btn_next"
+            android:text="SIGUIENTE ➔"
             android:backgroundTint="#2563EB"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -196,7 +223,7 @@
             android:id="@+id/btn_admin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/btn_admin"
+            android:text="ADMINISTRACIÓN"
             android:textColor="#64748B"
             style="?android:attr/borderlessButtonStyle"
             android:layout_marginTop="10dp"/>

@@ -5,14 +5,17 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
+import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
 import com.example.Cortex_LaSecuencia.utils.AudioManager
@@ -33,6 +36,7 @@ class ReporteFinalActivity : AppCompatActivity() {
         val containerResultados = findViewById<LinearLayout>(R.id.container_resultados)
         val btnReiniciar = findViewById<Button>(R.id.btn_reiniciar)
         val btnDescargarPDF = findViewById<Button>(R.id.btn_descargar_pdf)
+        val btnCompartir = findViewById<Button>(R.id.btn_compartir_whatsapp)
 
         val resultados = CortexManager.obtenerResultados()
         val nombresPruebas = mapOf(
@@ -64,16 +68,8 @@ class ReporteFinalActivity : AppCompatActivity() {
             val timestampFin = System.currentTimeMillis()
             val tiempoTranscurridoMs = timestampFin - operador.timestampInicio
             val tiempoSegundos = (tiempoTranscurridoMs / 1000).toInt()
-
-            // Guardar el tiempo en el operador
             operador.tiempoTotalSegundos = tiempoSegundos
-
-            android.util.Log.d(
-                "ReporteFinalActivity",
-                "⏱️ Tiempo total: ${tiempoSegundos}s (${tiempoTranscurridoMs}ms)"
-            )
         }
-
 
         if (esApto) {
             txtIcono.text = "😎"
@@ -89,11 +85,7 @@ class ReporteFinalActivity : AppCompatActivity() {
             txtEstado.setTextColor(Color.parseColor("#EF4444"))
             txtPuntaje.setTextColor(Color.parseColor("#EF4444"))
             txtMensaje.text = "$nombreUsuario, no cumples con el estándar.\nSISTEMA BLOQUEADO."
-            
-            // --- ✅ NUEVO: DISPARAR ALERTA AL ADMIN ---
-            val motivo = "Nota final: $promedio% (Umbral: 75%)"
-            CortexManager.enviarSolicitudDesbloqueo(motivo)
-            
+            CortexManager.enviarSolicitudDesbloqueo("Nota final: $promedio% (Umbral: 75%)")
             CortexManager.bloquearSistema(this)
             btnReiniciar.text = "DESBLOQUEO REMOTO / SUPERVISOR"
             btnReiniciar.background.setTint(Color.parseColor("#334155"))
@@ -101,13 +93,57 @@ class ReporteFinalActivity : AppCompatActivity() {
         }
 
         generarPDFSafe(resultados, silent = true)
-
         btnDescargarPDF.setOnClickListener { generarPDFSafe(resultados, silent = false) }
+
+        btnCompartir.setOnClickListener { mostrarDialogoCompartir() }
 
         btnReiniciar.setOnClickListener {
             if (!esApto) mostrarDialogoDesbloqueo()
             else reiniciarApp()
         }
+    }
+
+    private fun mostrarDialogoCompartir() {
+        AlertDialog.Builder(this)
+            .setTitle("Compartir Reporte")
+            .setItems(arrayOf("📄 Compartir PDF", "📸 Compartir Captura")) { _, which ->
+                if (which == 0) compartirPDF() else compartirCaptura()
+            }
+            .show()
+    }
+
+    private fun compartirPDF() {
+        val operador = CortexManager.operadorActual ?: return
+        val file = File(filesDir, "reporte_${operador.dni}.pdf")
+        if (!file.exists()) { Toast.makeText(this, "PDF no encontrado", Toast.LENGTH_SHORT).show(); return }
+        
+        val uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            setPackage("com.whatsapp")
+        }
+        try { startActivity(intent) } catch (e: Exception) { startActivity(Intent.createChooser(intent, "Compartir con...")) }
+    }
+
+    private fun compartirCaptura() {
+        val rootView = window.decorView.rootView
+        rootView.isDrawingCacheEnabled = true
+        val bitmap = Bitmap.createBitmap(rootView.drawingCache)
+        rootView.isDrawingCacheEnabled = false
+        
+        val file = File(cacheDir, "captura_reporte.jpg")
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+        
+        val uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/jpeg"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            setPackage("com.whatsapp")
+        }
+        try { startActivity(intent) } catch (e: Exception) { startActivity(Intent.createChooser(intent, "Compartir con...")) }
     }
 
     private fun generarPDFSafe(resultados: Map<String, Int>, silent: Boolean) {

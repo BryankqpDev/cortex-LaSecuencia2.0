@@ -39,7 +39,7 @@
     <string name="t4_analysis"><b>ANÁLISIS CEREBRAL:</b> Precisión motora fina y cerebelo.</string>
     <string name="t4_mission">🏁 <b>TU MISIÓN:</b> Aparecerán bolitas amarillas 🟡. Sé rápido y atrapa exactamente 5 con tu dedo.</string>
     
-    <!-- Test 5: Atención -->
+    <!-- Test 5: Attention -->
     <string name="t5_title">5. ATENCIÓN</string>
     <string name="t5_analysis"><b>ANÁLISIS CEREBRAL:</b> Inhibición de distractores (Stroop).</string>
     <string name="t5_mission">🏁 <b>TU MISIÓN:</b> ¡Cuidado con la trampa! Mira el COLOR DE LA TINTA 🎨, no leas la palabra. Si dice \'ROJO\' pero es verde, presiona VERDE.</string>
@@ -86,7 +86,7 @@
     <string name="btn_confirm_tracking">CONFIRMAR (%d/2)</string>
     <string name="btn_next">SIGUIENTE ➔</string>
     <string name="btn_exit">🚪 Salir</string>
-    <string name="btn_admin">ADMIN / DATA</string>
+    <string name="btn_admin">ADMINISTRACIÓN</string>
     <string name="btn_new_evaluation">🔄 NUEVA EVALUACIÓN</string>
     <string name="btn_download_pdf">DESCARGAR PDF</string>
     <string name="btn_finish_exit">FINALIZAR / SALIR</string>
@@ -95,6 +95,7 @@
     <string name="btn_register">CREAR CUENTA ADMIN</string>
     <string name="btn_start_evaluation">INICIAR EVALUACIÓN</string>
     <string name="btn_authenticating">AUTENTICANDO...</string>
+    <string name="btn_cerrar_sesion">CERRAR SESIÓN</string>
 
     <!-- ========================================== -->
     <!-- UI - LABELS Y TÍTULOS -->
@@ -105,7 +106,7 @@
     <string name="label_driver">CONDUCTOR</string>
     <string name="label_dni">DNI / ID</string>
     <string name="label_equipment_type">TIPO EQUIPO</string>
-    <string name="label_unit">UNIDAD</string>
+    <string name="label_unit">CÓDIGO DE EQUIPO</string>
     <string name="label_attempt">INTENTO %d/2</string>
     <string name="label_session_active">👤 Sesión activa</string>
     <string name="label_sentinel_mode">SENTINEL: MODO ESTRICTO</string>
@@ -120,7 +121,7 @@
     <string name="hint_supervisor_name">SUPERVISOR A CARGO</string>
     <string name="hint_driver_name">APELLIDOS Y NOMBRES</string>
     <string name="hint_document">DOCUMENTO</string>
-    <string name="hint_unit_plate">PLACA O CÓDIGO INT.</string>
+    <string name="hint_unit_plate">Código de equipo</string>
     <string name="hint_email">Correo Electrónico</string>
     <string name="hint_password">Contraseña</string>
 
@@ -242,9 +243,10 @@
     <!-- ========================================== -->
     <string-array name="lista_equipos">
         <item>-- SELECCIONE EQUIPO --</item>
-        <item>LANZADOR DE SHOTCRETE</item>
-        <item>MIXER DE BAJO PERFIL (MEZCLADORA)</item>
-        <item>CAMIONETA ESCOLTA / PERSONAL</item>
+        <item>ROBOT LANZADOR</item>
+        <item>MIXER</item>
+        <item>ROBOT LANZADOR / MIXER</item>
+        <item>CAMIONETA 4X4</item>
     </string-array>
 
 </resources>

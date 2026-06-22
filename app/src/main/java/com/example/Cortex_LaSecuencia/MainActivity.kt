@@ -15,21 +15,33 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import android.util.Log
 
 // ✅ IMPORTACIONES ACTUALIZADAS
 import com.example.Cortex_LaSecuencia.actividades.LockedActivity
 import com.example.Cortex_LaSecuencia.actividades.AdminActivity
 import com.example.Cortex_LaSecuencia.actividades.LoginActivity
 import com.example.Cortex_LaSecuencia.utils.SessionManager
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+data class OperadorFirebase(
+    val nombre: String = "",
+    val puesto: String = "",
+    val tipo: String = ""
+)
+
 class MainActivity : AppCompatActivity() {
 
     private val PREFS_NAME = "cortex_conductor_prefs"
     private lateinit var sessionManager: SessionManager
+    private val operadoresMap = mutableMapOf<String, OperadorFirebase>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +54,7 @@ class MainActivity : AppCompatActivity() {
         val etEmpresa = findViewById<EditText>(R.id.et_empresa)
         val etSupervisor = findViewById<EditText>(R.id.et_supervisor)
         val etNombre = findViewById<EditText>(R.id.et_nombre)
+        val etPuesto = findViewById<EditText>(R.id.et_puesto)
         val etDni = findViewById<EditText>(R.id.et_dni)
         val etUnidad = findViewById<EditText>(R.id.et_unidad)
         val spinnerEquipo = findViewById<Spinner>(R.id.spinner_equipo)
@@ -50,15 +63,50 @@ class MainActivity : AppCompatActivity() {
 
         // Cargar datos guardados
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        etEmpresa.setText(prefs.getString("empresa", ""))
         etSupervisor.setText(prefs.getString("supervisor", ""))
         etNombre.setText(prefs.getString("nombre", ""))
+        etPuesto.setText(prefs.getString("puesto", ""))
         etDni.setText(prefs.getString("dni", ""))
 
-        // ✅ FORMATO DE TEXTO: Capitalize Words
-        setupCapitalizeWords(etEmpresa)
+        // Forzar Empresa precargada y deshabilitada
+        etEmpresa.setText("BJ GRUPO")
+        etEmpresa.isEnabled = false
+
+        // Descarga de base de operadores desde Firebase
+        loadOperadores()
+
+        // ✅ FORMATO DE TEXTO: Capitalize Words (Se aplica solo si están habilitados)
         setupCapitalizeWords(etSupervisor)
         setupCapitalizeWords(etNombre)
+        setupCapitalizeWords(etPuesto)
+
+        // Lookup por DNI
+        etDni.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val dni = s?.toString()?.trim() ?: ""
+                if (dni.length == 8) {
+                    val operador = operadoresMap[dni]
+                    if (operador != null) {
+                        etNombre.setText(operador.nombre)
+                        etPuesto.setText(operador.puesto)
+                        Toast.makeText(this@MainActivity, "✅ Operador encontrado: ${operador.nombre}", Toast.LENGTH_SHORT).show()
+                        etNombre.isEnabled = false
+                        etPuesto.isEnabled = false
+                    } else {
+                        etNombre.setText("")
+                        etPuesto.setText("")
+                        etNombre.isEnabled = true
+                        etPuesto.isEnabled = true
+                        Toast.makeText(this@MainActivity, "⚠️ DNI no encontrado, ingrese nombre y puesto manualmente", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    etNombre.isEnabled = true
+                    etPuesto.isEnabled = true
+                }
+            }
+        })
 
         // ✅ AUTO-SCROLL AL SELECCIONAR TIPO DE EQUIPO
         spinnerEquipo.setOnTouchListener { view, _ ->
@@ -122,30 +170,38 @@ class MainActivity : AppCompatActivity() {
             val empresa = etEmpresa.text.toString().trim()
             val supervisor = etSupervisor.text.toString().trim()
             val nombre = etNombre.text.toString().trim()
+            val puesto = etPuesto.text.toString().trim()
             val dni = etDni.text.toString().trim()
             val unidad = etUnidad.text.toString().trim().uppercase()
             val equipoSeleccionado = spinnerEquipo.selectedItem.toString()
 
             // 1. Validar campos vacíos
-            if (empresa.isEmpty() || supervisor.isEmpty() || nombre.isEmpty() || dni.isEmpty() || unidad.isEmpty()) {
+            if (empresa.isEmpty() || supervisor.isEmpty() || nombre.isEmpty() || puesto.isEmpty() || dni.isEmpty() || unidad.isEmpty()) {
+                if (puesto.isEmpty()) etPuesto.error = "Ingrese puesto"
                 Toast.makeText(this, "⚠️ Faltan datos obligatorios", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // 2. ✅ VERIFICACIÓN DE BLOQUEO (DESPUÉS DE LLENAR DATOS)
+            // 2. Validación de Spinner de Equipos
+            if (equipoSeleccionado == "-- SELECCIONE EQUIPO --") {
+                Toast.makeText(this, "⚠️ Seleccione un tipo de equipo", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // 3. VERIFICACIÓN DE BLOQUEO (DESPUÉS DE LLENAR DATOS)
             if (CortexManager.estaBloqueado()) {
                 mostrarDialogoSistemaBloqueado(nombre, dni)
                 return@setOnClickListener
             }
 
-            // 3. Validaciones de formato
+            // 4. Validaciones de formato
             if (dni.length != 8) {
                 etDni.error = "El DNI debe tener 8 dígitos."
                 return@setOnClickListener
             }
 
-            if (!esPlacaValida(unidad)) {
-                etUnidad.error = "Placa inválida"
+            if (unidad.isEmpty()) {
+                etUnidad.error = "Ingrese código de equipo"
                 return@setOnClickListener
             }
 
@@ -154,14 +210,15 @@ class MainActivity : AppCompatActivity() {
             editor.putString("empresa", empresa)
             editor.putString("supervisor", supervisor)
             editor.putString("nombre", nombre)
+            editor.putString("puesto", puesto)
             editor.putString("dni", dni)
             editor.apply()
 
-            // ✅ 4. GENERAR FECHA Y HORA ACTUALES
+            // ✅ 5. GENERAR FECHA Y HORA ACTUALES
             val fechaActual = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
             val horaActual = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
 
-            // 5. Proceder con autenticación y biometría
+            // 6. Proceder con autenticación y biometría
             btnSiguiente.isEnabled = false
             btnSiguiente.text = "AUTENTICANDO..."
 
@@ -189,6 +246,27 @@ class MainActivity : AppCompatActivity() {
                 }
             )
         }
+    }
+
+    private fun loadOperadores() {
+        FirebaseDatabase.getInstance().getReference("operadores")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    operadoresMap.clear()
+                    for (child in snapshot.children) {
+                        val dni = child.key ?: continue
+                        val operador = child.getValue(OperadorFirebase::class.java)
+                        if (operador != null) {
+                            operadoresMap[dni] = operador
+                        }
+                    }
+                    Log.d("MainActivity", "✅ Base de datos local cargada: ${operadoresMap.size} operadores.")
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("MainActivity", "Error cargando operadores: ${error.message}")
+                }
+            })
     }
 
     private fun mostrarDialogoSistemaBloqueado(nombre: String, dni: String) {
@@ -219,11 +297,6 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton("CANCELAR", null)
             .show()
-    }
-
-    private fun esPlacaValida(placa: String): Boolean {
-        val n = placa.replace(Regex("[\\s-]"), "").uppercase()
-        return n.length == 6 && (n.matches(Regex("^[A-Z]{3}[0-9]{3}$")) || n.matches(Regex("^[0-9]{4}[A-Z]{2}$")))
     }
 
     private fun setupKeyboardListener(scrollView: ScrollView) {
@@ -274,7 +347,7 @@ class MainActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
 
             override fun afterTextChanged(s: Editable?) {
-                if (isFormatting || s == null) return
+                if (isFormatting || s == null || !editText.isEnabled) return
 
                 isFormatting = true
                 val formatted = s.toString().split(" ").joinToString(" ") { word ->
