@@ -25,6 +25,8 @@ import java.io.File
 
 class ReporteFinalActivity : AppCompatActivity() {
 
+    private var ultimoPdfGenerado: File? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_reporte_final)
@@ -92,6 +94,7 @@ class ReporteFinalActivity : AppCompatActivity() {
             AudioManager.hablar("Lo siento. No cumple con el estándar de seguridad. Sistema bloqueado.")
         }
 
+        // Generación automática del PDF al iniciar
         generarPDFSafe(resultados, silent = true)
         btnDescargarPDF.setOnClickListener { generarPDFSafe(resultados, silent = false) }
 
@@ -113,9 +116,11 @@ class ReporteFinalActivity : AppCompatActivity() {
     }
 
     private fun compartirPDF() {
-        val operador = CortexManager.operadorActual ?: return
-        val file = File(filesDir, "reporte_${operador.dni}.pdf")
-        if (!file.exists()) { Toast.makeText(this, "PDF no encontrado", Toast.LENGTH_SHORT).show(); return }
+        val file = ultimoPdfGenerado
+        if (file == null || !file.exists()) {
+            Toast.makeText(this, "⚠️ Primero genera el PDF con el botón DESCARGAR PDF", Toast.LENGTH_LONG).show()
+            return
+        }
         
         val uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -124,7 +129,11 @@ class ReporteFinalActivity : AppCompatActivity() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             setPackage("com.whatsapp")
         }
-        try { startActivity(intent) } catch (e: Exception) { startActivity(Intent.createChooser(intent, "Compartir con...")) }
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            startActivity(Intent.createChooser(intent, "Compartir con..."))
+        }
     }
 
     private fun compartirCaptura() {
@@ -143,7 +152,11 @@ class ReporteFinalActivity : AppCompatActivity() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             setPackage("com.whatsapp")
         }
-        try { startActivity(intent) } catch (e: Exception) { startActivity(Intent.createChooser(intent, "Compartir con...")) }
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            startActivity(Intent.createChooser(intent, "Compartir con..."))
+        }
     }
 
     private fun generarPDFSafe(resultados: Map<String, Int>, silent: Boolean) {
@@ -152,7 +165,13 @@ class ReporteFinalActivity : AppCompatActivity() {
             if (operador != null) {
                 val bitmapFoto = cargarFotoLocal(operador.dni)
                 val pdfFile = PDFGenerator.generarPDF(this, operador, resultados, bitmapFoto)
-                if (!silent && pdfFile != null) Toast.makeText(this, "PDF generado", Toast.LENGTH_LONG).show()
+                
+                // Guardar la referencia exacta de retorno
+                ultimoPdfGenerado = pdfFile
+                
+                if (!silent && pdfFile != null) {
+                    Toast.makeText(this, "PDF generado", Toast.LENGTH_LONG).show()
+                }
             }
         } catch (e: Exception) { }
     }

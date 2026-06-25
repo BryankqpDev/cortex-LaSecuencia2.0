@@ -87,14 +87,21 @@ class MainActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {
                 val dni = s?.toString()?.trim() ?: ""
                 if (dni.length == 8) {
+                    // Logs de depuración en la búsqueda
+                    Log.d("DNI_LOOKUP", "🔍 Buscando DNI: $dni")
+                    Log.d("DNI_LOOKUP", "📦 Operadores en memoria: ${operadoresMap.size}")
+                    Log.d("DNI_LOOKUP", "🗝️ Claves: ${operadoresMap.keys.toList()}")
+
                     val operador = operadoresMap[dni]
                     if (operador != null) {
+                        Log.d("DNI_LOOKUP", "✅ Encontrado: ${operador.nombre}")
                         etNombre.setText(operador.nombre)
                         etPuesto.setText(operador.puesto)
                         Toast.makeText(this@MainActivity, "✅ Operador encontrado: ${operador.nombre}", Toast.LENGTH_SHORT).show()
                         etNombre.isEnabled = false
                         etPuesto.isEnabled = false
                     } else {
+                        Log.d("DNI_LOOKUP", "❌ No encontrado")
                         etNombre.setText("")
                         etPuesto.setText("")
                         etNombre.isEnabled = true
@@ -253,6 +260,9 @@ class MainActivity : AppCompatActivity() {
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     operadoresMap.clear()
+                    // Log de Firebase devuelto
+                    Log.d("DNI_LOOKUP", "📥 Firebase devolvió: ${snapshot.childrenCount} registros")
+
                     for (child in snapshot.children) {
                         val dni = child.key ?: continue
                         val operador = child.getValue(OperadorFirebase::class.java)
@@ -260,11 +270,11 @@ class MainActivity : AppCompatActivity() {
                             operadoresMap[dni] = operador
                         }
                     }
-                    Log.d("MainActivity", "✅ Base de datos local cargada: ${operadoresMap.size} operadores.")
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Log.e("MainActivity", "Error cargando operadores: ${error.message}")
+                    // Log de cancelación de error en Firebase
+                    Log.e("DNI_LOOKUP", "🚫 Error Firebase: ${error.message}")
                 }
             })
     }
