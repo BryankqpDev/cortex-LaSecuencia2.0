@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.example.Cortex_LaSecuencia.CortexManager
 import com.example.Cortex_LaSecuencia.R
@@ -24,7 +25,9 @@ class SecuenciaTestActivity : TestBaseActivity() {
     private val LONGITUD_SECUENCIA = 6
     private var esTurnoDelUsuario = false
     private var intentoActual = 1
+    private var interrupcionDuranteMemorizacion = false
 
+    private val handlerSecuencia = Handler(Looper.getMainLooper())
     private lateinit var sessionParams: TestSessionParams.SecuenciaParams
 
     override fun obtenerTestId(): String = "t2"
@@ -71,6 +74,8 @@ class SecuenciaTestActivity : TestBaseActivity() {
         esTurnoDelUsuario = false
         secuenciaUsuario.clear()
         secuenciaGenerada.clear()
+        handlerSecuencia.removeCallbacksAndMessages(null)
+        restaurarColoresBotones()
 
         for (i in 0 until LONGITUD_SECUENCIA) {
             secuenciaGenerada.add(Random.nextInt(0, 9))
@@ -83,15 +88,14 @@ class SecuenciaTestActivity : TestBaseActivity() {
     }
 
     private fun mostrarSecuenciaCompleta() {
-        val handler = Handler(Looper.getMainLooper())
         val tiempoPaso = sessionParams.tiempoPorPasoMs
 
         secuenciaGenerada.forEachIndexed { i, botonIndex ->
-            handler.postDelayed({
+            handlerSecuencia.postDelayed({
                 if (!testFinalizado && !isFinishing) iluminarBoton(botonIndex, false)
 
                 if (i == secuenciaGenerada.size - 1) {
-                    handler.postDelayed({
+                    handlerSecuencia.postDelayed({
                         if (!testFinalizado && !isFinishing) {
                             esTurnoDelUsuario = true
                             txtInstruccion.text = "REPITE LA SECUENCIA"
@@ -113,6 +117,13 @@ class SecuenciaTestActivity : TestBaseActivity() {
         }, 500)
     }
 
+    private fun restaurarColoresBotones() {
+        val originalColor = Color.parseColor("#1E293B")
+        botones.forEach { view ->
+            view.backgroundTintList = android.content.res.ColorStateList.valueOf(originalColor)
+        }
+    }
+
     private fun verificarEntrada() {
         val indexActual = secuenciaUsuario.size - 1
 
@@ -129,6 +140,7 @@ class SecuenciaTestActivity : TestBaseActivity() {
     private fun gestionarFallo() {
         testFinalizado = true
         esTurnoDelUsuario = false
+        handlerSecuencia.removeCallbacksAndMessages(null)
 
         val aciertos = (secuenciaUsuario.size - 1).coerceAtLeast(0)
         val puntajeBase = (aciertos.toFloat() / LONGITUD_SECUENCIA * 100).toInt()
@@ -146,6 +158,7 @@ class SecuenciaTestActivity : TestBaseActivity() {
     private fun finalizarConExito() {
         testFinalizado = true
         esTurnoDelUsuario = false
+        handlerSecuencia.removeCallbacksAndMessages(null)
 
         val puntajeFinal = (100 - penalizacionPorAusencia).coerceAtLeast(0)
         CortexManager.guardarPuntaje("t2", puntajeFinal)
@@ -154,18 +167,25 @@ class SecuenciaTestActivity : TestBaseActivity() {
     }
 
     private fun mostrarDialogoReintento(puntaje: Int) {
-        mostrarResultadoEstandarConReintento("MEMORIA", puntaje, penalizacion = penalizacionPorAusencia) {
-            reiniciarTest()
-        }
+        AlertDialog.Builder(this)
+            .setTitle("MEMORIA")
+            .setMessage("INTENTO REGISTRADO\n\nNota: $puntaje%\n\nNecesitas 95% para saltarte el segundo intento.")
+            .setCancelable(false)
+            .setPositiveButton("INTENTO 2 →") { _, _ ->
+                reiniciarTest()
+            }
+            .show()
     }
-
+    
     private fun reiniciarTest() {
         testFinalizado = false
         secuenciaGenerada.clear()
         secuenciaUsuario.clear()
         esTurnoDelUsuario = false
+        interrupcionDuranteMemorizacion = false
         penalizacionPorAusencia = 0
         intentoActual = CortexManager.obtenerIntentoActual("t2")
+        handlerSecuencia.removeCallbacksAndMessages(null)
         
         sessionParams = TestSessionParams.generarSecuenciaParams()
         TestSessionParams.registrarParametros("t2", sessionParams)
@@ -176,18 +196,48 @@ class SecuenciaTestActivity : TestBaseActivity() {
     }
 
     private fun mostrarDialogoFinal(puntaje: Int, mensaje: String) {
-        mostrarResultadoEstandarFinal("MEMORIA", puntaje, penalizacion = penalizacionPorAusencia)
+        if (isFinishing) return
+        val titulo = if (puntaje >= 95) "¡EXCELENTE! 😎✅" else "MEMORIA"
+        val resultado = if (puntaje >= 95) "¡EXCELENTE!" else "MÓDULO FINALIZADO"
+        
+        AlertDialog.Builder(this)
+            .setTitle(titulo)
+            .setMessage("$resultado\n\n$mensaje\nNota Final: $puntaje%\nPenalización ausencia: -$penalizacionPorAusencia pts")
+            .setCancelable(false)
+            .setPositiveButton("➡️ SIGUIENTE") { _, _ ->
+                CortexManager.navegarAlSiguiente(this)
+                finish()
+            }
+            .show()
     }
 
     override fun onTestPaused() {
+        if (!esTurnoDelUsuario) {
+            interrupcionDuranteMemorizacion = true
+            handlerSecuencia.removeCallbacksAndMessages(null)
+            restaurarColoresBotones()
+        }
         esTurnoDelUsuario = false
         txtInstruccion.text = "PAUSA POR AUSENCIA"
     }
 
     override fun onTestResumed() {
         if (!testFinalizado) {
-            esTurnoDelUsuario = true
-            txtInstruccion.text = "CONTINUAR"
+            if (interrupcionDuranteMemorizacion) {
+                interrupcionDuranteMemorizacion = false
+                Toast.makeText(this, "🔄 Reiniciando secuencia...", Toast.LENGTH_SHORT).show()
+                Handler(Looper.getMainLooper()).postDelayed({
+                    if (!testFinalizado) prepararSecuenciaUnica()
+                }, 1000)
+            } else {
+                esTurnoDelUsuario = true
+                txtInstruccion.text = "CONTINUAR"
+            }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        handlerSecuencia.removeCallbacksAndMessages(null)
     }
 }
