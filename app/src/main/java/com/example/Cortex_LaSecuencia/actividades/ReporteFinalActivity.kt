@@ -186,23 +186,137 @@ class ReporteFinalActivity : AppCompatActivity() {
     private fun mostrarDialogoDesbloqueo() {
         val inputCodigo = android.widget.EditText(this).apply {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            hint = "Código (1007)"
+            hint = "Ingrese código OTP de 6 dígitos"
             gravity = Gravity.CENTER; setTextColor(Color.BLACK)
+            textSize = 20f
+            letterSpacing = 0.3f
         }
-        val container = android.widget.FrameLayout(this).apply { setPadding(50, 20, 50, 0); addView(inputCodigo) }
-        
-        AlertDialog.Builder(this)
-            .setTitle("🔓 DESBLOQUEO")
-            .setMessage("Esperando autorización del administrador o ingrese código manual:")
-            .setView(container)
-            .setPositiveButton("VALIDAR") { _, _ ->
-                if (CortexManager.verificarCodigoSupervisor(inputCodigo.text.toString())) {
-                    CortexManager.desbloquearSistema(this)
-                    reiniciarApp()
-                } else Toast.makeText(this, "Código incorrecto", Toast.LENGTH_SHORT).show()
-            }
+
+        val btnSolicitar = Button(this).apply {
+            text = "📩 SOLICITAR CÓDIGO"
+            setBackgroundColor(Color.parseColor("#2563EB"))
+            setTextColor(Color.WHITE)
+            textSize = 14f
+        }
+
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(50, 20, 50, 0)
+            addView(btnSolicitar)
+            addView(android.widget.Space(this@ReporteFinalActivity).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 24
+                )
+            })
+            addView(inputCodigo)
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("🔐 DESBLOQUEO OTP")
+            .setMessage("Solicite el código al administrador")
+            .setView(layout)
+            .setPositiveButton("VALIDAR", null) // Se configura después para evitar dismiss automático
             .setNegativeButton("CANCELAR", null)
-            .show()
+            .create()
+
+        dialog.show()
+
+        // ── Botón SOLICITAR CÓDIGO ──
+        btnSolicitar.setOnClickListener {
+            val operador = CortexManager.operadorActual ?: return@setOnClickListener
+            btnSolicitar.isEnabled = false
+            btnSolicitar.text = "Enviando..."
+
+            val body = org.json.JSONObject().apply {
+                put("nombre", operador.nombre)
+                put("dni", operador.dni)
+                put("empresa", operador.empresa)
+                put("fecha", operador.fecha)
+                put("hora", operador.hora)
+            }
+
+            callBackend("/solicitar-desbloqueo", body) { response, error ->
+                runOnUiThread {
+                    btnSolicitar.isEnabled = true
+                    btnSolicitar.text = "📩 SOLICITAR CÓDIGO"
+                    if (error == null && response?.optBoolean("success") == true) {
+                        Toast.makeText(this, "✅ Código enviado al administrador", Toast.LENGTH_LONG).show()
+                    } else {
+                        val msg = error ?: response?.optString("error") ?: "Error desconocido"
+                        Toast.makeText(this, "❌ Error al solicitar código: $msg", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+
+        // ── Botón VALIDAR (override para no cerrar el diálogo en caso de error) ──
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val codigoIngresado = inputCodigo.text.toString().trim()
+            if (codigoIngresado.isEmpty()) {
+                Toast.makeText(this, "Ingrese el código", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val operador = CortexManager.operadorActual ?: return@setOnClickListener
+
+            val body = org.json.JSONObject().apply {
+                put("dni", operador.dni)
+                put("codigo", codigoIngresado)
+            }
+
+            callBackend("/validar-codigo", body) { response, error ->
+                runOnUiThread {
+                    if (error == null && response?.optBoolean("success") == true) {
+                        Toast.makeText(this, "✅ Sistema desbloqueado", Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                        CortexManager.desbloquearSistema(this)
+                        reiniciarApp()
+                    } else {
+                        Toast.makeText(this, "❌ Código inválido o expirado", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Llamada HTTP POST al backend de Cortex.
+     * Ejecuta en hilo separado y devuelve resultado en callback.
+     *
+     * @param endpoint Ruta del endpoint (ej: "/solicitar-desbloqueo")
+     * @param body JSONObject con el cuerpo de la petición
+     * @param callback (response: JSONObject?, error: String?) → se ejecuta en hilo llamante
+     */
+    private fun callBackend(
+        endpoint: String,
+        body: org.json.JSONObject,
+        callback: (response: org.json.JSONObject?, error: String?) -> Unit
+    ) {
+        Thread {
+            try {
+                val url = java.net.URL("https://supabase-catha-cortex-backend.c2awqr.easypanel.host$endpoint")
+                val conn = url.openConnection() as java.net.HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+                conn.connectTimeout = 10000
+                conn.readTimeout = 10000
+                conn.doOutput = true
+
+                conn.outputStream.use { os ->
+                    os.write(body.toString().toByteArray(Charsets.UTF_8))
+                }
+
+                val responseCode = conn.responseCode
+                val stream = if (responseCode in 200..299) conn.inputStream else conn.errorStream
+                val responseText = stream.bufferedReader().use { it.readText() }
+                conn.disconnect()
+
+                val json = org.json.JSONObject(responseText)
+                callback(json, null)
+            } catch (e: Exception) {
+                callback(null, e.message ?: "Error de conexión")
+            }
+        }.start()
     }
 
     private fun reiniciarApp() {
