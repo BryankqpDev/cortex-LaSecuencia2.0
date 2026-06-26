@@ -57,8 +57,8 @@ class FaceNetProcessor(context: Context) {
     fun validateAgainstMultiple(
         newEmbedding: FloatArray,
         referenceEmbeddings: List<FloatArray>,
-        avgThreshold: Float = 0.75f,
-        maxThreshold: Float = 0.80f
+        maxThreshold: Float = 0.62f,
+        avgThreshold: Float = 0.58f
     ): ValidationResult {
         val similarities = referenceEmbeddings.map { calculateSimilarity(newEmbedding, it) }
         val avg = similarities.average().toFloat()
@@ -66,7 +66,7 @@ class FaceNetProcessor(context: Context) {
 
         return when {
             max >= maxThreshold && avg >= avgThreshold -> ValidationResult.Match(max, avg)
-            max >= 0.70f && avg >= 0.65f -> ValidationResult.ProbableMatch(max, true)
+            max >= 0.70f && avg >= 0.62f -> ValidationResult.ProbableMatch(max, true)
             else -> ValidationResult.NoMatch(max)
         }
     }

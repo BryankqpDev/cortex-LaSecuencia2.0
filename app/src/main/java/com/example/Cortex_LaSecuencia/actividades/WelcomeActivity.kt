@@ -109,7 +109,7 @@ class WelcomeActivity : AppCompatActivity() {
         // ✅ INICIAR CRONÓMETRO: Guardar timestamp de inicio
         // ═══════════════════════════════════════════════════════════════════
         val operador = CortexManager.operadorActual
-        if (operador != null && operador.timestampInicio == 0L) {
+        if (operador != null) {
             operador.timestampInicio = System.currentTimeMillis()
             android.util.Log.d(
                 "WelcomeActivity",

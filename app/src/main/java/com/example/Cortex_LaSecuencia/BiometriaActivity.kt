@@ -8,6 +8,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
@@ -52,6 +54,9 @@ class BiometriaActivity : AppCompatActivity() {
     private var estaAutenticado = false
     private val BYPASS_LIVENESS_DESARROLLO = true 
     private var modo = "registro"
+
+    private val fotosRegistro = mutableListOf<Bitmap>()
+    private val FOTOS_REQUERIDAS = 3
 
     private val operadorDni: String
         get() = CortexManager.operadorActual?.dni ?: "invitado"
@@ -141,31 +146,58 @@ class BiometriaActivity : AppCompatActivity() {
             if (qualityResult is CaptureQualityResult.Valid) {
                 // ✅ PASO 3: Biometría verificada
                 activarCheck(iconCheck3)
-                if (modo == "registro") registrarUsuario(bitmap) else autenticarUsuario(bitmap)
+                if (modo == "registro") {
+                    registrarUsuario(bitmap)
+                } else {
+                    autenticarUsuario(bitmap)
+                }
             } else { handleError("Rostro no detectado") }
         }
     }
 
     private suspend fun registrarUsuario(bitmap: Bitmap) {
-        val resultado = biometricValidator.enrollUser(operadorDni, listOf(bitmap), !BYPASS_LIVENESS_DESARROLLO)
+        fotosRegistro.add(bitmap)
+        if (fotosRegistro.size < FOTOS_REQUERIDAS) {
+            txtInstruccion.text = "Foto ${fotosRegistro.size}/$FOTOS_REQUERIDAS — Gira ligeramente la cabeza"
+            Handler(Looper.getMainLooper()).postDelayed({
+                reintentar(limpiarFotos = false)
+            }, 1500)
+        } else {
+            registrarUsuario(fotosRegistro)
+        }
+    }
+
+    private suspend fun registrarUsuario(bitmaps: List<Bitmap>) {
+        val resultado = biometricValidator.enrollUser(operadorDni, bitmaps, !BYPASS_LIVENESS_DESARROLLO)
+        Log.d("FACE_AUTH", "📝 Resultado registro: $resultado")
         if (resultado is EnrollmentResult.Success) {
             // ✅ PASO 4: Decisión finalizada
             activarCheck(iconCheck4)
             // ✅ GUARDAR CON NOMBRE FIJO PARA EL REPORTE (LANDSCAPE)
-            guardarFotoLocalmente(bitmap, operadorDni)
+            if (bitmaps.isNotEmpty()) {
+                guardarFotoLocalmente(bitmaps.first(), operadorDni)
+            }
             mostrarConfirmacion("Registro completado")
-        } else { handleError("Fallo en registro") }
+        } else { 
+            fotosRegistro.clear()
+            handleError("Fallo en registro") 
+        }
     }
 
     private suspend fun autenticarUsuario(bitmap: Bitmap) {
+        Log.d("FACE_AUTH", "🔍 Iniciando autenticación para DNI: $operadorDni")
         val resultado = biometricValidator.authenticateUser(operadorDni, listOf(bitmap), !BYPASS_LIVENESS_DESARROLLO)
+        Log.d("FACE_AUTH", "📊 Resultado autenticación: $resultado")
         if (resultado is AuthenticationResult.Success) {
             // ✅ PASO 4: Decisión finalizada
             activarCheck(iconCheck4)
             // ✅ TAMBIÉN ACTUALIZAMOS LA FOTO LOCAL PARA EL REPORTE ACTUAL (LANDSCAPE)
             guardarFotoLocalmente(bitmap, operadorDni)
             mostrarConfirmacion("Identidad verificada")
-        } else { handleError("Identidad no coincide") }
+        } else { 
+            Log.e("FACE_AUTH", "❌ Fallo autenticación: $resultado")
+            handleError("Identidad no coincide") 
+        }
     }
 
     private fun guardarFotoLocalmente(bitmap: Bitmap, dni: String) {
@@ -209,7 +241,8 @@ class BiometriaActivity : AppCompatActivity() {
         reintentar()
     }
 
-    private fun reintentar() {
+    private fun reintentar(limpiarFotos: Boolean = true) {
+        if (limpiarFotos) fotosRegistro.clear()
         cardVerificacion.visibility = View.GONE
         cardConfirmacion.visibility = View.GONE
         imgPreview.visibility = View.GONE
