@@ -53,6 +53,7 @@ object CortexManager {
     private const val KEY_OP_FECHA = "op_fecha"
     private const val KEY_OP_HORA = "op_hora"
     private const val KEY_OP_TIMESTAMP_INICIO = "op_timestamp_inicio"
+    private const val KEY_OP_TIMESTAMP_FIN = "op_timestamp_fin"
 
     var operadorActual: Operador? = null
     var usuarioAdmin: FirebaseUser? = null
@@ -143,18 +144,22 @@ object CortexManager {
             // ✅ CAMBIO: Umbral de 95% (igual que MVP JavaScript)
             if (puntajeClamp >= 95) {
                 resultados[testId] = puntajeClamp
-                guardarProgreso()
             } else {
                 puntajesTemporales.getOrPut(testId) { mutableListOf() }.add(puntajeClamp)
                 intentosPorTest[testId] = 2
-                guardarProgreso()
             }
         } else {
             puntajesTemporales.getOrPut(testId) { mutableListOf() }.add(puntajeClamp)
             val promedio = (puntajesTemporales[testId]!!.sum() / puntajesTemporales[testId]!!.size).coerceIn(0, 100)
             resultados[testId] = promedio
-            guardarProgreso()
         }
+
+        // Capturar timestamp de finalización cuando se completan todos los tests
+        if (resultados.size == listaDeTests.size && (operadorActual?.timestampFin ?: 0L) == 0L) {
+            operadorActual?.timestampFin = System.currentTimeMillis()
+            Log.d("CortexManager", "⏱️ Tiempo final capturado: ${operadorActual?.timestampFin}")
+        }
+        guardarProgreso()
     }
 
     fun obtenerResultados(): Map<String, Int> = resultados
@@ -299,6 +304,7 @@ object CortexManager {
             editor.putString(KEY_OP_FECHA, op.fecha)
             editor.putString(KEY_OP_HORA, op.hora)
             editor.putLong(KEY_OP_TIMESTAMP_INICIO, op.timestampInicio)
+            editor.putLong(KEY_OP_TIMESTAMP_FIN, op.timestampFin)
         }
         editor.apply()
         Log.d("CortexManager", "✅ Progreso guardado: ${resultados.size} tests completados")
@@ -318,7 +324,8 @@ object CortexManager {
             unidad = prefs.getString(KEY_OP_UNIDAD, "") ?: "",
             fecha = prefs.getString(KEY_OP_FECHA, "") ?: "",
             hora = prefs.getString(KEY_OP_HORA, "") ?: "",
-            timestampInicio = prefs.getLong(KEY_OP_TIMESTAMP_INICIO, 0L)
+            timestampInicio = prefs.getLong(KEY_OP_TIMESTAMP_INICIO, 0L),
+            timestampFin = prefs.getLong(KEY_OP_TIMESTAMP_FIN, 0L)
         )
         resultados.clear()
         prefs.getString(KEY_RESULTADOS, "")?.split(",")?.forEach { entry ->
@@ -364,6 +371,7 @@ object CortexManager {
             .remove(KEY_OP_FECHA)
             .remove(KEY_OP_HORA)
             .remove(KEY_OP_TIMESTAMP_INICIO)
+            .remove(KEY_OP_TIMESTAMP_FIN)
             .remove(KEY_YA_ENVIADO)
             .apply()
         Log.d("CortexManager", "🗑️ Progreso limpiado")

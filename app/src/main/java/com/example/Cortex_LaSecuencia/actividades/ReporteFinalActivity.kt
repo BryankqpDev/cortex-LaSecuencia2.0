@@ -67,7 +67,7 @@ class ReporteFinalActivity : AppCompatActivity() {
 
         val operador = CortexManager.operadorActual
         if (operador != null && operador.timestampInicio > 0) {
-            val timestampFin = System.currentTimeMillis()
+            val timestampFin = if (operador.timestampFin > 0) operador.timestampFin else System.currentTimeMillis()
             val tiempoTranscurridoMs = timestampFin - operador.timestampInicio
             val tiempoSegundos = (tiempoTranscurridoMs / 1000).toInt()
             operador.tiempoTotalSegundos = tiempoSegundos

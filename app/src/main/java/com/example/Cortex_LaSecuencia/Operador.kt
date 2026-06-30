@@ -26,5 +26,6 @@ data class Operador(
     // ✅ NUEVOS CAMPOS PARA TRACKING DE TIEMPO
     // ═══════════════════════════════════════════════════════════════════════
     var timestampInicio: Long = 0L,        // Timestamp cuando empieza el primer test
-    var tiempoTotalSegundos: Int = 0       // Tiempo total en segundos al finalizar
+    var tiempoTotalSegundos: Int = 0,      // Tiempo total en segundos al finalizar
+    var timestampFin: Long = 0L            // Timestamp cuando se completa el último test
 )
