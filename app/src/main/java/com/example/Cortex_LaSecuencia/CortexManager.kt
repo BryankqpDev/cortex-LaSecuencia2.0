@@ -38,6 +38,7 @@ object CortexManager {
 
     private const val PREFS_NAME = "CortexPrefs"
     private const val KEY_LOCK_UNTIL = "cortex_lock_until"
+    private const val KEY_YA_ENVIADO = "eval_ya_enviado"
     
     private const val KEY_EVAL_EN_PROGRESO = "eval_en_progreso"
     private const val KEY_RESULTADOS = "eval_resultados"
@@ -176,6 +177,12 @@ object CortexManager {
     }
 
     fun registrarNube(notaFinal: Int, esApto: Boolean) {
+        val prefs = appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs?.getBoolean(KEY_YA_ENVIADO, false) == true) {
+            Log.d("CortexManager", "⚠️ Registro ya enviado anteriormente, omitiendo duplicado")
+            return
+        }
+
         operadorActual?.let { op ->
             val tiempoMs = System.currentTimeMillis() - op.timestampInicio
             val minutos = (tiempoMs / 1000 / 60).toInt()
@@ -195,6 +202,9 @@ object CortexManager {
             )
             val dbRef = FirebaseDatabase.getInstance().getReference("registros")
             dbRef.push().setValue(reg)
+
+            // Al final, marcar como enviado:
+            prefs?.edit()?.putBoolean(KEY_YA_ENVIADO, true)?.apply()
         }
     }
 
@@ -354,6 +364,7 @@ object CortexManager {
             .remove(KEY_OP_FECHA)
             .remove(KEY_OP_HORA)
             .remove(KEY_OP_TIMESTAMP_INICIO)
+            .remove(KEY_YA_ENVIADO)
             .apply()
         Log.d("CortexManager", "🗑️ Progreso limpiado")
     }
